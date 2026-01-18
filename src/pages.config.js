@@ -11,6 +11,11 @@ import ManageNewsletter from './pages/ManageNewsletter';
 import ManageGallery from './pages/ManageGallery';
 import EnterResults from './pages/EnterResults';
 import ViewResults from './pages/ViewResults';
+import AssignSubjects from './pages/AssignSubjects';
+import AssignTeachers from './pages/AssignTeachers';
+import AssignClasses from './pages/AssignClasses';
+import ReviewResults from './pages/ReviewResults';
+import ReviewClassResults from './pages/ReviewClassResults';
 
 
 export const PAGES = {
@@ -27,6 +32,11 @@ export const PAGES = {
     "ManageGallery": ManageGallery,
     "EnterResults": EnterResults,
     "ViewResults": ViewResults,
+    "AssignSubjects": AssignSubjects,
+    "AssignTeachers": AssignTeachers,
+    "AssignClasses": AssignClasses,
+    "ReviewResults": ReviewResults,
+    "ReviewClassResults": ReviewClassResults,
 }
 
 export const pagesConfig = {
