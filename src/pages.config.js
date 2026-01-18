@@ -18,6 +18,7 @@ import ReviewResults from './pages/ReviewResults';
 import ReviewClassResults from './pages/ReviewClassResults';
 import ManageCalendar from './pages/ManageCalendar';
 import ManageTimetable from './pages/ManageTimetable';
+import ManageAssignments from './pages/ManageAssignments';
 
 
 export const PAGES = {
@@ -41,6 +42,7 @@ export const PAGES = {
     "ReviewClassResults": ReviewClassResults,
     "ManageCalendar": ManageCalendar,
     "ManageTimetable": ManageTimetable,
+    "ManageAssignments": ManageAssignments,
 }
 
 export const pagesConfig = {
