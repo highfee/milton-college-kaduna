@@ -1,0 +1,488 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { base44 } from '@/api/base44Client';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Upload, CheckCircle, GraduationCap, User, MapPin, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+
+const CLASSES = {
+  'Nursery': ['Reception Class'],
+  'Primary': ['Primary 1A', 'Primary 1B', 'Primary 2A', 'Primary 2B', 'Primary 3A', 'Primary 3B', 'Primary 4A', 'Primary 4B', 'Primary 5A', 'Primary 5B'],
+  'Secondary': ['JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SS1 Arts A', 'SS1 Arts B', 'SS1 Com A', 'SS1 Com B', 'SS1 Sci A', 'SS1 Sci B', 'SS2 Arts A', 'SS2 Arts B', 'SS2 Com A', 'SS2 Com B', 'SS2 Sci A', 'SS2 Sci B', 'SS3 Arts A', 'SS3 Arts B', 'SS3 Com A', 'SS3 Com B', 'SS3 Sci A', 'SS3 Sci B']
+};
+
+const STATES = [
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 
+  'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 
+  'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 
+  'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
+];
+
+export default function AdmissionForm() {
+  const [step, setStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [applicationNumber, setApplicationNumber] = useState('');
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    middle_name: '',
+    date_of_birth: '',
+    gender: '',
+    passport_photo: '',
+    section_applying: '',
+    class_applying: '',
+    former_school_name: '',
+    former_school_class: '',
+    last_result_upload: '',
+    state_of_origin: '',
+    local_government: '',
+    address: '',
+    parent_name: '',
+    parent_phone: '',
+    parent_email: '',
+    parent_occupation: '',
+    emergency_contact: '',
+    health_conditions: ''
+  });
+
+  const handleChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+    if (field === 'section_applying') {
+      setFormData({ ...formData, section_applying: value, class_applying: '' });
+    }
+  };
+
+  const handleFileUpload = async (e, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check file size for passport (5MB max)
+    if (field === 'passport_photo' && file.size > 5 * 1024 * 1024) {
+      alert('Passport photo must be less than 5MB');
+      return;
+    }
+
+    // Check file type
+    if (field === 'passport_photo' && !['image/jpeg', 'image/jpg'].includes(file.type)) {
+      alert('Passport photo must be in JPEG format');
+      return;
+    }
+
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    handleChange(field, file_url);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    const appNum = 'APP' + Date.now().toString().slice(-8);
+    
+    await base44.entities.AdmissionApplication.create({
+      ...formData,
+      application_number: appNum,
+      application_date: new Date().toISOString().split('T')[0],
+      status: 'Pending'
+    });
+
+    setApplicationNumber(appNum);
+    setSubmitted(true);
+    setSubmitting(false);
+  };
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#1e3a5f] to-[#2c4a6e] flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl p-8 max-w-md w-full text-center"
+        >
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-10 h-10 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Application Submitted!</h2>
+          <p className="text-gray-600 mb-4">
+            Your application has been received successfully.
+          </p>
+          <div className="bg-gray-50 rounded-xl p-4 mb-6">
+            <p className="text-sm text-gray-500">Application Number</p>
+            <p className="text-2xl font-bold text-[#1e3a5f]">{applicationNumber}</p>
+          </div>
+          <p className="text-sm text-gray-500 mb-6">
+            Please save this number for tracking your application status.
+          </p>
+          <Link to={createPageUrl('Home')}>
+            <Button className="w-full bg-[#1e3a5f] hover:bg-[#2c4a6e]">
+              Back to Home
+            </Button>
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#1e3a5f] to-[#2c4a6e] text-white py-8">
+        <div className="container mx-auto px-4">
+          <Link to={createPageUrl('Home')} className="inline-flex items-center text-white/80 hover:text-white mb-4">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Home
+          </Link>
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+              <GraduationCap className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">Admission Application</h1>
+              <p className="text-blue-200">Milton College of Arts and Science, Kaduna</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center mb-8">
+          {[
+            { num: 1, label: 'Personal Info', icon: User },
+            { num: 2, label: 'Education', icon: GraduationCap },
+            { num: 3, label: 'Location', icon: MapPin },
+            { num: 4, label: 'Parent/Guardian', icon: Users }
+          ].map((s, idx) => (
+            <React.Fragment key={s.num}>
+              <div className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step >= s.num ? 'bg-[#1e3a5f] text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  <s.icon className="w-5 h-5" />
+                </div>
+                <span className={`text-xs mt-1 ${step >= s.num ? 'text-[#1e3a5f]' : 'text-gray-500'}`}>{s.label}</span>
+              </div>
+              {idx < 3 && <div className={`w-16 h-1 mx-2 ${step > s.num ? 'bg-[#1e3a5f]' : 'bg-gray-200'}`} />}
+            </React.Fragment>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {/* Step 1: Personal Information */}
+          {step === 1 && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle>Personal Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>First Name *</Label>
+                      <Input
+                        value={formData.first_name}
+                        onChange={(e) => handleChange('first_name', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Middle Name</Label>
+                      <Input
+                        value={formData.middle_name}
+                        onChange={(e) => handleChange('middle_name', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Last Name *</Label>
+                      <Input
+                        value={formData.last_name}
+                        onChange={(e) => handleChange('last_name', e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Date of Birth *</Label>
+                      <Input
+                        type="date"
+                        value={formData.date_of_birth}
+                        onChange={(e) => handleChange('date_of_birth', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Gender *</Label>
+                      <Select value={formData.gender} onValueChange={(v) => handleChange('gender', v)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Passport Photo (JPEG, max 5MB) *</Label>
+                    <div className="mt-2">
+                      {formData.passport_photo ? (
+                        <div className="flex items-center gap-4">
+                          <img src={formData.passport_photo} alt="Passport" className="w-24 h-24 object-cover rounded-lg" />
+                          <Button type="button" variant="outline" onClick={() => handleChange('passport_photo', '')}>
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#1e3a5f]">
+                          <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                          <span className="text-sm text-gray-500">Click to upload passport</span>
+                          <input type="file" className="hidden" accept="image/jpeg,image/jpg" onChange={(e) => handleFileUpload(e, 'passport_photo')} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button type="button" onClick={() => setStep(2)} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
+                      Next
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Step 2: Education */}
+          {step === 2 && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle>Educational Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Section Applying For *</Label>
+                      <Select value={formData.section_applying} onValueChange={(v) => handleChange('section_applying', v)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select section" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Nursery">Nursery</SelectItem>
+                          <SelectItem value="Primary">Primary</SelectItem>
+                          <SelectItem value="Secondary">Secondary</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Class Applying For *</Label>
+                      <Select 
+                        value={formData.class_applying} 
+                        onValueChange={(v) => handleChange('class_applying', v)}
+                        disabled={!formData.section_applying}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select class" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formData.section_applying && CLASSES[formData.section_applying]?.map(cls => (
+                            <SelectItem key={cls} value={cls}>{cls}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Former School Name *</Label>
+                      <Input
+                        value={formData.former_school_name}
+                        onChange={(e) => handleChange('former_school_name', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Class in Former School</Label>
+                      <Input
+                        value={formData.former_school_class}
+                        onChange={(e) => handleChange('former_school_class', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Last Term Result (Optional)</Label>
+                    <div className="mt-2">
+                      {formData.last_result_upload ? (
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-green-600">File uploaded</span>
+                          <Button type="button" variant="outline" size="sm" onClick={() => handleChange('last_result_upload', '')}>
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#1e3a5f]">
+                          <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                          <span className="text-sm text-gray-500">Upload last term result</span>
+                          <input type="file" className="hidden" onChange={(e) => handleFileUpload(e, 'last_result_upload')} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <Button type="button" variant="outline" onClick={() => setStep(1)}>
+                      Previous
+                    </Button>
+                    <Button type="button" onClick={() => setStep(3)} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
+                      Next
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Step 3: Location */}
+          {step === 3 && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle>Location Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>State of Origin *</Label>
+                      <Select value={formData.state_of_origin} onValueChange={(v) => handleChange('state_of_origin', v)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATES.map(state => (
+                            <SelectItem key={state} value={state}>{state}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Local Government Area</Label>
+                      <Input
+                        value={formData.local_government}
+                        onChange={(e) => handleChange('local_government', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Home Address *</Label>
+                    <Textarea
+                      value={formData.address}
+                      onChange={(e) => handleChange('address', e.target.value)}
+                      rows={3}
+                      required
+                    />
+                  </div>
+
+                  <div className="flex justify-between">
+                    <Button type="button" variant="outline" onClick={() => setStep(2)}>
+                      Previous
+                    </Button>
+                    <Button type="button" onClick={() => setStep(4)} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
+                      Next
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Step 4: Parent/Guardian */}
+          {step === 4 && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle>Parent/Guardian Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Parent/Guardian Name *</Label>
+                      <Input
+                        value={formData.parent_name}
+                        onChange={(e) => handleChange('parent_name', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Phone Number *</Label>
+                      <Input
+                        value={formData.parent_phone}
+                        onChange={(e) => handleChange('parent_phone', e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Email Address</Label>
+                      <Input
+                        type="email"
+                        value={formData.parent_email}
+                        onChange={(e) => handleChange('parent_email', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Occupation</Label>
+                      <Input
+                        value={formData.parent_occupation}
+                        onChange={(e) => handleChange('parent_occupation', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Emergency Contact Number</Label>
+                    <Input
+                      value={formData.emergency_contact}
+                      onChange={(e) => handleChange('emergency_contact', e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Health Conditions (if any)</Label>
+                    <Textarea
+                      value={formData.health_conditions}
+                      onChange={(e) => handleChange('health_conditions', e.target.value)}
+                      placeholder="Please list any health conditions, allergies, or special needs"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="flex justify-between">
+                    <Button type="button" variant="outline" onClick={() => setStep(3)}>
+                      Previous
+                    </Button>
+                    <Button type="submit" className="bg-[#1e3a5f] hover:bg-[#2c4a6e]" disabled={submitting}>
+                      {submitting ? 'Submitting...' : 'Submit Application'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}
