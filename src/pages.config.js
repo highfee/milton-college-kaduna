@@ -20,6 +20,9 @@ import SchoolSettings from './pages/SchoolSettings';
 import StaffRoles from './pages/StaffRoles';
 import ViewResults from './pages/ViewResults';
 import Reports from './pages/Reports';
+import ManageCBT from './pages/ManageCBT';
+import TakeCBT from './pages/TakeCBT';
+import ViewCBTResults from './pages/ViewCBTResults';
 
 
 export const PAGES = {
@@ -45,6 +48,9 @@ export const PAGES = {
     "StaffRoles": StaffRoles,
     "ViewResults": ViewResults,
     "Reports": Reports,
+    "ManageCBT": ManageCBT,
+    "TakeCBT": TakeCBT,
+    "ViewCBTResults": ViewCBTResults,
 }
 
 export const pagesConfig = {
