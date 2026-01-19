@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Upload, CheckCircle, GraduationCap, User, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, Upload, CheckCircle, GraduationCap, User, MapPin, Users, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
 const CLASSES = {
-  'Nursery': ['Reception Class'],
+  'Nursery': ['Nursery 1', 'Nursery 2', 'Reception Class'],
   'Primary': ['Primary 1A', 'Primary 1B', 'Primary 2A', 'Primary 2B', 'Primary 3A', 'Primary 3B', 'Primary 4A', 'Primary 4B', 'Primary 5A', 'Primary 5B'],
   'Secondary': ['JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SS1 Arts A', 'SS1 Arts B', 'SS1 Com A', 'SS1 Com B', 'SS1 Sci A', 'SS1 Sci B', 'SS2 Arts A', 'SS2 Arts B', 'SS2 Com A', 'SS2 Com B', 'SS2 Sci A', 'SS2 Sci B', 'SS3 Arts A', 'SS3 Arts B', 'SS3 Com A', 'SS3 Com B', 'SS3 Sci A', 'SS3 Sci B']
 };
@@ -29,6 +29,9 @@ export default function AdmissionForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [applicationNumber, setApplicationNumber] = useState('');
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -70,13 +73,50 @@ export default function AdmissionForm() {
     }
 
     // Check file type
-    if (field === 'passport_photo' && !['image/jpeg', 'image/jpg'].includes(file.type)) {
-      alert('Passport photo must be in JPEG format');
+    if (field === 'passport_photo' && !['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+      alert('Passport photo must be in JPEG or PNG format');
       return;
     }
 
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     handleChange(field, file_url);
+  };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setShowCamera(true);
+      }
+    } catch (error) {
+      alert('Unable to access camera. Please use file upload instead.');
+    }
+  };
+
+  const capturePhoto = async () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (video && canvas) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], 'passport.jpg', { type: 'image/jpeg' });
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        handleChange('passport_photo', file_url);
+        stopCamera();
+      }, 'image/jpeg');
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+    }
+    setShowCamera(false);
   };
 
   const handleSubmit = async (e) => {
@@ -231,7 +271,7 @@ export default function AdmissionForm() {
                   </div>
 
                   <div>
-                    <Label>Passport Photo (JPEG, max 5MB) *</Label>
+                    <Label>Passport Photo *</Label>
                     <div className="mt-2">
                       {formData.passport_photo ? (
                         <div className="flex items-center gap-4">
@@ -240,12 +280,38 @@ export default function AdmissionForm() {
                             Remove
                           </Button>
                         </div>
+                      ) : showCamera ? (
+                        <div className="space-y-4">
+                          <div className="relative">
+                            <video ref={videoRef} autoPlay className="w-full max-w-md rounded-lg" />
+                            <canvas ref={canvasRef} className="hidden" />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button type="button" onClick={capturePhoto} className="bg-[#1e3a5f]">
+                              <Camera className="w-4 h-4 mr-2" />
+                              Capture Photo
+                            </Button>
+                            <Button type="button" variant="outline" onClick={stopCamera}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
                       ) : (
-                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#1e3a5f]">
-                          <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                          <span className="text-sm text-gray-500">Click to upload passport</span>
-                          <input type="file" className="hidden" accept="image/jpeg,image/jpg" onChange={(e) => handleFileUpload(e, 'passport_photo')} />
-                        </label>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <button
+                            type="button"
+                            onClick={startCamera}
+                            className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#1e3a5f] transition-colors"
+                          >
+                            <Camera className="w-8 h-8 text-gray-400 mb-2" />
+                            <span className="text-sm text-gray-500">Take Photo</span>
+                          </button>
+                          <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#1e3a5f] transition-colors">
+                            <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                            <span className="text-sm text-gray-500">Upload Photo</span>
+                            <input type="file" className="hidden" accept="image/jpeg,image/jpg,image/png" onChange={(e) => handleFileUpload(e, 'passport_photo')} />
+                          </label>
+                        </div>
                       )}
                     </div>
                   </div>
