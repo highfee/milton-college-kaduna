@@ -108,7 +108,7 @@ export default function Home() {
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </Link>
-                <Link to={createPageUrl('Login')}>
+                <Link to={createPageUrl('PortalLogin')}>
                   <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8">
                     Portal Login
                   </Button>
@@ -447,7 +447,7 @@ export default function Home() {
               <ul className="space-y-2 text-gray-400 text-sm">
                 <li><Link to={createPageUrl('AdmissionForm')} className="hover:text-white">Apply for Admission</Link></li>
                 <li><Link to={createPageUrl('Gallery')} className="hover:text-white">Gallery</Link></li>
-                <li><Link to={createPageUrl('Login')} className="hover:text-white">Portal Login</Link></li>
+                <li><Link to={createPageUrl('PortalLogin')} className="hover:text-white">Portal Login</Link></li>
               </ul>
             </div>
             <div>
