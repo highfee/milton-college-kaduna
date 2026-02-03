@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Download, Lock, FileText, TrendingUp, Award } from 'lucide-react';
+import { Download, FileText, TrendingUp, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { calculateStudentAverage, getPosition } from '@/components/GradingUtils';
 
 export default function ViewResults() {
   const [user, setUser] = useState(null);
@@ -15,10 +15,10 @@ export default function ViewResults() {
   const [myChildren, setMyChildren] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [results, setResults] = useState([]);
-  const [feeStatus, setFeeStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedTerm, setSelectedTerm] = useState('');
   const [selectedSession, setSelectedSession] = useState('');
+  const [classRanking, setClassRanking] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -64,42 +64,43 @@ export default function ViewResults() {
   };
 
   const loadResults = async () => {
-    // Check fee payment status
-    const payments = await base44.entities.FeePayment.filter({
+    // Load results
+    const resultsData = await base44.entities.Result.filter({
       student_id: selectedStudent,
       term: selectedTerm,
       session: selectedSession,
       status: 'Approved'
     });
-    setFeeStatus(payments.length > 0);
+    setResults(resultsData);
 
-    if (payments.length > 0) {
-      // Load results
-      const resultsData = await base44.entities.Result.filter({
-        student_id: selectedStudent,
+    // Calculate class ranking
+    if (resultsData.length > 0) {
+      const currentClass = resultsData[0].class;
+      const allClassResults = await base44.entities.Result.filter({
+        class: currentClass,
         term: selectedTerm,
         session: selectedSession,
         status: 'Approved'
       });
-      setResults(resultsData);
-    } else {
-      setResults([]);
+
+      // Group by student
+      const studentScores = {};
+      allClassResults.forEach(r => {
+        if (!studentScores[r.student_id]) {
+          studentScores[r.student_id] = [];
+        }
+        studentScores[r.student_id].push(r);
+      });
+
+      // Calculate averages and rank
+      const rankings = Object.entries(studentScores).map(([sid, results]) => ({
+        student_id: sid,
+        ...calculateStudentAverage(results)
+      })).sort((a, b) => parseFloat(b.average) - parseFloat(a.average));
+
+      const myRank = rankings.findIndex(r => r.student_id === selectedStudent) + 1;
+      setClassRanking({ rank: myRank, total: rankings.length, position: getPosition(myRank) });
     }
-  };
-
-  const calculateAverage = () => {
-    if (results.length === 0) return 0;
-    const total = results.reduce((sum, r) => sum + (r.total || 0), 0);
-    return (total / results.length).toFixed(2);
-  };
-
-  const calculatePosition = () => {
-    // This is simplified - in real implementation, you'd compare with all students
-    const avg = parseFloat(calculateAverage());
-    if (avg >= 70) return '1st-10th';
-    if (avg >= 60) return '11th-20th';
-    if (avg >= 50) return '21st-30th';
-    return '31st+';
   };
 
   const currentStudent = student || myChildren.find(c => c.id === selectedStudent);
@@ -164,17 +165,7 @@ export default function ViewResults() {
           </CardContent>
         </Card>
 
-        {feeStatus === false && (
-          <Alert className="mb-6 border-orange-200 bg-orange-50">
-            <Lock className="h-4 w-4 text-orange-600" />
-            <AlertDescription className="text-orange-800">
-              School fees for {selectedTerm} {selectedSession} has not been paid or approved. 
-              Please contact the accountant to view your results.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {feeStatus === true && currentStudent && (
+        {currentStudent && results.length > 0 && (
           <>
             {/* Student Info Card */}
             <Card className="mb-6 border-0 shadow-sm">
@@ -223,7 +214,7 @@ export default function ViewResults() {
             </Card>
 
             {/* Summary Cards */}
-            <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <div className="grid md:grid-cols-4 gap-4 mb-6">
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -242,7 +233,7 @@ export default function ViewResults() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-500">Average Score</p>
-                      <p className="text-3xl font-bold text-green-600">{calculateAverage()}%</p>
+                      <p className="text-3xl font-bold text-green-600">{calculateStudentAverage(results).average}%</p>
                     </div>
                     <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                       <TrendingUp className="w-6 h-6 text-green-600" />
@@ -254,8 +245,24 @@ export default function ViewResults() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-500">Position</p>
-                      <p className="text-3xl font-bold text-purple-600">{calculatePosition()}</p>
+                      <p className="text-sm text-gray-500">Average Grade</p>
+                      <p className="text-3xl font-bold text-indigo-600">{calculateStudentAverage(results).grade}</p>
+                    </div>
+                    <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+                      <Award className="w-6 h-6 text-indigo-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">Class Position</p>
+                      <p className="text-3xl font-bold text-purple-600">
+                        {classRanking ? classRanking.position : '-'}
+                      </p>
+                      <p className="text-xs text-gray-500">of {classRanking?.total || 0}</p>
                     </div>
                     <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                       <Award className="w-6 h-6 text-purple-600" />
@@ -298,10 +305,11 @@ export default function ViewResults() {
                           <TableCell className="font-bold">{result.total}</TableCell>
                           <TableCell>
                             <Badge className={
-                              result.grade === 'A' ? 'bg-green-100 text-green-800' :
-                              result.grade === 'B' ? 'bg-blue-100 text-blue-800' :
-                              result.grade === 'C' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-gray-100 text-gray-800'
+                              result.grade?.startsWith('A') ? 'bg-green-100 text-green-800' :
+                              result.grade?.startsWith('B') ? 'bg-blue-100 text-blue-800' :
+                              result.grade?.startsWith('C') ? 'bg-yellow-100 text-yellow-800' :
+                              result.grade?.startsWith('D') || result.grade?.startsWith('E') ? 'bg-orange-100 text-orange-800' :
+                              'bg-red-100 text-red-800'
                             }>
                               {result.grade}
                             </Badge>
