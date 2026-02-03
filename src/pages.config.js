@@ -72,6 +72,11 @@ import StaffRoles from './pages/StaffRoles';
 import TakeCBT from './pages/TakeCBT';
 import ViewCBTResults from './pages/ViewCBTResults';
 import ViewResults from './pages/ViewResults';
+import PortalLogin from './pages/PortalLogin';
+import AdminPortal from './pages/AdminPortal';
+import TeacherPortal from './pages/TeacherPortal';
+import StudentPortal from './pages/StudentPortal';
+import ParentPortal from './pages/ParentPortal';
 
 
 export const PAGES = {
@@ -100,6 +105,11 @@ export const PAGES = {
     "TakeCBT": TakeCBT,
     "ViewCBTResults": ViewCBTResults,
     "ViewResults": ViewResults,
+    "PortalLogin": PortalLogin,
+    "AdminPortal": AdminPortal,
+    "TeacherPortal": TeacherPortal,
+    "StudentPortal": StudentPortal,
+    "ParentPortal": ParentPortal,
 }
 
 export const pagesConfig = {
