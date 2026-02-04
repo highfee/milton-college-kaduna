@@ -55,6 +55,7 @@ import AssignTeachers from './pages/AssignTeachers';
 import Dashboard from './pages/Dashboard';
 import EnterResults from './pages/EnterResults';
 import Gallery from './pages/Gallery';
+import GenerateReportCards from './pages/GenerateReportCards';
 import Home from './pages/Home';
 import ManageAssignments from './pages/ManageAssignments';
 import ManageCBT from './pages/ManageCBT';
@@ -76,9 +77,8 @@ import StudentPortal from './pages/StudentPortal';
 import TakeCBT from './pages/TakeCBT';
 import TeacherPortal from './pages/TeacherPortal';
 import ViewCBTResults from './pages/ViewCBTResults';
-import ViewResults from './pages/ViewResults';
-import GenerateReportCards from './pages/GenerateReportCards';
 import ViewReportCard from './pages/ViewReportCard';
+import ViewResults from './pages/ViewResults';
 
 
 export const PAGES = {
@@ -90,6 +90,7 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "EnterResults": EnterResults,
     "Gallery": Gallery,
+    "GenerateReportCards": GenerateReportCards,
     "Home": Home,
     "ManageAssignments": ManageAssignments,
     "ManageCBT": ManageCBT,
@@ -111,9 +112,8 @@ export const PAGES = {
     "TakeCBT": TakeCBT,
     "TeacherPortal": TeacherPortal,
     "ViewCBTResults": ViewCBTResults,
-    "ViewResults": ViewResults,
-    "GenerateReportCards": GenerateReportCards,
     "ViewReportCard": ViewReportCard,
+    "ViewResults": ViewResults,
 }
 
 export const pagesConfig = {

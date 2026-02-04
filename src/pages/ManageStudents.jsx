@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { NIGERIAN_STATES, NIGERIAN_TRIBES, getLGAsByState } from '@/components/NigeriaData';
 
 const CLASSES = {
   'Nursery': ['Reception Class'],
@@ -272,17 +273,21 @@ export default function ManageStudents() {
                 <div className="grid md:grid-cols-4 gap-4">
                   <div>
                     <Label>State of Origin</Label>
-                    <Input
-                      value={formData.state_of_origin}
-                      onChange={(e) => setFormData({ ...formData, state_of_origin: e.target.value })}
-                    />
+                    <Select value={formData.state_of_origin} onValueChange={(v) => setFormData({ ...formData, state_of_origin: v, local_government: '' })}>
+                      <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+                      <SelectContent>
+                        {NIGERIAN_STATES.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Local Govt</Label>
-                    <Input
-                      value={formData.local_government}
-                      onChange={(e) => setFormData({ ...formData, local_government: e.target.value })}
-                    />
+                    <Select value={formData.local_government} onValueChange={(v) => setFormData({ ...formData, local_government: v })} disabled={!formData.state_of_origin}>
+                      <SelectTrigger><SelectValue placeholder="Select LGA" /></SelectTrigger>
+                      <SelectContent>
+                        {getLGAsByState(formData.state_of_origin).map(lga => <SelectItem key={lga} value={lga}>{lga}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Blood Group</Label>
@@ -307,10 +312,12 @@ export default function ManageStudents() {
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
                     <Label>Tribe</Label>
-                    <Input
-                      value={formData.tribe}
-                      onChange={(e) => setFormData({ ...formData, tribe: e.target.value })}
-                    />
+                    <Select value={formData.tribe} onValueChange={(v) => setFormData({ ...formData, tribe: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select tribe" /></SelectTrigger>
+                      <SelectContent>
+                        {NIGERIAN_TRIBES.map(tribe => <SelectItem key={tribe} value={tribe}>{tribe}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Weight (kg)</Label>
