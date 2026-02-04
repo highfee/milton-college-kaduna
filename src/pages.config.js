@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AdminPortal from './pages/AdminPortal';
 import AdmissionForm from './pages/AdmissionForm';
 import AssignClasses from './pages/AssignClasses';
 import AssignSubjects from './pages/AssignSubjects';
@@ -64,22 +65,24 @@ import ManageStudents from './pages/ManageStudents';
 import ManageSubjects from './pages/ManageSubjects';
 import ManageTeachers from './pages/ManageTeachers';
 import ManageTimetable from './pages/ManageTimetable';
+import ParentPortal from './pages/ParentPortal';
+import PortalLogin from './pages/PortalLogin';
 import Reports from './pages/Reports';
 import ReviewClassResults from './pages/ReviewClassResults';
 import ReviewResults from './pages/ReviewResults';
 import SchoolSettings from './pages/SchoolSettings';
 import StaffRoles from './pages/StaffRoles';
+import StudentPortal from './pages/StudentPortal';
 import TakeCBT from './pages/TakeCBT';
+import TeacherPortal from './pages/TeacherPortal';
 import ViewCBTResults from './pages/ViewCBTResults';
 import ViewResults from './pages/ViewResults';
-import PortalLogin from './pages/PortalLogin';
-import AdminPortal from './pages/AdminPortal';
-import TeacherPortal from './pages/TeacherPortal';
-import StudentPortal from './pages/StudentPortal';
-import ParentPortal from './pages/ParentPortal';
+import GenerateReportCards from './pages/GenerateReportCards';
+import ViewReportCard from './pages/ViewReportCard';
 
 
 export const PAGES = {
+    "AdminPortal": AdminPortal,
     "AdmissionForm": AdmissionForm,
     "AssignClasses": AssignClasses,
     "AssignSubjects": AssignSubjects,
@@ -97,19 +100,20 @@ export const PAGES = {
     "ManageSubjects": ManageSubjects,
     "ManageTeachers": ManageTeachers,
     "ManageTimetable": ManageTimetable,
+    "ParentPortal": ParentPortal,
+    "PortalLogin": PortalLogin,
     "Reports": Reports,
     "ReviewClassResults": ReviewClassResults,
     "ReviewResults": ReviewResults,
     "SchoolSettings": SchoolSettings,
     "StaffRoles": StaffRoles,
+    "StudentPortal": StudentPortal,
     "TakeCBT": TakeCBT,
+    "TeacherPortal": TeacherPortal,
     "ViewCBTResults": ViewCBTResults,
     "ViewResults": ViewResults,
-    "PortalLogin": PortalLogin,
-    "AdminPortal": AdminPortal,
-    "TeacherPortal": TeacherPortal,
-    "StudentPortal": StudentPortal,
-    "ParentPortal": ParentPortal,
+    "GenerateReportCards": GenerateReportCards,
+    "ViewReportCard": ViewReportCard,
 }
 
 export const pagesConfig = {
