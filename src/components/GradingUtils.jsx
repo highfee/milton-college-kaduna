@@ -76,3 +76,9 @@ export const getPosition = (rank) => {
     default: return `${rank}th`;
   }
 };
+
+// Aliases for backward compatibility
+export const calculateGrade = getGrade;
+export const calculateRemark = getRemark;
+export const calculateAverage = calculateStudentAverage;
+export const formatPosition = getPosition;
