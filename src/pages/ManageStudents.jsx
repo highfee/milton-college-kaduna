@@ -87,6 +87,24 @@ export default function ManageStudents() {
     } else {
       const admNum = 'MCA' + Date.now().toString().slice(-6);
       await base44.entities.Student.create({ ...formData, admission_number: admNum });
+
+      // Auto-create Parent record if parent_name + parent_phone provided
+      if (formData.parent_name && formData.parent_phone) {
+        const existingParents = await base44.entities.Parent.filter({ phone: formData.parent_phone });
+        if (existingParents.length === 0) {
+          const parentId = 'PAR' + Date.now().toString().slice(-6);
+          await base44.entities.Parent.create({
+            parent_id: parentId,
+            default_username: parentId,
+            full_name: formData.parent_name,
+            phone: formData.parent_phone,
+            email: formData.parent_email || '',
+            address: formData.address || '',
+            relationship: 'Guardian',
+            status: 'Active'
+          });
+        }
+      }
     }
 
     setIsDialogOpen(false);
