@@ -74,12 +74,12 @@ import ReviewResults from './pages/ReviewResults';
 import SchoolSettings from './pages/SchoolSettings';
 import StaffRoles from './pages/StaffRoles';
 import StudentPortal from './pages/StudentPortal';
+import StudentProfile from './pages/StudentProfile';
 import TakeCBT from './pages/TakeCBT';
 import TeacherPortal from './pages/TeacherPortal';
 import ViewCBTResults from './pages/ViewCBTResults';
 import ViewReportCard from './pages/ViewReportCard';
 import ViewResults from './pages/ViewResults';
-import StudentProfile from './pages/StudentProfile';
 
 
 export const PAGES = {
@@ -110,12 +110,12 @@ export const PAGES = {
     "SchoolSettings": SchoolSettings,
     "StaffRoles": StaffRoles,
     "StudentPortal": StudentPortal,
+    "StudentProfile": StudentProfile,
     "TakeCBT": TakeCBT,
     "TeacherPortal": TeacherPortal,
     "ViewCBTResults": ViewCBTResults,
     "ViewReportCard": ViewReportCard,
     "ViewResults": ViewResults,
-    "StudentProfile": StudentProfile,
 }
 
 export const pagesConfig = {

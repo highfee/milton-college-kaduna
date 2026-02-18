@@ -39,7 +39,10 @@ export const getRemark = (percentage, section) => {
     if (score >= 75) return 'Excellent';
     if (score >= 70) return 'Very Good';
     if (score >= 65) return 'Good';
+    if (score >= 60) return 'Credit';
+    if (score >= 55) return 'Credit';
     if (score >= 50) return 'Credit';
+    if (score >= 45) return 'Pass';
     if (score >= 40) return 'Pass';
     return 'Fail';
   } else {
@@ -52,6 +55,31 @@ export const getRemark = (percentage, section) => {
   }
 };
 
+/** Returns grade statistics for a result set */
+export const getGradeStats = (results, section) => {
+  const sec = section || results[0]?.section || 'Primary';
+  let credits = 0, fails = 0, aGrades = 0, bGrades = 0, passes = 0;
+
+  results.forEach(r => {
+    const g = r.grade || '';
+    if (sec === 'Secondary') {
+      if (g === 'A1') aGrades++;
+      else if (g === 'B2' || g === 'B3') bGrades++;
+      else if (g === 'C4' || g === 'C5' || g === 'C6') credits++;
+      else if (g === 'D7' || g === 'E8') passes++;
+      else if (g === 'F9') fails++;
+    } else {
+      if (g === 'A') aGrades++;
+      else if (g === 'B') bGrades++;
+      else if (g === 'C') credits++;
+      else if (g === 'D' || g === 'E') passes++;
+      else if (g === 'F') fails++;
+    }
+  });
+
+  return { aGrades, bGrades, credits, passes, fails };
+};
+
 export const calculateStudentAverage = (results) => {
   if (!results || results.length === 0) return { average: 0, grade: 'F', totalScore: 0, totalSubjects: 0 };
   
@@ -61,12 +89,14 @@ export const calculateStudentAverage = (results) => {
   
   const section = results[0]?.section || 'Primary';
   const grade = getGrade(average, section);
+  const stats = getGradeStats(results, section);
   
   return {
-    average: average.toFixed(2),
+    average: parseFloat(average.toFixed(2)),
     grade,
     totalScore,
-    totalSubjects
+    totalSubjects,
+    ...stats
   };
 };
 
