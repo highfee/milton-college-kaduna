@@ -63,6 +63,10 @@ export default function ManageTeachers() {
     loadTeachers();
   };
 
+  const getDefaultCredentials = (teacher) => {
+    return { username: teacher.staff_id, password: 'User123' };
+  };
+
   const handleEdit = (teacher) => {
     setEditingTeacher(teacher);
     setFormData(teacher);
