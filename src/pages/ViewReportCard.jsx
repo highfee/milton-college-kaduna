@@ -291,17 +291,59 @@ export default function ViewReportCard() {
                 </tbody>
               </table>
 
+              {/* Grade Summary */}
+              <div className="mt-4 grid grid-cols-3 md:grid-cols-6 gap-2 text-center text-sm">
+                <div className="bg-green-50 border border-green-200 rounded p-2">
+                  <div className="text-xs text-gray-600">{reportCard.section === 'Secondary' ? 'A1' : 'A'} Grades</div>
+                  <div className="font-bold text-green-700 text-lg">{reportCard.a_grade_count ?? 0}</div>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                  <div className="text-xs text-gray-600">{reportCard.section === 'Secondary' ? 'B2/B3' : 'B'} Grades</div>
+                  <div className="font-bold text-blue-700 text-lg">{reportCard.b_grade_count ?? 0}</div>
+                </div>
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Credits</div>
+                  <div className="font-bold text-yellow-700 text-lg">{reportCard.credits_count ?? 0}</div>
+                </div>
+                <div className="bg-orange-50 border border-orange-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Passes</div>
+                  <div className="font-bold text-orange-700 text-lg">{reportCard.passes_count ?? 0}</div>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Fails</div>
+                  <div className="font-bold text-red-700 text-lg">{reportCard.fails_count ?? 0}</div>
+                </div>
+                <div className="bg-purple-50 border border-purple-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Avg Score</div>
+                  <div className="font-bold text-purple-700 text-lg">{reportCard.average}%</div>
+                </div>
+              </div>
+
               {/* Grading Scale */}
               <div className="mt-4 text-xs text-gray-600">
-                <p className="font-semibold mb-1">Grading Scale:</p>
-                <div className="flex gap-4 flex-wrap">
-                  <span>A (70-100) - Excellent</span>
-                  <span>B (60-69) - Very Good</span>
-                  <span>C (50-59) - Good</span>
-                  <span>D (45-49) - Pass</span>
-                  <span>E (40-44) - Weak Pass</span>
-                  <span>F (0-39) - Fail</span>
-                </div>
+                <p className="font-semibold mb-1">Grading Scale ({reportCard.section === 'Secondary' ? 'Secondary' : 'Primary/Nursery'}):</p>
+                {reportCard.section === 'Secondary' ? (
+                  <div className="flex gap-3 flex-wrap">
+                    <span>A1 (75-100) - Excellent</span>
+                    <span>B2 (70-74) - Very Good</span>
+                    <span>B3 (65-69) - Good</span>
+                    <span>C4 (60-64) - Credit</span>
+                    <span>C5 (55-59) - Credit</span>
+                    <span>C6 (50-54) - Credit</span>
+                    <span>D7 (45-49) - Pass</span>
+                    <span>E8 (40-44) - Pass</span>
+                    <span>F9 (0-39) - Fail</span>
+                  </div>
+                ) : (
+                  <div className="flex gap-3 flex-wrap">
+                    <span>A (70-100) - Excellent</span>
+                    <span>B (60-69) - Very Good</span>
+                    <span>C (50-59) - Good</span>
+                    <span>D (45-49) - Pass</span>
+                    <span>E (40-44) - Weak Pass</span>
+                    <span>F (0-39) - Fail</span>
+                  </div>
+                )}
               </div>
             </div>
 
