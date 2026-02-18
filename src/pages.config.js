@@ -78,7 +78,6 @@ import StudentProfile from './pages/StudentProfile';
 import TakeCBT from './pages/TakeCBT';
 import TeacherPortal from './pages/TeacherPortal';
 import ViewCBTResults from './pages/ViewCBTResults';
-import ViewReportCard from './pages/ViewReportCard';
 import ViewResults from './pages/ViewResults';
 import ManageParents from './pages/ManageParents';
 import StaffProfile from './pages/StaffProfile';
@@ -116,7 +115,6 @@ export const PAGES = {
     "TakeCBT": TakeCBT,
     "TeacherPortal": TeacherPortal,
     "ViewCBTResults": ViewCBTResults,
-    "ViewReportCard": ViewReportCard,
     "ViewResults": ViewResults,
     "ManageParents": ManageParents,
     "StaffProfile": StaffProfile,
