@@ -492,7 +492,12 @@ export default function ManageStudents() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>{student.admission_number}</TableCell>
+                        <TableCell>
+                          <div>
+                            <span className="font-mono text-sm font-bold">{student.admission_number}</span>
+                            <p className="text-xs text-gray-400">Username: {student.admission_number}</p>
+                          </div>
+                        </TableCell>
                         <TableCell><Badge variant="outline">{student.section}</Badge></TableCell>
                         <TableCell>{student.current_class}</TableCell>
                         <TableCell>{student.gender}</TableCell>
