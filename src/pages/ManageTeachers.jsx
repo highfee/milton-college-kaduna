@@ -317,7 +317,12 @@ export default function ManageTeachers() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>{teacher.staff_id}</TableCell>
+                        <TableCell>
+                          <div>
+                            <span className="font-mono text-sm font-bold">{teacher.staff_id}</span>
+                            <p className="text-xs text-gray-400">Username: {teacher.staff_id}</p>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{teacher.section}</Badge>
                         </TableCell>
