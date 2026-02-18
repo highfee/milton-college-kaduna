@@ -94,26 +94,11 @@ export default function EnterResults() {
     return ca1 + ca2 + ex;
   };
 
-  const calculateGrade = (total) => {
-    if (total >= 70) return 'A';
-    if (total >= 60) return 'B';
-    if (total >= 50) return 'C';
-    if (total >= 40) return 'D';
-    if (total >= 30) return 'E';
-    return 'F';
-  };
+  // section is derived from the class student belongs to
+  const getStudentSection = (student) => student.section || 'Primary';
 
-  const getRemarkFromGrade = (grade) => {
-    const remarks = {
-      'A': 'Excellent',
-      'B': 'Very Good',
-      'C': 'Good',
-      'D': 'Fair',
-      'E': 'Poor',
-      'F': 'Fail'
-    };
-    return remarks[grade] || '';
-  };
+  const computeGrade = (total, student) => getGrade(total, getStudentSection(student));
+  const computeRemark = (total, student) => getRemark(total, getStudentSection(student));
 
   const handleScoreChange = (studentId, field, value) => {
     const numValue = value === '' ? '' : Math.min(parseFloat(value), field === 'exam_score' ? 60 : 20);
