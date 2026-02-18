@@ -72,8 +72,8 @@ export default function ParentPortal() {
   };
 
   const quickActions = [
-    { icon: FileText, label: 'View Results', page: 'ViewResults', color: 'bg-blue-500' },
-    { icon: TrendingUp, label: 'Academic Progress', page: 'Reports', color: 'bg-green-500' },
+    { icon: FileText, label: 'View Report Card', page: 'ViewReportCard', color: 'bg-blue-500' },
+    { icon: TrendingUp, label: 'View Results', page: 'ViewResults', color: 'bg-green-500' },
     { icon: Calendar, label: 'School Calendar', page: 'ManageCalendar', color: 'bg-purple-500' },
     { icon: BookOpen, label: 'Assignments', page: 'ManageAssignments', color: 'bg-orange-500' }
   ];
