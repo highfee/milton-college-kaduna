@@ -109,8 +109,10 @@ export default function EnterResults() {
     const examScore = field === 'exam_score' ? numValue : (currentResult.exam_score || 0);
     
     const total = calculateTotal(firstCA, secondCA, examScore);
-    const grade = calculateGrade(total);
-    const remark = getRemarkFromGrade(grade);
+    // find student to get section for proper grading
+    const studentObj = students.find(s => s.id === studentId);
+    const grade = computeGrade(total, studentObj || {});
+    const remark = computeRemark(total, studentObj || {});
 
     setResults({
       ...results,
@@ -155,6 +157,7 @@ export default function EnterResults() {
         grade: result.grade || '',
         remark: result.remark || '',
         teacher_id: teacher?.id,
+        section: student.section,
         status: 'Submitted'
       };
 
