@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
 import { SCHOOL_CLASSES, ALL_SCHOOL_CLASSES, SCHOOL_SECTIONS } from '@/components/GradingUtils';
 
 const CLASSES = SCHOOL_CLASSES;
