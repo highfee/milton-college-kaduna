@@ -8,13 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Download, Eye, CheckCircle, Loader2 } from 'lucide-react';
-import { calculateGrade, calculateRemark, calculateAverage, formatPosition } from '@/components/GradingUtils';
+import { calculateGrade, calculateRemark, calculateAverage, formatPosition, SCHOOL_CLASSES, getGradeStats } from '@/components/GradingUtils';
 
-const CLASSES = {
-  Nursery: ['Nursery 1', 'Nursery 2'],
-  Primary: ['Primary 1', 'Primary 2', 'Primary 3', 'Primary 4', 'Primary 5'],
-  Secondary: ['JSS 1', 'JSS 2', 'JSS 3', 'SS 1', 'SS 2', 'SS 3']
-};
+const CLASSES = SCHOOL_CLASSES;
 
 export default function GenerateReportCards() {
   const [user, setUser] = useState(null);
