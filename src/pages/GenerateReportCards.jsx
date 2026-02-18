@@ -110,6 +110,7 @@ export default function GenerateReportCards() {
       const { average, totalScore } = calculateAverage(results);
       const overallGrade = calculateGrade(average, student.section || section);
       const position = calculatePosition(average, studentAverages);
+      const stats = getGradeStats(results, student.section || section);
 
       // Prepare subjects data
       const subjectsData = results.map(result => ({
@@ -139,6 +140,11 @@ export default function GenerateReportCards() {
         overall_grade: overallGrade,
         position: position,
         total_students: classStudents.length,
+        credits_count: stats.credits,
+        fails_count: stats.fails,
+        a_grade_count: stats.aGrades,
+        b_grade_count: stats.bGrades,
+        passes_count: stats.passes,
         class_teacher_comment: sampleResult.teacher_comment || '',
         form_teacher_comment: sampleResult.form_teacher_comment || '',
         head_teacher_comment: sampleResult.head_teacher_comment || '',
