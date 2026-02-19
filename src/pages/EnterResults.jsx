@@ -186,9 +186,17 @@ export default function EnterResults() {
     s.admission_number?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const availableClasses = teacher?.teacher_type === 'Class Teacher' 
-    ? [teacher.assigned_class] 
-    : (teacher?.section ? CLASSES[teacher.section] || [] : []);
+  // Derive available classes from the subjects assigned (or all classes for admin)
+  const availableClasses = React.useMemo(() => {
+    if (subjects.length === 0) return [];
+    const classSet = new Set();
+    subjects.forEach(s => (s.classes || []).forEach(c => classSet.add(c)));
+    // Sort in a logical order
+    const allClassOrder = [
+      ...CLASSES['Nursery'], ...CLASSES['Primary'], ...CLASSES['Secondary']
+    ];
+    return allClassOrder.filter(c => classSet.has(c));
+  }, [subjects]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
