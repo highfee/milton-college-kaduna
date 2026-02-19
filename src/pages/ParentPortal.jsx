@@ -4,22 +4,38 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { 
   FileText, GraduationCap, LogOut, UserCircle,
-  TrendingUp, BookOpen, Calendar
+  TrendingUp, BookOpen, Calendar, Eye, EyeOff
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+const DEFAULT_PASSWORD = 'User123';
 
 export default function ParentPortal() {
-  const [user, setUser] = useState(null);
   const [children, setChildren] = useState([]);
   const [selectedChild, setSelectedChild] = useState(null);
+  const [parentRecord, setParentRecord] = useState(null);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [parentId, setParentId] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
 
   useEffect(() => {
-    loadData();
+    const session = sessionStorage.getItem('parent_portal_logged_in');
+    const savedParentId = sessionStorage.getItem('parent_portal_id');
+    if (session === 'true' && savedParentId) {
+      loadParentByParentId(savedParentId);
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -28,29 +44,60 @@ export default function ParentPortal() {
     }
   }, [selectedChild]);
 
-  const loadData = async () => {
-    try {
-      const userData = await base44.auth.me();
-      setUser(userData);
-
-      const parentStudents = await base44.entities.ParentStudent.filter({ parent_email: userData.email });
-      const childrenIds = parentStudents.map(ps => ps.student_id);
-      
-      if (childrenIds.length > 0) {
-        const childrenData = await Promise.all(
-          childrenIds.map(id => base44.entities.Student.filter({ id }))
-        );
-        const flatChildren = childrenData.flat();
-        setChildren(flatChildren);
-        if (flatChildren[0]) {
-          setSelectedChild(flatChildren[0]);
-        }
-      }
-    } catch (error) {
-      base44.auth.redirectToLogin();
-    } finally {
-      setLoading(false);
+  const handleLogin = async () => {
+    if (!parentId || !password) {
+      setLoginError('Please enter your Parent ID and password');
+      return;
     }
+    if (password !== DEFAULT_PASSWORD) {
+      setLoginError('Incorrect password. Default password is User123');
+      return;
+    }
+    setLoginLoading(true);
+    setLoginError('');
+    const parents = await base44.entities.Parent.filter({ parent_id: parentId.trim() });
+    if (!parents[0]) {
+      setLoginError('Parent ID not found. Please check and try again.');
+      setLoginLoading(false);
+      return;
+    }
+    sessionStorage.setItem('parent_portal_logged_in', 'true');
+    sessionStorage.setItem('parent_portal_id', parentId.trim());
+    setLoginLoading(false);
+    loadParentByParentId(parentId.trim());
+  };
+
+  const loadParentByParentId = async (pid) => {
+    setLoading(true);
+    const parents = await base44.entities.Parent.filter({ parent_id: pid });
+    if (!parents[0]) {
+      setLoginError('Parent record not found.');
+      sessionStorage.removeItem('parent_portal_logged_in');
+      sessionStorage.removeItem('parent_portal_id');
+      setLoading(false);
+      return;
+    }
+    const parent = parents[0];
+    setParentRecord(parent);
+
+    // Find children linked via parent_email on Student or via ParentStudent
+    const [byEmail, byLink] = await Promise.all([
+      base44.entities.Student.filter({ parent_email: parent.email }),
+      parent.email ? base44.entities.ParentStudent.filter({ parent_email: parent.email }) : Promise.resolve([])
+    ]);
+
+    const linkedIds = byLink.map(l => l.student_id);
+    const linkedStudents = linkedIds.length > 0
+      ? (await Promise.all(linkedIds.map(id => base44.entities.Student.filter({ id })))).flat()
+      : [];
+
+    const allChildren = [...byEmail];
+    linkedStudents.forEach(s => { if (!allChildren.find(c => c.id === s.id)) allChildren.push(s); });
+
+    setChildren(allChildren);
+    if (allChildren[0]) setSelectedChild(allChildren[0]);
+    setLoggedIn(true);
+    setLoading(false);
   };
 
   const loadChildStats = async () => {
@@ -68,7 +115,14 @@ export default function ParentPortal() {
   };
 
   const handleLogout = () => {
-    base44.auth.logout();
+    sessionStorage.removeItem('parent_portal_logged_in');
+    sessionStorage.removeItem('parent_portal_id');
+    setLoggedIn(false);
+    setParentRecord(null);
+    setChildren([]);
+    setSelectedChild(null);
+    setParentId('');
+    setPassword('');
   };
 
   const quickActions = [
