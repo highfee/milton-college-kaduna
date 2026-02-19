@@ -149,6 +149,54 @@ export default function TeacherPortal() {
     );
   }
 
+  if (!loggedIn) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-lg border-0">
+          <div className="bg-[#1e3a5f] rounded-t-xl p-6 text-white text-center">
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Users className="w-8 h-8" />
+            </div>
+            <h1 className="text-2xl font-bold">Teacher Portal</h1>
+            <p className="text-white/80 text-sm mt-1">Sign in with your Staff ID</p>
+          </div>
+          <CardContent className="p-6 space-y-4">
+            <div>
+              <Label>Staff ID</Label>
+              <Input
+                placeholder="Enter your Staff ID (e.g. TCH001)"
+                value={staffId}
+                onChange={(e) => setStaffId(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              />
+            </div>
+            <div>
+              <Label>Password</Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                  className="pr-10"
+                />
+                <button type="button" className="absolute right-3 top-2.5 text-gray-400" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+            <Button className="w-full bg-[#1e3a5f] hover:bg-[#1e3a5f]/90" onClick={handleLogin} disabled={loginLoading}>
+              {loginLoading ? 'Signing in...' : 'Sign In'}
+            </Button>
+            <p className="text-xs text-gray-500 text-center">Default password: <strong>User123</strong></p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -161,7 +209,7 @@ export default function TeacherPortal() {
               </div>
               <div>
                 <h1 className="text-xl font-bold">Teacher Portal</h1>
-                <p className="text-sm text-white/80">{user?.full_name}</p>
+                <p className="text-sm text-white/80">{teacher?.first_name} {teacher?.last_name}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
