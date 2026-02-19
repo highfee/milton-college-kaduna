@@ -40,26 +40,34 @@ export default function EnterResults() {
     const userData = await base44.auth.me();
     setUser(userData);
 
-    const teacherData = await base44.entities.Teacher.filter({ email: userData.email });
-    if (teacherData[0]) {
-      setTeacher(teacherData[0]);
-      
-      // Load subjects assigned to this teacher
-      if (teacherData[0].teacher_type === 'Subject Teacher') {
-        const subjectsData = await base44.entities.Subject.filter({ teacher_id: teacherData[0].id });
-        setSubjects(subjectsData);
-      } else if (teacherData[0].teacher_type === 'Class Teacher') {
-        // For class teachers, get all subjects for their class
-        const subjectsData = await base44.entities.Subject.filter({ section: teacherData[0].section });
-        setSubjects(subjectsData);
-        setSelectedClass(teacherData[0].assigned_class);
-      }
-    }
+    const [teacherData, settings, staffRoles] = await Promise.all([
+      base44.entities.Teacher.filter({ email: userData.email }),
+      base44.entities.SchoolSettings.list(),
+      base44.entities.StaffRole.filter({ user_email: userData.email })
+    ]);
 
-    const settings = await base44.entities.SchoolSettings.list();
     if (settings[0]) {
       setSelectedTerm(settings[0].current_term);
       setSelectedSession(settings[0].current_session);
+    }
+
+    const isAdmin = userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin' || r.role === 'Principal' || r.role === 'Head Teacher');
+
+    if (isAdmin) {
+      // Admins see all subjects and classes
+      const allSubjects = await base44.entities.Subject.filter({ status: 'Active' });
+      setSubjects(allSubjects);
+    } else if (teacherData[0]) {
+      setTeacher(teacherData[0]);
+      // Load ALL subjects where this teacher is assigned
+      const subjectsData = await base44.entities.Subject.filter({ teacher_id: teacherData[0].id, status: 'Active' });
+      setSubjects(subjectsData);
+      if (teacherData[0].teacher_type === 'Class Teacher' && teacherData[0].assigned_class) {
+        setSelectedClass(teacherData[0].assigned_class);
+      }
+      if (teacherData[0].form_teacher_class) {
+        setSelectedClass(teacherData[0].form_teacher_class);
+      }
     }
 
     setLoading(false);
