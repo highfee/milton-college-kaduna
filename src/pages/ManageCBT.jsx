@@ -338,18 +338,24 @@ export default function ManageCBT() {
                 <div>
                   <Label>Select Classes *</Label>
                   <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-2 p-4 bg-gray-50 rounded-lg max-h-48 overflow-y-auto">
-                    {(formData.section ? CLASSES[formData.section] || [] : []).map(className => (
-                      <div key={className} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={className}
-                          checked={formData.classes?.includes(className)}
-                          onCheckedChange={() => handleClassToggle(className)}
-                        />
-                        <label htmlFor={className} className="text-sm cursor-pointer">
-                          {className}
-                        </label>
-                      </div>
-                    ))}
+                    {(() => {
+                      const selectedSubjectObj = subjects.find(s => s.id === formData.subject_id);
+                      const availClasses = selectedSubjectObj?.classes?.length
+                        ? selectedSubjectObj.classes
+                        : (formData.section ? CLASSES[formData.section] || [] : []);
+                      return availClasses.map(className => (
+                        <div key={className} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`cls-${className}`}
+                            checked={formData.classes?.includes(className)}
+                            onCheckedChange={() => handleClassToggle(className)}
+                          />
+                          <label htmlFor={`cls-${className}`} className="text-sm cursor-pointer">
+                            {className}
+                          </label>
+                        </div>
+                      ));
+                    })()}
                   </div>
                 </div>
 
