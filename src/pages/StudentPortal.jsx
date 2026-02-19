@@ -158,7 +158,7 @@ export default function StudentPortal() {
         </Card>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {statCards.map((stat, idx) => {
             const Icon = stat.icon;
             return (
@@ -169,7 +169,7 @@ export default function StudentPortal() {
                       <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
                       <p className="text-3xl font-bold">{stat.value || 0}</p>
                     </div>
-                    <div className={`w-12 h-12 ${stat.color} bg-opacity-10 rounded-lg flex items-center justify-center`}>
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center bg-opacity-10`} style={{backgroundColor: 'rgba(0,0,0,0.05)'}}>
                       <Icon className={`w-6 h-6 ${stat.color}`} />
                     </div>
                   </div>
@@ -178,6 +178,28 @@ export default function StudentPortal() {
             );
           })}
         </div>
+
+        {/* My Subjects */}
+        {subjects.length > 0 && (
+          <Card className="border-0 shadow-md mb-8">
+            <CardHeader>
+              <CardTitle>My Subjects ({subjects.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {subjects.map((subject) => (
+                  <div key={subject.id} className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <BookOpen className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{subject.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{subject.teacher_name}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Actions */}
         <Card className="border-0 shadow-md">
