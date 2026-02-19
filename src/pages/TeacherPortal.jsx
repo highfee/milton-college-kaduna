@@ -4,21 +4,88 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { 
   BookOpen, ClipboardList, FileText, Users, Calendar,
-  CheckSquare, MessageSquare, LogOut, GraduationCap
+  CheckSquare, MessageSquare, LogOut, GraduationCap, Eye, EyeOff
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+const DEFAULT_PASSWORD = 'User123';
 
 export default function TeacherPortal() {
   const [user, setUser] = useState(null);
   const [teacher, setTeacher] = useState(null);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [staffId, setStaffId] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
 
   useEffect(() => {
-    loadData();
+    const session = sessionStorage.getItem('teacher_portal_logged_in');
+    const savedStaffId = sessionStorage.getItem('teacher_portal_staff_id');
+    if (session === 'true' && savedStaffId) {
+      loadTeacherByStaffId(savedStaffId);
+    } else {
+      setLoading(false);
+    }
   }, []);
+
+  const handleLogin = async () => {
+    if (!staffId || !password) {
+      setLoginError('Please enter your Staff ID and password');
+      return;
+    }
+    if (password !== DEFAULT_PASSWORD) {
+      setLoginError('Incorrect password. Default password is User123');
+      return;
+    }
+    setLoginLoading(true);
+    setLoginError('');
+    const teachers = await base44.entities.Teacher.filter({ staff_id: staffId.trim() });
+    if (!teachers[0]) {
+      setLoginError('Staff ID not found. Please check and try again.');
+      setLoginLoading(false);
+      return;
+    }
+    sessionStorage.setItem('teacher_portal_logged_in', 'true');
+    sessionStorage.setItem('teacher_portal_staff_id', staffId.trim());
+    setLoginLoading(false);
+    loadTeacherByStaffId(staffId.trim());
+  };
+
+  const loadTeacherByStaffId = async (sid) => {
+    setLoading(true);
+    const teacherData = await base44.entities.Teacher.filter({ staff_id: sid });
+    if (teacherData[0]) {
+      setTeacher(teacherData[0]);
+
+      const [assignments, subjects, students] = await Promise.all([
+        base44.entities.Assignment.filter({ teacher_id: teacherData[0].id }),
+        base44.entities.Subject.filter({ teacher_id: teacherData[0].id }),
+        teacherData[0].assigned_class 
+          ? base44.entities.Student.filter({ current_class: teacherData[0].assigned_class })
+          : Promise.resolve([])
+      ]);
+
+      setStats({
+        mySubjects: subjects.length,
+        myAssignments: assignments.length,
+        myStudents: students.length
+      });
+      setLoggedIn(true);
+    } else {
+      setLoginError('Teacher record not found.');
+      sessionStorage.removeItem('teacher_portal_logged_in');
+      sessionStorage.removeItem('teacher_portal_staff_id');
+    }
+    setLoading(false);
+  };
 
   const loadData = async () => {
     try {
