@@ -118,7 +118,12 @@ export default function TeacherPortal() {
   };
 
   const handleLogout = () => {
-    base44.auth.logout();
+    sessionStorage.removeItem('teacher_portal_logged_in');
+    sessionStorage.removeItem('teacher_portal_staff_id');
+    setLoggedIn(false);
+    setTeacher(null);
+    setStaffId('');
+    setPassword('');
   };
 
   const quickActions = [
