@@ -62,6 +62,7 @@ import ManageCBT from './pages/ManageCBT';
 import ManageCalendar from './pages/ManageCalendar';
 import ManageGallery from './pages/ManageGallery';
 import ManageNewsletter from './pages/ManageNewsletter';
+import ManageParents from './pages/ManageParents';
 import ManageStudents from './pages/ManageStudents';
 import ManageSubjects from './pages/ManageSubjects';
 import ManageTeachers from './pages/ManageTeachers';
@@ -72,6 +73,7 @@ import Reports from './pages/Reports';
 import ReviewClassResults from './pages/ReviewClassResults';
 import ReviewResults from './pages/ReviewResults';
 import SchoolSettings from './pages/SchoolSettings';
+import StaffProfile from './pages/StaffProfile';
 import StaffRoles from './pages/StaffRoles';
 import StudentPortal from './pages/StudentPortal';
 import StudentProfile from './pages/StudentProfile';
@@ -79,8 +81,6 @@ import TakeCBT from './pages/TakeCBT';
 import TeacherPortal from './pages/TeacherPortal';
 import ViewCBTResults from './pages/ViewCBTResults';
 import ViewResults from './pages/ViewResults';
-import ManageParents from './pages/ManageParents';
-import StaffProfile from './pages/StaffProfile';
 
 
 export const PAGES = {
@@ -99,6 +99,7 @@ export const PAGES = {
     "ManageCalendar": ManageCalendar,
     "ManageGallery": ManageGallery,
     "ManageNewsletter": ManageNewsletter,
+    "ManageParents": ManageParents,
     "ManageStudents": ManageStudents,
     "ManageSubjects": ManageSubjects,
     "ManageTeachers": ManageTeachers,
@@ -109,6 +110,7 @@ export const PAGES = {
     "ReviewClassResults": ReviewClassResults,
     "ReviewResults": ReviewResults,
     "SchoolSettings": SchoolSettings,
+    "StaffProfile": StaffProfile,
     "StaffRoles": StaffRoles,
     "StudentPortal": StudentPortal,
     "StudentProfile": StudentProfile,
@@ -116,8 +118,6 @@ export const PAGES = {
     "TeacherPortal": TeacherPortal,
     "ViewCBTResults": ViewCBTResults,
     "ViewResults": ViewResults,
-    "ManageParents": ManageParents,
-    "StaffProfile": StaffProfile,
 }
 
 export const pagesConfig = {
