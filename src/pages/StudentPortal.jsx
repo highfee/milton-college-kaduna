@@ -128,14 +128,48 @@ export default function StudentPortal() {
     );
   }
 
-  if (!student) {
+  if (!loggedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="max-w-md">
-          <CardContent className="p-8 text-center">
-            <h2 className="text-xl font-bold mb-4">Student Not Found</h2>
-            <p className="text-gray-600 mb-4">No student record is linked to your account.</p>
-            <Button onClick={handleLogout}>Logout</Button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-lg border-0">
+          <div className="bg-green-600 rounded-t-xl p-6 text-white text-center">
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <GraduationCap className="w-8 h-8" />
+            </div>
+            <h1 className="text-2xl font-bold">Student Portal</h1>
+            <p className="text-white/80 text-sm mt-1">Sign in with your Admission Number</p>
+          </div>
+          <CardContent className="p-6 space-y-4">
+            <div>
+              <Label>Admission Number / Student ID</Label>
+              <Input
+                placeholder="Enter your Admission Number"
+                value={admissionNo}
+                onChange={(e) => setAdmissionNo(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              />
+            </div>
+            <div>
+              <Label>Password</Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                  className="pr-10"
+                />
+                <button type="button" className="absolute right-3 top-2.5 text-gray-400" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+            <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleLogin} disabled={loginLoading}>
+              {loginLoading ? 'Signing in...' : 'Sign In'}
+            </Button>
+            <p className="text-xs text-gray-500 text-center">Default password: <strong>User123</strong></p>
           </CardContent>
         </Card>
       </div>
