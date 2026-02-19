@@ -59,17 +59,33 @@ export default function ManageCBT() {
     const userData = await base44.auth.me();
     setUser(userData);
 
-    const teacherData = await base44.entities.Teacher.filter({ email: userData.email });
-    if (teacherData[0]) {
-      setTeacher(teacherData[0]);
-      
-      const subjectsData = await base44.entities.Subject.filter({ teacher_id: teacherData[0].id });
-      setSubjects(subjectsData);
-      
-      const examsData = await base44.entities.CBTExam.filter({ created_by: userData.email });
-      setExams(examsData);
+    const [teacherData, staffRoles, settings] = await Promise.all([
+      base44.entities.Teacher.filter({ email: userData.email }),
+      base44.entities.StaffRole.filter({ user_email: userData.email }),
+      base44.entities.SchoolSettings.list()
+    ]);
+
+    if (settings[0]) {
+      setFormData(prev => ({ ...prev, term: settings[0].current_term, session: settings[0].current_session }));
     }
 
+    const isAdmin = userData.role === 'admin' || staffRoles.some(r => ['Admin','Principal','Head Teacher'].includes(r.role));
+
+    let subjectsData;
+    if (isAdmin) {
+      subjectsData = await base44.entities.Subject.filter({ status: 'Active' });
+      const examsData = await base44.entities.CBTExam.list('-created_date', 100);
+      setExams(examsData);
+    } else if (teacherData[0]) {
+      setTeacher(teacherData[0]);
+      subjectsData = await base44.entities.Subject.filter({ teacher_id: teacherData[0].id, status: 'Active' });
+      const examsData = await base44.entities.CBTExam.filter({ created_by: userData.email });
+      setExams(examsData);
+    } else {
+      subjectsData = [];
+    }
+
+    setSubjects(subjectsData || []);
     setLoading(false);
   };
 
