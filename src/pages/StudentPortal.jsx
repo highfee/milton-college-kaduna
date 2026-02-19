@@ -4,68 +4,105 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { 
   FileText, ClipboardList, BookOpen, Calendar,
-  GraduationCap, LogOut, TrendingUp
+  GraduationCap, LogOut, TrendingUp, Eye, EyeOff
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+const DEFAULT_PASSWORD = 'User123';
 
 export default function StudentPortal() {
-  const [user, setUser] = useState(null);
   const [student, setStudent] = useState(null);
   const [stats, setStats] = useState({});
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [admissionNo, setAdmissionNo] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const userData = await base44.auth.me();
-      setUser(userData);
-
-      const studentData = await base44.entities.Student.filter({ parent_email: userData.email });
-      if (studentData[0]) {
-        setStudent(studentData[0]);
-
-        const [assignments, results, cbtExams, allSubjects] = await Promise.all([
-          base44.entities.Assignment.filter({ class: studentData[0].current_class, status: 'Active' }),
-          base44.entities.Result.filter({ student_id: studentData[0].id, status: 'Approved' }),
-          base44.entities.CBTExam.filter({ status: 'Published' }),
-          base44.entities.Subject.filter({ status: 'Active' })
-        ]);
-
-        // Filter subjects for this student's class
-        const classSubjects = allSubjects.filter(s => 
-          s.classes?.includes(studentData[0].current_class)
-        );
-        setSubjects(classSubjects);
-
-        // Filter CBT exams for this student's class that are active
-        const now = new Date().toISOString();
-        const availableCBT = cbtExams.filter(exam =>
-          exam.classes?.includes(studentData[0].current_class) &&
-          exam.start_date <= now && exam.end_date >= now
-        );
-
-        setStats({
-          activeAssignments: assignments.length,
-          completedSubjects: results.length,
-          availableCBT: availableCBT.length,
-          totalSubjects: classSubjects.length
-        });
-      }
-    } catch (error) {
-      base44.auth.redirectToLogin();
-    } finally {
+    const session = sessionStorage.getItem('student_portal_logged_in');
+    const savedAdmNo = sessionStorage.getItem('student_portal_adm');
+    if (session === 'true' && savedAdmNo) {
+      loadStudentByAdmission(savedAdmNo);
+    } else {
       setLoading(false);
     }
+  }, []);
+
+  const handleLogin = async () => {
+    if (!admissionNo || !password) {
+      setLoginError('Please enter your Admission Number and password');
+      return;
+    }
+    if (password !== DEFAULT_PASSWORD) {
+      setLoginError('Incorrect password. Default password is User123');
+      return;
+    }
+    setLoginLoading(true);
+    setLoginError('');
+    const students = await base44.entities.Student.filter({ admission_number: admissionNo.trim() });
+    if (!students[0]) {
+      setLoginError('Admission number not found. Please check and try again.');
+      setLoginLoading(false);
+      return;
+    }
+    sessionStorage.setItem('student_portal_logged_in', 'true');
+    sessionStorage.setItem('student_portal_adm', admissionNo.trim());
+    setLoginLoading(false);
+    loadStudentByAdmission(admissionNo.trim());
+  };
+
+  const loadStudentByAdmission = async (admNo) => {
+    setLoading(true);
+    const studentData = await base44.entities.Student.filter({ admission_number: admNo });
+    if (studentData[0]) {
+      setStudent(studentData[0]);
+
+      const [assignments, results, cbtExams, allSubjects] = await Promise.all([
+        base44.entities.Assignment.filter({ class: studentData[0].current_class, status: 'Active' }),
+        base44.entities.Result.filter({ student_id: studentData[0].id, status: 'Approved' }),
+        base44.entities.CBTExam.filter({ status: 'Published' }),
+        base44.entities.Subject.filter({ status: 'Active' })
+      ]);
+
+      const classSubjects = allSubjects.filter(s => s.classes?.includes(studentData[0].current_class));
+      setSubjects(classSubjects);
+
+      const now = new Date().toISOString();
+      const availableCBT = cbtExams.filter(exam =>
+        exam.classes?.includes(studentData[0].current_class) &&
+        exam.start_date <= now && exam.end_date >= now
+      );
+
+      setStats({
+        activeAssignments: assignments.length,
+        completedSubjects: results.length,
+        availableCBT: availableCBT.length,
+        totalSubjects: classSubjects.length
+      });
+      setLoggedIn(true);
+    } else {
+      setLoginError('Student record not found.');
+      sessionStorage.removeItem('student_portal_logged_in');
+      sessionStorage.removeItem('student_portal_adm');
+    }
+    setLoading(false);
   };
 
   const handleLogout = () => {
-    base44.auth.logout();
+    sessionStorage.removeItem('student_portal_logged_in');
+    sessionStorage.removeItem('student_portal_adm');
+    setLoggedIn(false);
+    setStudent(null);
+    setAdmissionNo('');
+    setPassword('');
   };
 
   const quickActions = [
