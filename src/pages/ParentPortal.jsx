@@ -140,7 +140,55 @@ export default function ParentPortal() {
     );
   }
 
-  if (children.length === 0) {
+  if (!loggedIn) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-lg border-0">
+          <div className="bg-purple-600 rounded-t-xl p-6 text-white text-center">
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <UserCircle className="w-8 h-8" />
+            </div>
+            <h1 className="text-2xl font-bold">Parent Portal</h1>
+            <p className="text-white/80 text-sm mt-1">Sign in with your Parent ID</p>
+          </div>
+          <CardContent className="p-6 space-y-4">
+            <div>
+              <Label>Parent ID</Label>
+              <Input
+                placeholder="Enter your Parent ID (e.g. PAR123456)"
+                value={parentId}
+                onChange={(e) => setParentId(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              />
+            </div>
+            <div>
+              <Label>Password</Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                  className="pr-10"
+                />
+                <button type="button" className="absolute right-3 top-2.5 text-gray-400" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+            <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={handleLogin} disabled={loginLoading}>
+              {loginLoading ? 'Signing in...' : 'Sign In'}
+            </Button>
+            <p className="text-xs text-gray-500 text-center">Default password: <strong>User123</strong></p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loggedIn && children.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="max-w-md">
@@ -166,7 +214,7 @@ export default function ParentPortal() {
               </div>
               <div>
                 <h1 className="text-xl font-bold">Parent Portal</h1>
-                <p className="text-sm text-white/80">{user?.full_name}</p>
+                <p className="text-sm text-white/80">{parentRecord?.full_name}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
