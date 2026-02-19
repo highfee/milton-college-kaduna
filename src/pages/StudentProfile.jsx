@@ -280,6 +280,33 @@ export default function StudentProfile() {
             </Card>
           </TabsContent>
 
+          {/* Subjects */}
+          <TabsContent value="subjects">
+            <Card>
+              <CardHeader>
+                <CardTitle>Subjects for {student.current_class}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {studentSubjects?.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {studentSubjects.map(subject => (
+                      <div key={subject.id} className="flex items-start gap-3 p-4 border rounded-lg bg-blue-50 border-blue-100">
+                        <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-semibold text-gray-900">{subject.name}</p>
+                          {subject.code && <p className="text-xs text-gray-500">Code: {subject.code}</p>}
+                          <p className="text-xs text-gray-600 mt-1">Teacher: {subject.teacher_name || 'Not assigned'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500 py-8">No subjects assigned to this class yet</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Academic History */}
           <TabsContent value="academic">
             <div className="space-y-6">
