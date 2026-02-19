@@ -82,6 +82,14 @@ export default function StudentProfile() {
     initialData: [],
   });
 
+  const { data: studentSubjects } = useQuery({
+    queryKey: ['studentSubjects', student?.current_class],
+    queryFn: () => base44.entities.Subject.filter({ status: 'Active' }),
+    enabled: !!student?.current_class,
+    select: (data) => data.filter(s => s.classes?.includes(student?.current_class)),
+    initialData: [],
+  });
+
   const handleEditStudent = async () => {
     try {
       await base44.entities.Student.update(studentId, editData);
