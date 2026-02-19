@@ -77,8 +77,9 @@ export default function StudentPortal() {
   ];
 
   const statCards = [
-    { label: 'Active Assignments', value: stats.activeAssignments, icon: ClipboardList, color: 'text-blue-600' },
-    { label: 'Completed Subjects', value: stats.completedSubjects, icon: BookOpen, color: 'text-green-600' },
+    { label: 'My Subjects', value: stats.totalSubjects, icon: BookOpen, color: 'text-blue-600' },
+    { label: 'Results Available', value: stats.completedSubjects, icon: TrendingUp, color: 'text-green-600' },
+    { label: 'Active Assignments', value: stats.activeAssignments, icon: ClipboardList, color: 'text-orange-600' },
     { label: 'Available CBT', value: stats.availableCBT, icon: FileText, color: 'text-purple-600' }
   ];
 
