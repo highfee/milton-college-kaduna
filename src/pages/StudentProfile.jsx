@@ -223,8 +223,9 @@ export default function StudentProfile() {
 
         {/* Tabs */}
         <Tabs defaultValue="personal" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="personal">Personal Info</TabsTrigger>
+            <TabsTrigger value="subjects">Subjects</TabsTrigger>
             <TabsTrigger value="academic">Academic History</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="discipline">Discipline</TabsTrigger>
