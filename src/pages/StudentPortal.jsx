@@ -14,6 +14,7 @@ export default function StudentPortal() {
   const [user, setUser] = useState(null);
   const [student, setStudent] = useState(null);
   const [stats, setStats] = useState({});
+  const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,16 +30,31 @@ export default function StudentPortal() {
       if (studentData[0]) {
         setStudent(studentData[0]);
 
-        const [assignments, results, cbtExams] = await Promise.all([
+        const [assignments, results, cbtExams, allSubjects] = await Promise.all([
           base44.entities.Assignment.filter({ class: studentData[0].current_class, status: 'Active' }),
           base44.entities.Result.filter({ student_id: studentData[0].id, status: 'Approved' }),
-          base44.entities.CBTExam.filter({ classes: studentData[0].current_class, status: 'Published' })
+          base44.entities.CBTExam.filter({ status: 'Published' }),
+          base44.entities.Subject.filter({ status: 'Active' })
         ]);
+
+        // Filter subjects for this student's class
+        const classSubjects = allSubjects.filter(s => 
+          s.classes?.includes(studentData[0].current_class)
+        );
+        setSubjects(classSubjects);
+
+        // Filter CBT exams for this student's class that are active
+        const now = new Date().toISOString();
+        const availableCBT = cbtExams.filter(exam =>
+          exam.classes?.includes(studentData[0].current_class) &&
+          exam.start_date <= now && exam.end_date >= now
+        );
 
         setStats({
           activeAssignments: assignments.length,
           completedSubjects: results.length,
-          availableCBT: cbtExams.length
+          availableCBT: availableCBT.length,
+          totalSubjects: classSubjects.length
         });
       }
     } catch (error) {
