@@ -239,10 +239,14 @@ export default function TeacherPortal() {
                 <p className="text-sm text-white/80">{teacher?.first_name} {teacher?.last_name}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Badge className="bg-white/20 text-white border-0 hidden md:flex">
-                {teacher?.section} Section
-              </Badge>
+            <div className="flex items-center gap-2">
+              {isHeadTeacher ? (
+                <Badge className="bg-white/20 text-white border-0 hidden md:flex">Head Teacher</Badge>
+              ) : isNurseryPrimary && (teacher?.teacher_type === 'Class Teacher' || teacher?.teacher_type === 'Form Teacher') ? (
+                <Badge className="bg-white/20 text-white border-0 hidden md:flex">Class & Form Teacher</Badge>
+              ) : (
+                <Badge className="bg-white/20 text-white border-0 hidden md:flex">{teacher?.teacher_type}</Badge>
+              )}
               <Button variant="ghost" className="text-white hover:bg-white/20" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
