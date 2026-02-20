@@ -63,6 +63,14 @@ export default function PortalLogin() {
       icon: UserCircle,
       color: 'bg-purple-500',
       hoverColor: 'hover:bg-purple-600'
+    },
+    {
+      id: 'HeadTeacherPortal',
+      title: 'Head Teacher Portal',
+      description: 'Class Teacher · Form Teacher · Head Teacher functions in one place',
+      icon: Star,
+      color: 'bg-amber-600',
+      hoverColor: 'hover:bg-amber-700'
     }
   ];
 
