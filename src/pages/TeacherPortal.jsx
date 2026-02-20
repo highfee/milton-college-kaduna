@@ -258,11 +258,17 @@ export default function TeacherPortal() {
         <Card className="border-0 shadow-md mb-8 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <CardContent className="p-6">
             <h2 className="text-2xl font-bold mb-2">Welcome back, {teacher?.first_name}!</h2>
-            <p className="text-white/90">
-              {teacher?.teacher_type === 'Class Teacher' && `Class Teacher - ${teacher?.assigned_class}`}
-              {teacher?.teacher_type === 'Form Teacher' && `Form Teacher - ${teacher?.form_teacher_class}`}
-              {teacher?.teacher_type === 'Subject Teacher' && 'Subject Teacher'}
-            </p>
+            <p className="text-white/90 mb-3">{getRoleLabel()}</p>
+            <div className="flex flex-wrap gap-2">
+              {getRoleBadges().map((badge, i) => (
+                <span key={i} className="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-medium">
+                  {badge}
+                </span>
+              ))}
+              <span className="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-medium">
+                {teacher?.section} Section
+              </span>
+            </div>
           </CardContent>
         </Card>
 
