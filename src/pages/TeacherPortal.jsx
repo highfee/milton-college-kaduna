@@ -126,6 +126,33 @@ export default function TeacherPortal() {
     setPassword('');
   };
 
+  // Determine portal role label and color based on section + type
+  const isNurseryPrimary = teacher?.section === 'Nursery' || teacher?.section === 'Primary';
+  const isHeadTeacher = teacher?.teacher_type === 'Head Teacher' || 
+    (isNurseryPrimary && teacher?.teacher_type === 'Head Teacher');
+
+  const getRoleLabel = () => {
+    if (isHeadTeacher) {
+      return 'Class Teacher · Form Teacher · Head Teacher';
+    }
+    if (isNurseryPrimary && (teacher?.teacher_type === 'Class Teacher' || teacher?.teacher_type === 'Form Teacher')) {
+      return 'Class Teacher & Form Teacher';
+    }
+    if (teacher?.teacher_type === 'Class Teacher') return `Class Teacher — ${teacher?.assigned_class}`;
+    if (teacher?.teacher_type === 'Form Teacher') return `Form Teacher — ${teacher?.form_teacher_class}`;
+    return 'Subject Teacher';
+  };
+
+  const getRoleBadges = () => {
+    if (isHeadTeacher) {
+      return ['Class Teacher', 'Form Teacher', 'Head Teacher'];
+    }
+    if (isNurseryPrimary && (teacher?.teacher_type === 'Class Teacher' || teacher?.teacher_type === 'Form Teacher')) {
+      return ['Class Teacher', 'Form Teacher'];
+    }
+    return [teacher?.teacher_type];
+  };
+
   const quickActions = [
     { icon: FileText, label: 'Enter Results', page: 'EnterResults', color: 'bg-blue-500' },
     { icon: ClipboardList, label: 'Review Class Results', page: 'ReviewClassResults', color: 'bg-green-500' },
