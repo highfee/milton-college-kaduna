@@ -81,6 +81,7 @@ import TakeCBT from './pages/TakeCBT';
 import TeacherPortal from './pages/TeacherPortal';
 import ViewCBTResults from './pages/ViewCBTResults';
 import ViewResults from './pages/ViewResults';
+import HeadTeacherPortal from './pages/HeadTeacherPortal';
 
 
 export const PAGES = {
@@ -118,6 +119,7 @@ export const PAGES = {
     "TeacherPortal": TeacherPortal,
     "ViewCBTResults": ViewCBTResults,
     "ViewResults": ViewResults,
+    "HeadTeacherPortal": HeadTeacherPortal,
 }
 
 export const pagesConfig = {
