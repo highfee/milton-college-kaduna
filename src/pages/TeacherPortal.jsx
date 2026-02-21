@@ -53,6 +53,17 @@ export default function TeacherPortal() {
       setLoginLoading(false);
       return;
     }
+    // Head Teacher and Principal have their own dedicated portals
+    if (teachers[0].teacher_type === 'Head Teacher') {
+      setLoginError('Please use the Head Teacher Portal instead.');
+      setLoginLoading(false);
+      return;
+    }
+    if (teachers[0].teacher_type === 'Principal') {
+      setLoginError("Please use the Principal's Portal instead.");
+      setLoginLoading(false);
+      return;
+    }
     sessionStorage.setItem('teacher_portal_logged_in', 'true');
     sessionStorage.setItem('teacher_portal_staff_id', staffId.trim());
     setLoginLoading(false);
