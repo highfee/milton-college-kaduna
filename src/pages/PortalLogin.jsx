@@ -71,6 +71,14 @@ export default function PortalLogin() {
       icon: Star,
       color: 'bg-amber-600',
       hoverColor: 'hover:bg-amber-700'
+    },
+    {
+      id: 'PrincipalPortal',
+      title: "Principal's Portal",
+      description: 'School-wide oversight: review results, manage teachers and students',
+      icon: Shield,
+      color: 'bg-[#1e3a5f]',
+      hoverColor: 'hover:bg-[#2c4a6e]'
     }
   ];
 
