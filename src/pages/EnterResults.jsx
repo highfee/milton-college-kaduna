@@ -51,7 +51,7 @@ export default function EnterResults() {
       setSelectedSession(settings[0].current_session);
     }
 
-    const isAdmin = userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin' || r.role === 'Principal' || r.role === 'Head Teacher');
+    const isAdmin = userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin');
 
     if (isAdmin) {
       // Admins see all subjects and classes
@@ -59,15 +59,13 @@ export default function EnterResults() {
       setSubjects(allSubjects);
     } else if (teacherData[0]) {
       setTeacher(teacherData[0]);
-      // Load ALL subjects where this teacher is assigned
-      const subjectsData = await base44.entities.Subject.filter({ teacher_id: teacherData[0].id, status: 'Active' });
+      const t = teacherData[0];
+      // Teachers only see subjects assigned to them
+      const subjectsData = await base44.entities.Subject.filter({ teacher_id: t.id, status: 'Active' });
       setSubjects(subjectsData);
-      if (teacherData[0].teacher_type === 'Class Teacher' && teacherData[0].assigned_class) {
-        setSelectedClass(teacherData[0].assigned_class);
-      }
-      if (teacherData[0].form_teacher_class) {
-        setSelectedClass(teacherData[0].form_teacher_class);
-      }
+      // Pre-select their assigned class
+      if (t.assigned_class) setSelectedClass(t.assigned_class);
+      else if (t.form_teacher_class) setSelectedClass(t.form_teacher_class);
     }
 
     setLoading(false);
