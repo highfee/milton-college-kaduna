@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const SECTIONS = ['Nursery', 'Primary', 'Secondary'];
-const TEACHER_TYPES = ['Class Teacher', 'Subject Teacher', 'Form Teacher'];
+const TEACHER_TYPES = ['Class Teacher', 'Subject Teacher', 'Form Teacher', 'Head Teacher', 'Principal'];
 
 export default function ManageTeachers() {
   const [teachers, setTeachers] = useState([]);
