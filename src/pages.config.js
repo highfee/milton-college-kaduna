@@ -56,6 +56,7 @@ import Dashboard from './pages/Dashboard';
 import EnterResults from './pages/EnterResults';
 import Gallery from './pages/Gallery';
 import GenerateReportCards from './pages/GenerateReportCards';
+import HeadTeacherPortal from './pages/HeadTeacherPortal';
 import Home from './pages/Home';
 import ManageAssignments from './pages/ManageAssignments';
 import ManageCBT from './pages/ManageCBT';
@@ -81,7 +82,7 @@ import TakeCBT from './pages/TakeCBT';
 import TeacherPortal from './pages/TeacherPortal';
 import ViewCBTResults from './pages/ViewCBTResults';
 import ViewResults from './pages/ViewResults';
-import HeadTeacherPortal from './pages/HeadTeacherPortal';
+import PrincipalPortal from './pages/PrincipalPortal';
 
 
 export const PAGES = {
@@ -94,6 +95,7 @@ export const PAGES = {
     "EnterResults": EnterResults,
     "Gallery": Gallery,
     "GenerateReportCards": GenerateReportCards,
+    "HeadTeacherPortal": HeadTeacherPortal,
     "Home": Home,
     "ManageAssignments": ManageAssignments,
     "ManageCBT": ManageCBT,
@@ -119,7 +121,7 @@ export const PAGES = {
     "TeacherPortal": TeacherPortal,
     "ViewCBTResults": ViewCBTResults,
     "ViewResults": ViewResults,
-    "HeadTeacherPortal": HeadTeacherPortal,
+    "PrincipalPortal": PrincipalPortal,
 }
 
 export const pagesConfig = {
