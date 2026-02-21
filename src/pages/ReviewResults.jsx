@@ -145,8 +145,9 @@ export default function ReviewResults() {
     `${s.first_name} ${s.last_name}`.toLowerCase().includes(search.toLowerCase())
   );
 
-  const section = staffRole?.section || 'Secondary';
-  const availableClasses = CLASSES[section] || [];
+  // Show all classes for admins/principals; restrict to section for staff roles
+  const section = staffRole?.section;
+  const availableClasses = section && section !== 'All' ? (CLASSES[section] || []) : [...CLASSES.Nursery, ...CLASSES.Primary, ...CLASSES.Secondary];
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
