@@ -169,7 +169,7 @@ export default function StudentPortal() {
             <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleLogin} disabled={loginLoading}>
               {loginLoading ? 'Signing in...' : 'Sign In'}
             </Button>
-            <p className="text-xs text-gray-500 text-center">Default password: <strong>User123</strong></p>
+
           </CardContent>
         </Card>
       </div>

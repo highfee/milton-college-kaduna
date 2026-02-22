@@ -228,7 +228,7 @@ export default function TeacherPortal() {
             <Button className="w-full bg-[#1e3a5f] hover:bg-[#1e3a5f]/90" onClick={handleLogin} disabled={loginLoading}>
               {loginLoading ? 'Signing in...' : 'Sign In'}
             </Button>
-            <p className="text-xs text-gray-500 text-center">Default password: <strong>User123</strong></p>
+
           </CardContent>
         </Card>
       </div>
