@@ -39,15 +39,25 @@ export default function TakeCBT() {
   }, [examStarted, timeRemaining]);
 
   const loadData = async () => {
+    // Try student portal session first
+    const stAdm = sessionStorage.getItem('student_portal_adm');
+    if (stAdm) {
+      const studentData = await base44.entities.Student.filter({ admission_number: stAdm });
+      if (studentData[0]) {
+        setStudent(studentData[0]);
+        await loadAvailableExams(studentData[0]);
+      }
+      setLoading(false);
+      return;
+    }
+    // Fallback: logged-in user
     const userData = await base44.auth.me();
     setUser(userData);
-
     const studentData = await base44.entities.Student.filter({ parent_email: userData.email });
     if (studentData[0]) {
       setStudent(studentData[0]);
       await loadAvailableExams(studentData[0]);
     }
-
     setLoading(false);
   };
 

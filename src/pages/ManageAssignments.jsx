@@ -53,13 +53,25 @@ export default function ManageAssignments() {
     const userData = await base44.auth.me();
     setUser(userData);
 
-    const teacherData = await base44.entities.Teacher.filter({ email: userData.email });
-    if (teacherData[0]) {
+    const [teacherData, staffRoles] = await Promise.all([
+      base44.entities.Teacher.filter({ email: userData.email }),
+      base44.entities.StaffRole.filter({ user_email: userData.email })
+    ]);
+
+    const isAdmin = userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin');
+
+    if (isAdmin) {
+      const [allSubjects, allAssignments] = await Promise.all([
+        base44.entities.Subject.filter({ status: 'Active' }),
+        base44.entities.Assignment.list('-created_date', 100)
+      ]);
+      setSubjects(allSubjects);
+      setAssignments(allAssignments);
+    } else if (teacherData[0]) {
       setTeacher(teacherData[0]);
-      
+      // Teachers only see subjects and assignments for their own classes
       const subjectsData = await base44.entities.Subject.filter({ teacher_id: teacherData[0].id });
       setSubjects(subjectsData);
-      
       const assignmentsData = await base44.entities.Assignment.filter({ teacher_id: teacherData[0].id });
       setAssignments(assignmentsData);
     }
