@@ -5,7 +5,7 @@ import { createPageUrl } from '../utils';
 import { 
   Users, GraduationCap, BookOpen, Calendar, FileText, Settings,
   TrendingUp, UserPlus, ClipboardList, Image, MessageSquare, BarChart3,
-  LogOut, Menu, X
+  LogOut, Menu, X, Printer
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,7 @@ export default function AdminPortal() {
     { icon: Calendar, label: 'Calendar', page: 'ManageCalendar', color: 'bg-teal-500' },
     { icon: Image, label: 'Gallery', page: 'ManageGallery', color: 'bg-pink-500' },
     { icon: MessageSquare, label: 'Newsletter', page: 'ManageNewsletter', color: 'bg-yellow-500' },
+    { icon: Printer, label: 'Print Results', page: 'PrintResult', color: 'bg-cyan-600' },
     { icon: Settings, label: 'School Settings', page: 'SchoolSettings', color: 'bg-gray-600' }
   ];
 

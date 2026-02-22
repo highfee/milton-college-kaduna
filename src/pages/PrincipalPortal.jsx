@@ -3,8 +3,10 @@ import { base44 } from '@/api/base44Client';
 import {
   Eye, EyeOff, LogOut, Users, GraduationCap, BookOpen, FileText,
   CheckCircle, MessageSquare, BarChart2, Settings, ClipboardList,
-  Save, Search, ArrowUp, ArrowDown, Star, Shield
+  Save, Search, ArrowUp, ArrowDown, Star, Shield, Printer
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '../utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
