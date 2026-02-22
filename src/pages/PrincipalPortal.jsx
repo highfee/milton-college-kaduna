@@ -18,7 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { SCHOOL_CLASSES } from '@/components/GradingUtils';
 
 const DEFAULT_PASSWORD = 'User123';
-const ALL_CLASSES = [...(SCHOOL_CLASSES['Nursery'] || []), ...(SCHOOL_CLASSES['Primary'] || []), ...(SCHOOL_CLASSES['Secondary'] || [])];
+// Principal only approves Secondary classes
+const ALL_CLASSES = [...(SCHOOL_CLASSES['Secondary'] || [])];
 
 // ─── Login ─────────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }) {
@@ -72,7 +73,6 @@ function LoginScreen({ onLogin }) {
           <Button className="w-full bg-[#1e3a5f] hover:bg-[#2c4a6e]" onClick={handleLogin} disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
-          <p className="text-xs text-gray-500 text-center">Default password: <strong>User123</strong></p>
         </CardContent>
       </Card>
     </div>

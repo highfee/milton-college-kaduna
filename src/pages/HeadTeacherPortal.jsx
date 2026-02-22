@@ -73,7 +73,6 @@ function LoginScreen({ onLogin }) {
           <Button className="w-full bg-amber-700 hover:bg-amber-800" onClick={handleLogin} disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
-          <p className="text-xs text-gray-500 text-center">Default password: <strong>User123</strong></p>
         </CardContent>
       </Card>
     </div>
@@ -443,7 +442,9 @@ function HeadTeacherReviewTab({ teacher, settings }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const sectionClasses = [...(SCHOOL_CLASSES[teacher.section] || [])];
+  // Head Teacher approves Nursery + Primary only
+  const HT_SECTIONS = ['Nursery', 'Primary'];
+  const sectionClasses = HT_SECTIONS.flatMap(s => SCHOOL_CLASSES[s] || []);
 
   useEffect(() => {
     if (selectedClass && selectedTerm && selectedSession) loadStudents();
