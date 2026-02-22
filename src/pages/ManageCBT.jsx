@@ -340,9 +340,17 @@ export default function ManageCBT() {
                   <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-2 p-4 bg-gray-50 rounded-lg max-h-48 overflow-y-auto">
                     {(() => {
                       const selectedSubjectObj = subjects.find(s => s.id === formData.subject_id);
-                      const availClasses = selectedSubjectObj?.classes?.length
-                        ? selectedSubjectObj.classes
-                        : (formData.section ? CLASSES[formData.section] || [] : []);
+                      let availClasses;
+                      if (teacher) {
+                        // Restrict teacher to their subject's classes or assigned class
+                        availClasses = selectedSubjectObj?.classes?.length
+                          ? selectedSubjectObj.classes
+                          : (teacher.assigned_class ? [teacher.assigned_class] : (teacher.form_teacher_class ? [teacher.form_teacher_class] : []));
+                      } else {
+                        availClasses = selectedSubjectObj?.classes?.length
+                          ? selectedSubjectObj.classes
+                          : (formData.section ? CLASSES[formData.section] || [] : []);
+                      }
                       return availClasses.map(className => (
                         <div key={className} className="flex items-center space-x-2">
                           <Checkbox
