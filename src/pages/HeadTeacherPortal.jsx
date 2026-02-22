@@ -443,8 +443,7 @@ function HeadTeacherReviewTab({ teacher, settings }) {
   const [saving, setSaving] = useState(false);
 
   // Head Teacher approves Nursery + Primary only
-  const HT_SECTIONS = ['Nursery', 'Primary'];
-  const sectionClasses = HT_SECTIONS.flatMap(s => SCHOOL_CLASSES[s] || []);
+  const sectionClasses = [...(SCHOOL_CLASSES['Nursery'] || []), ...(SCHOOL_CLASSES['Primary'] || [])];
 
   useEffect(() => {
     if (selectedClass && selectedTerm && selectedSession) loadStudents();
