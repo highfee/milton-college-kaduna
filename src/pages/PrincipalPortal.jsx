@@ -123,6 +123,11 @@ function OverviewTab({ principal, stats, setActiveTab }) {
                 <p className="text-xs text-white/70 mt-1">{desc}</p>
               </button>
             ))}
+            <Link to={createPageUrl('PrintResult')} className="bg-white/10 hover:bg-white/20 rounded-lg p-4 text-left transition-colors block">
+              <Printer className="w-5 h-5 mb-2" />
+              <p className="font-semibold text-sm">Print Results</p>
+              <p className="text-xs text-white/70 mt-1">Print individual or class result slips</p>
+            </Link>
           </div>
         </CardContent>
       </Card>
@@ -648,6 +653,11 @@ export default function PrincipalPortal() {
             <TabsTrigger value="students" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">
               <GraduationCap className="w-4 h-4 mr-2" /> Students
             </TabsTrigger>
+            <Link to={createPageUrl('PrintResult')}>
+              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                <Printer className="w-4 h-4 mr-2" /> Print Results
+              </button>
+            </Link>
           </TabsList>
 
           <TabsContent value="overview">
