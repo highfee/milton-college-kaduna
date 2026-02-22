@@ -69,7 +69,7 @@ export default function ManageCBT() {
       setFormData(prev => ({ ...prev, term: settings[0].current_term, session: settings[0].current_session }));
     }
 
-    const isAdmin = userData.role === 'admin' || staffRoles.some(r => ['Admin','Principal','Head Teacher'].includes(r.role));
+    const isAdmin = userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin');
 
     let subjectsData;
     if (isAdmin) {

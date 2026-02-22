@@ -233,9 +233,14 @@ export default function ManageAssignments() {
                     <Select value={formData.class} onValueChange={(v) => setFormData({ ...formData, class: v })}>
                       <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
                       <SelectContent>
-                        {(formData.section ? CLASSES[formData.section] || [] : []).map(c => (
-                          <SelectItem key={c} value={c}>{c}</SelectItem>
-                        ))}
+                        {(() => {
+                          const selectedSubjectObj = subjects.find(s => s.id === formData.subject_id);
+                          // If teacher: restrict to subject's assigned classes; else all section classes
+                          const availClasses = teacher
+                            ? (selectedSubjectObj?.classes?.length ? selectedSubjectObj.classes : (teacher.assigned_class ? [teacher.assigned_class] : (teacher.form_teacher_class ? [teacher.form_teacher_class] : [])))
+                            : (formData.section ? CLASSES[formData.section] || [] : []);
+                          return availClasses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>);
+                        })()}
                       </SelectContent>
                     </Select>
                   </div>
