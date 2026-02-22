@@ -162,8 +162,8 @@ function EnterResultsTab({ teacher, settings }) {
     loadStudentsAndResults();
   };
 
-  // Classes available: assigned class + any class in their section
-  const sectionClasses = [...(SCHOOL_CLASSES[teacher.section] || [])];
+  // HT can enter results for Nursery and Primary classes only
+  const sectionClasses = [...(SCHOOL_CLASSES['Nursery'] || []), ...(SCHOOL_CLASSES['Primary'] || [])];
   const filteredStudents = students.filter(s =>
     `${s.first_name} ${s.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
     s.admission_number?.toLowerCase().includes(search.toLowerCase())
