@@ -83,6 +83,8 @@ import TakeCBT from './pages/TakeCBT';
 import TeacherPortal from './pages/TeacherPortal';
 import ViewCBTResults from './pages/ViewCBTResults';
 import ViewResults from './pages/ViewResults';
+import PrintResult from './pages/PrintResult';
+import ViewResult from './pages/ViewResult';
 
 
 export const PAGES = {
@@ -122,6 +124,8 @@ export const PAGES = {
     "TeacherPortal": TeacherPortal,
     "ViewCBTResults": ViewCBTResults,
     "ViewResults": ViewResults,
+    "PrintResult": PrintResult,
+    "ViewResult": ViewResult,
 }
 
 export const pagesConfig = {
