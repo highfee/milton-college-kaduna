@@ -1,13 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { getGrade, getRemark } from '@/components/GradingUtils';
-import { TrendingUp, BookOpen, Award, ChevronDown, ChevronUp } from 'lucide-react';
+import { getGrade, getRemark, getPosition } from '@/components/GradingUtils';
+import { TrendingUp, BookOpen, Award } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+const AFFECTIVE_TRAITS = [
+  { key: 'punctuality', label: 'Punctuality' },
+  { key: 'neatness', label: 'Neatness' },
+  { key: 'honesty', label: 'Honesty' },
+  { key: 'politeness', label: 'Politeness' },
+  { key: 'attentiveness', label: 'Attentiveness' },
+  { key: 'cooperation', label: 'Cooperation' },
+  { key: 'perseverance', label: 'Perseverance' },
+  { key: 'leadership', label: 'Leadership' },
+];
+const PSYCHOMOTOR_SKILLS = [
+  { key: 'handwriting', label: 'Handwriting' },
+  { key: 'drawing', label: 'Drawing/Art' },
+  { key: 'verbal_fluency', label: 'Verbal Fluency' },
+  { key: 'sport_games', label: 'Sport & Games' },
+  { key: 'music', label: 'Music' },
+  { key: 'computer_skills', label: 'Computer Skills' },
+];
+const RATING_LABELS = { 1: 'Poor', 2: 'Fair', 3: 'Good', 4: 'Very Good', 5: 'Excellent' };
 
 export default function ViewResult() {
   const [student, setStudent] = useState(null);
@@ -19,7 +39,6 @@ export default function ViewResult() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    // Try to get student from session (student portal) or parent portal
     const stAdm = sessionStorage.getItem('student_portal_adm');
     const parentId = sessionStorage.getItem('parent_portal_id');
 
@@ -53,14 +72,22 @@ export default function ViewResult() {
     setLoading(false);
   };
 
-  const avg = results.length ? (results.reduce((s, r) => s + (r.total || 0), 0) / results.length).toFixed(1) : 0;
+  const totalScore = results.reduce((s, r) => s + (r.total || 0), 0);
+  const avg = results.length ? (totalScore / results.length).toFixed(1) : 0;
+  const classPosition = results[0]?.class_position;
+  const totalInClass = results[0]?.total_in_class;
+  const passed = results.filter(r => r.grade && r.grade !== 'F' && r.grade !== 'F9').length;
+  const failed = results.filter(r => r.grade === 'F' || r.grade === 'F9').length;
+  const credits = results.filter(r => ['C4','C5','C6','C'].includes(r.grade || '')).length;
+  const affective = results[0]?.affective_traits || {};
+  const psychomotor = results[0]?.psychomotor_skills || {};
 
   const gradeColor = (grade) => {
     if (!grade) return 'text-gray-500';
     if (grade === 'A1' || grade === 'A') return 'text-green-600 font-bold';
     if (grade?.startsWith('B')) return 'text-blue-600 font-bold';
     if (grade?.startsWith('C')) return 'text-indigo-600';
-    if (grade?.startsWith('F')) return 'text-red-600 font-bold';
+    if (grade === 'F9' || grade === 'F') return 'text-red-600 font-bold';
     return 'text-gray-700';
   };
 
@@ -85,7 +112,7 @@ export default function ViewResult() {
         <p className="text-gray-500 mb-6">{student.first_name} {student.last_name} — {student.current_class}</p>
 
         {/* Student banner */}
-        <Card className="border-0 shadow-md mb-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+        <Card className="border-0 shadow-md mb-6 bg-gradient-to-r from-[#1e3a5f] to-blue-700 text-white">
           <CardContent className="p-5 flex items-center gap-4">
             {student.passport_photo ? (
               <img src={student.passport_photo} alt="" className="w-16 h-16 rounded-full object-cover border-4 border-white/30" />
@@ -94,9 +121,17 @@ export default function ViewResult() {
                 {student.first_name?.[0]}{student.last_name?.[0]}
               </div>
             )}
-            <div>
-              <h2 className="text-xl font-bold">{student.first_name} {student.middle_name} {student.last_name}</h2>
-              <p className="text-white/80">Adm. No: {student.admission_number} | Class: {student.current_class} | {student.section}</p>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold">{student.first_name} {student.middle_name || ''} {student.last_name}</h2>
+              <p className="text-white/80 text-sm">Adm. No: {student.admission_number} | Class: {student.current_class} | {student.section}</p>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-2 text-xs">
+                {student.date_of_birth && <div><span className="text-white/60">DOB:</span> {student.date_of_birth}</div>}
+                {student.state_of_origin && <div><span className="text-white/60">State:</span> {student.state_of_origin}</div>}
+                {student.blood_group && <div><span className="text-white/60">Blood:</span> {student.blood_group}</div>}
+                {student.genotype && <div><span className="text-white/60">Genotype:</span> {student.genotype}</div>}
+                {student.sport_house && <div><span className="text-white/60">House:</span> {student.sport_house}</div>}
+                {student.gender && <div><span className="text-white/60">Gender:</span> {student.gender}</div>}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -120,11 +155,8 @@ export default function ViewResult() {
                 <Label>Session</Label>
                 <Input value={selectedSession} onChange={e => setSelectedSession(e.target.value)} className="w-36" />
               </div>
-              <button
-                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                onClick={loadResults}
-                disabled={loading}
-              >
+              <button className="px-5 py-2 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#2c4a6e] font-medium"
+                onClick={loadResults} disabled={loading}>
                 {loading ? 'Loading...' : 'View Results'}
               </button>
             </div>
@@ -141,18 +173,25 @@ export default function ViewResult() {
             </Card>
           ) : (
             <>
-              {/* Summary */}
-              <div className="grid grid-cols-3 gap-4 mb-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <Card className="border-0 shadow-md">
                   <CardContent className="p-4 text-center">
-                    <p className="text-xs text-gray-500">Average</p>
-                    <p className="text-3xl font-bold text-blue-600">{avg}%</p>
+                    <p className="text-xs text-gray-500">Total Score</p>
+                    <p className="text-2xl font-bold text-[#1e3a5f]">{totalScore}</p>
                   </CardContent>
                 </Card>
                 <Card className="border-0 shadow-md">
                   <CardContent className="p-4 text-center">
-                    <p className="text-xs text-gray-500">Subjects</p>
-                    <p className="text-3xl font-bold">{results.length}</p>
+                    <p className="text-xs text-gray-500">Average</p>
+                    <p className="text-2xl font-bold text-green-600">{avg}%</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-md">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-xs text-gray-500">Class Position</p>
+                    <p className="text-2xl font-bold text-red-600">{classPosition ? getPosition(classPosition) : '—'}</p>
+                    {totalInClass && <p className="text-xs text-gray-400">of {totalInClass} students</p>}
                   </CardContent>
                 </Card>
                 <Card className="border-0 shadow-md">
@@ -165,6 +204,22 @@ export default function ViewResult() {
                 </Card>
               </div>
 
+              {/* Stats Row */}
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                  <p className="text-xs text-gray-500">Subjects Passed</p>
+                  <p className="text-xl font-bold text-green-700">{passed}</p>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                  <p className="text-xs text-gray-500">Credits Obtained</p>
+                  <p className="text-xl font-bold text-blue-700">{credits}</p>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                  <p className="text-xs text-gray-500">Subjects Failed</p>
+                  <p className="text-xl font-bold text-red-700">{failed}</p>
+                </div>
+              </div>
+
               {/* Results Table */}
               <Card className="border-0 shadow-sm mb-6">
                 <CardHeader><CardTitle>Subject Results</CardTitle></CardHeader>
@@ -172,24 +227,30 @@ export default function ViewResult() {
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Subject</TableHead>
-                          <TableHead className="text-center">1st CA (20)</TableHead>
-                          <TableHead className="text-center">2nd CA (20)</TableHead>
-                          <TableHead className="text-center">Exam (60)</TableHead>
-                          <TableHead className="text-center">Total</TableHead>
-                          <TableHead className="text-center">Grade</TableHead>
-                          <TableHead>Remark</TableHead>
+                        <TableRow className="bg-[#1e3a5f]">
+                          <TableHead className="text-white">Subject</TableHead>
+                          <TableHead className="text-white text-center">1st CA<br/>(10)</TableHead>
+                          <TableHead className="text-white text-center">2nd CA<br/>(10)</TableHead>
+                          <TableHead className="text-white text-center">3rd CA<br/>(10)</TableHead>
+                          <TableHead className="text-white text-center">Exam<br/>(70)</TableHead>
+                          <TableHead className="text-white text-center">Total</TableHead>
+                          <TableHead className="text-white text-center">Avg</TableHead>
+                          <TableHead className="text-white text-center">Pos.</TableHead>
+                          <TableHead className="text-white text-center">Grade</TableHead>
+                          <TableHead className="text-white">Remark</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {results.map((r, i) => (
-                          <TableRow key={i}>
+                          <TableRow key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-blue-50/30'}>
                             <TableCell className="font-medium">{r.subject_name}</TableCell>
                             <TableCell className="text-center">{r.first_ca ?? '—'}</TableCell>
                             <TableCell className="text-center">{r.second_ca ?? '—'}</TableCell>
+                            <TableCell className="text-center">{r.third_ca ?? '—'}</TableCell>
                             <TableCell className="text-center">{r.exam_score ?? '—'}</TableCell>
-                            <TableCell className="text-center font-bold text-lg">{r.total ?? '—'}</TableCell>
+                            <TableCell className="text-center font-bold text-lg text-[#1e3a5f]">{r.total ?? '—'}</TableCell>
+                            <TableCell className="text-center text-sm text-gray-500">{r.class_average_score ? parseFloat(r.class_average_score).toFixed(1) : '—'}</TableCell>
+                            <TableCell className="text-center font-medium text-purple-600">{r.subject_position ? getPosition(r.subject_position) : '—'}</TableCell>
                             <TableCell className={`text-center text-lg ${gradeColor(r.grade)}`}>{r.grade || '—'}</TableCell>
                             <TableCell className="text-sm text-gray-600">{r.remark || '—'}</TableCell>
                           </TableRow>
@@ -200,15 +261,79 @@ export default function ViewResult() {
                 </CardContent>
               </Card>
 
+              {/* Affective Traits & Psychomotor */}
+              {(Object.keys(affective).length > 0 || Object.keys(psychomotor).length > 0) && (
+                <div className="grid md:grid-cols-2 gap-4 mb-6">
+                  <Card className="border-0 shadow-sm">
+                    <CardHeader><CardTitle className="text-[#1e3a5f] text-sm">Affective Traits</CardTitle></CardHeader>
+                    <CardContent>
+                      {AFFECTIVE_TRAITS.map(t => (
+                        <div key={t.key} className="flex justify-between items-center py-1 border-b last:border-0 text-sm">
+                          <span className="text-gray-700">{t.label}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                              {[1,2,3,4,5].map(n => (
+                                <div key={n} className={`w-4 h-4 rounded-full border ${n <= (affective[t.key] || 0) ? 'bg-[#1e3a5f] border-[#1e3a5f]' : 'bg-gray-100 border-gray-300'}`} />
+                              ))}
+                            </div>
+                            <span className="text-xs text-gray-500 w-16">{RATING_LABELS[affective[t.key]] || '—'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-sm">
+                    <CardHeader><CardTitle className="text-purple-700 text-sm">Psychomotor Skills</CardTitle></CardHeader>
+                    <CardContent>
+                      {PSYCHOMOTOR_SKILLS.map(t => (
+                        <div key={t.key} className="flex justify-between items-center py-1 border-b last:border-0 text-sm">
+                          <span className="text-gray-700">{t.label}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                              {[1,2,3,4,5].map(n => (
+                                <div key={n} className={`w-4 h-4 rounded-full border ${n <= (psychomotor[t.key] || 0) ? 'bg-purple-700 border-purple-700' : 'bg-gray-100 border-gray-300'}`} />
+                              ))}
+                            </div>
+                            <span className="text-xs text-gray-500 w-16">{RATING_LABELS[psychomotor[t.key]] || '—'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Next Term & Fees */}
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                  <p className="text-xs text-gray-500">Next Term Begins</p>
+                  <p className="font-bold text-green-700">{results[0]?.next_term_begins || '—'}</p>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                  <p className="text-xs text-gray-500">Fees Arrears</p>
+                  <p className="font-bold text-red-700">₦{Number(results[0]?.school_fees_arrears || 0).toLocaleString()}</p>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                  <p className="text-xs text-gray-500">Current School Fees</p>
+                  <p className="font-bold text-blue-700">₦{Number(results[0]?.school_fees_current || 0).toLocaleString()}</p>
+                </div>
+              </div>
+
               {/* Comments */}
-              {(results[0]?.class_teacher_comment || results[0]?.head_teacher_comment || results[0]?.principal_comment) && (
+              {(results[0]?.teacher_comment || results[0]?.head_teacher_comment || results[0]?.principal_comment || results[0]?.form_teacher_comment) && (
                 <Card className="border-0 shadow-sm">
-                  <CardHeader><CardTitle>Comments</CardTitle></CardHeader>
+                  <CardHeader><CardTitle>Teacher Comments</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
-                    {results[0]?.class_teacher_comment && (
+                    {results[0]?.teacher_comment && (
                       <div className="p-3 bg-blue-50 rounded-lg">
                         <p className="text-xs font-semibold text-blue-700 mb-1">Class Teacher's Comment</p>
-                        <p className="text-sm">{results[0].class_teacher_comment}</p>
+                        <p className="text-sm">{results[0].teacher_comment}</p>
+                      </div>
+                    )}
+                    {results[0]?.form_teacher_comment && (
+                      <div className="p-3 bg-green-50 rounded-lg">
+                        <p className="text-xs font-semibold text-green-700 mb-1">Form Teacher's Comment</p>
+                        <p className="text-sm">{results[0].form_teacher_comment}</p>
                       </div>
                     )}
                     {results[0]?.head_teacher_comment && (
