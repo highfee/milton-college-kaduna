@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { getGrade, getRemark, SCHOOL_CLASSES } from '@/components/GradingUtils';
+import EnterTraitsDialog from '@/components/EnterTraitsDialog';
 
 const DEFAULT_PASSWORD = 'User123';
 
