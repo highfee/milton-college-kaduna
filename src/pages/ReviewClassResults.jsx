@@ -37,19 +37,23 @@ export default function ReviewClassResults() {
   }, [teacher, selectedTerm, selectedSession]);
 
   const loadData = async () => {
-    const userData = await base44.auth.me();
-    setUser(userData);
-
-    const teacherData = await base44.entities.Teacher.filter({ email: userData.email });
-    if (teacherData[0]) {
-      setTeacher(teacherData[0]);
-    }
-
+    // Support teacher portal session (staff_id) and regular auth
+    const staffId = sessionStorage.getItem('teacher_portal_staff_id');
     const settings = await base44.entities.SchoolSettings.list();
     if (settings[0]) {
       setSelectedTerm(settings[0].current_term);
       setSelectedSession(settings[0].current_session);
     }
+
+    let teacherData = [];
+    if (staffId) {
+      teacherData = await base44.entities.Teacher.filter({ staff_id: staffId });
+    } else {
+      const userData = await base44.auth.me();
+      setUser(userData);
+      teacherData = await base44.entities.Teacher.filter({ email: userData.email });
+    }
+    if (teacherData[0]) setTeacher(teacherData[0]);
 
     setLoading(false);
   };
