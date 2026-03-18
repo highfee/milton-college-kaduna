@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Edit, Trash2, FileText, Upload, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText, Upload, Eye, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -270,6 +270,14 @@ export default function ManageNewsletter() {
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="icon" onClick={() => { setPreviewNewsletter(newsletter); setPreviewDialog(true); }}>
                               <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Print Newsletter" onClick={() => {
+                              const win = window.open('', '_blank');
+                              win.document.write(`<html><head><title>${newsletter.title}</title><style>body{font-family:serif;max-width:800px;margin:40px auto;padding:20px;}h1{color:#1e3a5f;}pre{white-space:pre-wrap;font-family:serif;}</style></head><body><h1>${newsletter.title}</h1><p>${newsletter.term} | ${newsletter.session} | ${newsletter.published_date || ''}</p><hr/><pre>${newsletter.content || ''}</pre></body></html>`);
+                              win.document.close();
+                              win.print();
+                            }}>
+                              <Printer className="w-4 h-4 text-blue-500" />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(newsletter)}>
                               <Edit className="w-4 h-4" />
