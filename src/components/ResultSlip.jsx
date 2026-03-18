@@ -317,10 +317,10 @@ export default function ResultSlip({ student, results, settings, term, session, 
         {/* ===== COMMENTS + NEXT TERM + FEES ===== */}
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '5px', marginBottom: '5px' }}>
           <div style={{ border: '1px solid #c7d2e4', borderRadius: '4px', padding: '4px 6px' }}>
-            {results[0]?.teacher_comment && (
+            {(results[0]?.class_teacher_comment || results[0]?.teacher_comment) && (
               <div style={{ marginBottom: '3px' }}>
                 <b style={{ color: '#1e3a5f', fontSize: '7.5px' }}>Class Teacher's Remark:</b>
-                <span style={{ fontSize: '7.5px', marginLeft: '4px' }}>{results[0].teacher_comment}</span>
+                <span style={{ fontSize: '7.5px', marginLeft: '4px' }}>{results[0].class_teacher_comment || results[0].teacher_comment}</span>
               </div>
             )}
             {isNurseryOrPrimary && results[0]?.head_teacher_comment && (
