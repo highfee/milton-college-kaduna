@@ -154,7 +154,7 @@ function EnterResultsTab({ teacher, settings }) {
         student_id: student.id, student_name: `${student.first_name} ${student.last_name}`,
         admission_number: student.admission_number, class: selectedClass, section: student.section || teacher.section,
         term: selectedTerm, session: selectedSession, subject_id: selectedSubject, subject_name: subjectData?.name,
-        first_ca: parseFloat(r.first_ca) || 0, second_ca: parseFloat(r.second_ca) || 0, exam_score: parseFloat(r.exam_score) || 0,
+        first_ca: parseFloat(r.first_ca) || 0, second_ca: parseFloat(r.second_ca) || 0, third_ca: parseFloat(r.third_ca) || 0, exam_score: parseFloat(r.exam_score) || 0,
         total: r.total || 0, grade: r.grade || '', remark: r.remark || '', teacher_id: teacher.id, status: 'Submitted'
       };
       r.id ? await base44.entities.Result.update(r.id, payload) : await base44.entities.Result.create(payload);
@@ -225,9 +225,10 @@ function EnterResultsTab({ teacher, settings }) {
                   <TableRow>
                     <TableHead>Student</TableHead>
                     <TableHead>Adm. No.</TableHead>
-                    <TableHead>1st CA (20)</TableHead>
-                    <TableHead>2nd CA (20)</TableHead>
-                    <TableHead>Exam (60)</TableHead>
+                    <TableHead>1st CA (10)</TableHead>
+                    <TableHead>2nd CA (10)</TableHead>
+                    <TableHead>3rd CA (10)</TableHead>
+                    <TableHead>Exam (70)</TableHead>
                     <TableHead>Total</TableHead>
                     <TableHead>Grade</TableHead>
                     <TableHead>Remark</TableHead>
@@ -240,11 +241,11 @@ function EnterResultsTab({ teacher, settings }) {
                       <TableRow key={student.id}>
                         <TableCell className="font-medium">{student.first_name} {student.last_name}</TableCell>
                         <TableCell>{student.admission_number}</TableCell>
-                        {['first_ca', 'second_ca', 'exam_score'].map(field => (
+                        {['first_ca', 'second_ca', 'third_ca', 'exam_score'].map(field => (
                           <TableCell key={field}>
-                            <Input type="number" min="0" max={field === 'exam_score' ? 60 : 20}
+                            <Input type="number" min="0" max={field === 'exam_score' ? 70 : 10}
                               value={r[field] ?? ''} onChange={e => handleScoreChange(student.id, field, e.target.value)}
-                              className="w-20 text-center" />
+                              className="w-16 text-center" />
                           </TableCell>
                         ))}
                         <TableCell><Badge variant="outline" className="font-bold">{r.total || 0}</Badge></TableCell>
