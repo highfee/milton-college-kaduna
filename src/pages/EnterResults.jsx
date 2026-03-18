@@ -309,34 +309,20 @@ export default function EnterResults() {
                               <TableCell>{student.admission_number}</TableCell>
                               <TableCell className="font-medium">{student.first_name} {student.last_name}</TableCell>
                               <TableCell>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="20"
-                                  value={result.first_ca || ''}
-                                  onChange={(e) => handleScoreChange(student.id, 'first_ca', e.target.value)}
-                                  className="w-20"
-                                />
+                                <Input type="number" min="0" max="10" value={result.first_ca || ''}
+                                  onChange={(e) => handleScoreChange(student.id, 'first_ca', e.target.value)} className="w-16" />
                               </TableCell>
                               <TableCell>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="20"
-                                  value={result.second_ca || ''}
-                                  onChange={(e) => handleScoreChange(student.id, 'second_ca', e.target.value)}
-                                  className="w-20"
-                                />
+                                <Input type="number" min="0" max="10" value={result.second_ca || ''}
+                                  onChange={(e) => handleScoreChange(student.id, 'second_ca', e.target.value)} className="w-16" />
                               </TableCell>
                               <TableCell>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="60"
-                                  value={result.exam_score || ''}
-                                  onChange={(e) => handleScoreChange(student.id, 'exam_score', e.target.value)}
-                                  className="w-20"
-                                />
+                                <Input type="number" min="0" max="10" value={result.third_ca || ''}
+                                  onChange={(e) => handleScoreChange(student.id, 'third_ca', e.target.value)} className="w-16" />
+                              </TableCell>
+                              <TableCell>
+                                <Input type="number" min="0" max="70" value={result.exam_score || ''}
+                                  onChange={(e) => handleScoreChange(student.id, 'exam_score', e.target.value)} className="w-16" />
                               </TableCell>
                               <TableCell>
                                 <span className="font-bold text-lg">{result.total || 0}</span>
