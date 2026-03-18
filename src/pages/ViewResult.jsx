@@ -324,10 +324,10 @@ export default function ViewResult() {
                 <Card className="border-0 shadow-sm">
                   <CardHeader><CardTitle>Teacher Comments</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
-                    {results[0]?.teacher_comment && (
+                    {(results[0]?.class_teacher_comment || results[0]?.teacher_comment) && (
                       <div className="p-3 bg-blue-50 rounded-lg">
                         <p className="text-xs font-semibold text-blue-700 mb-1">Class Teacher's Comment</p>
-                        <p className="text-sm">{results[0].teacher_comment}</p>
+                        <p className="text-sm">{results[0].class_teacher_comment || results[0].teacher_comment}</p>
                       </div>
                     )}
                     {results[0]?.form_teacher_comment && (

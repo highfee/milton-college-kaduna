@@ -76,7 +76,7 @@ export default function ReviewClassResults() {
       session: selectedSession
     });
     setResults(resultsData);
-    setComment(resultsData[0]?.form_teacher_comment || '');
+    setComment(resultsData[0]?.class_teacher_comment || resultsData[0]?.form_teacher_comment || '');
     setIsDialogOpen(true);
   };
 
@@ -88,6 +88,7 @@ export default function ReviewClassResults() {
 
     for (const result of results) {
       await base44.entities.Result.update(result.id, {
+        class_teacher_comment: comment,
         form_teacher_comment: comment
       });
     }

@@ -411,6 +411,7 @@ function FormTeacherTab({ teacher, settings }) {
                     <TableHead>Subject</TableHead>
                     <TableHead>1st CA</TableHead>
                     <TableHead>2nd CA</TableHead>
+                    <TableHead>3rd CA</TableHead>
                     <TableHead>Exam</TableHead>
                     <TableHead>Total</TableHead>
                     <TableHead>Grade</TableHead>
@@ -420,9 +421,10 @@ function FormTeacherTab({ teacher, settings }) {
                   {results.map(r => (
                     <TableRow key={r.id}>
                       <TableCell>{r.subject_name}</TableCell>
-                      <TableCell>{r.first_ca}</TableCell>
-                      <TableCell>{r.second_ca}</TableCell>
-                      <TableCell>{r.exam_score}</TableCell>
+                      <TableCell>{r.first_ca ?? '—'}</TableCell>
+                      <TableCell>{r.second_ca ?? '—'}</TableCell>
+                      <TableCell>{r.third_ca ?? '—'}</TableCell>
+                      <TableCell>{r.exam_score ?? '—'}</TableCell>
                       <TableCell><strong>{r.total}</strong></TableCell>
                       <TableCell><Badge variant="outline">{r.grade}</Badge></TableCell>
                     </TableRow>
