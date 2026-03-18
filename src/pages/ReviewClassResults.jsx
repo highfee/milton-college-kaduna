@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Search, MessageSquare, CheckCircle } from 'lucide-react';
+import { Search, MessageSquare, CheckCircle, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import EnterTraitsDialog from '@/components/EnterTraitsDialog';
 
 export default function ReviewClassResults() {
   const [user, setUser] = useState(null);
@@ -23,6 +24,7 @@ export default function ReviewClassResults() {
   const [selectedSession, setSelectedSession] = useState('');
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [traitsStudent, setTraitsStudent] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -53,12 +55,10 @@ export default function ReviewClassResults() {
   };
 
   const loadStudents = async () => {
-    if (!teacher?.form_teacher_class) return;
-
-    const studentsData = await base44.entities.Student.filter({ 
-      current_class: teacher.form_teacher_class, 
-      status: 'Active' 
-    });
+    // Support both form teachers and class teachers
+    const cls = teacher?.form_teacher_class || teacher?.assigned_class;
+    if (!cls) return;
+    const studentsData = await base44.entities.Student.filter({ current_class: cls, status: 'Active' });
     setStudents(studentsData);
   };
 
@@ -155,7 +155,7 @@ export default function ReviewClassResults() {
         </Card>
 
         {/* Students List */}
-        {teacher?.form_teacher_class && selectedTerm && selectedSession && (
+        {(teacher?.form_teacher_class || teacher?.assigned_class) && selectedTerm && selectedSession && (
           <Card className="border-0 shadow-sm">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -176,10 +176,14 @@ export default function ReviewClassResults() {
                         <TableCell>
                           <Badge className="bg-blue-100 text-blue-800">Ready for Review</Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right flex gap-2 justify-end">
                           <Button size="sm" onClick={() => handleReviewStudent(student)}>
                             <MessageSquare className="w-4 h-4 mr-1" />
-                            Review
+                            Comment
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-amber-400 text-amber-700" onClick={() => setTraitsStudent(student)}>
+                            <Star className="w-4 h-4 mr-1" />
+                            Traits
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -190,6 +194,15 @@ export default function ReviewClassResults() {
             </CardContent>
           </Card>
         )}
+
+        {/* Affective Traits Dialog */}
+        <EnterTraitsDialog
+          open={!!traitsStudent}
+          onClose={() => setTraitsStudent(null)}
+          student={traitsStudent}
+          term={selectedTerm}
+          session={selectedSession}
+        />
 
         {/* Review Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
