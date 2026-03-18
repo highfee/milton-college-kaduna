@@ -61,6 +61,7 @@ export default function AdminPortal() {
     { icon: Image, label: 'Gallery', page: 'ManageGallery', color: 'bg-pink-500' },
     { icon: MessageSquare, label: 'Newsletter', page: 'ManageNewsletter', color: 'bg-yellow-500' },
     { icon: Printer, label: 'Print/Send Results', page: 'PrintResult', color: 'bg-cyan-600' },
+    { icon: FileText, label: 'Print Newsletter', page: 'ManageNewsletter', color: 'bg-violet-600' },
     { icon: Settings, label: 'School Settings', page: 'SchoolSettings', color: 'bg-gray-600' }
   ];
 
