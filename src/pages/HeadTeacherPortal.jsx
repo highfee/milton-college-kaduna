@@ -275,6 +275,7 @@ function FormTeacherTab({ teacher, settings }) {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [traitsStudent, setTraitsStudent] = useState(null);
 
   const myClass = teacher?.assigned_class || teacher?.form_teacher_class;
 
@@ -360,9 +361,14 @@ function FormTeacherTab({ teacher, settings }) {
                       <TableCell>{s.admission_number}</TableCell>
                       <TableCell>{s.current_class}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => handleReview(s)}>
-                          <MessageSquare className="w-4 h-4 mr-1" /> Review & Comment
-                        </Button>
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" variant="outline" onClick={() => handleReview(s)}>
+                            <MessageSquare className="w-4 h-4 mr-1" /> Comment
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-amber-400 text-amber-700" onClick={() => setTraitsStudent(s)}>
+                            <Star className="w-4 h-4 mr-1" /> Traits
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -373,6 +379,14 @@ function FormTeacherTab({ teacher, settings }) {
           )}
         </CardContent>
       </Card>
+
+      <EnterTraitsDialog
+        open={!!traitsStudent}
+        onClose={() => setTraitsStudent(null)}
+        student={traitsStudent}
+        term={selectedTerm}
+        session={selectedSession}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
