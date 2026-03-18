@@ -1,5 +1,5 @@
 import React from 'react';
-import { getPosition } from '@/components/GradingUtils';
+import { getPosition, getGrade } from '@/components/GradingUtils';
 
 const RATING_KEY = [
   { score: 5, label: '5 = Excellent' },
