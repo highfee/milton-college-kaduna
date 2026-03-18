@@ -162,6 +162,7 @@ export default function EnterResults() {
         subject_name: selectedSubjectData?.name,
         first_ca: parseFloat(result.first_ca) || 0,
         second_ca: parseFloat(result.second_ca) || 0,
+        third_ca: parseFloat(result.third_ca) || 0,
         exam_score: parseFloat(result.exam_score) || 0,
         total: result.total || 0,
         grade: result.grade || '',
@@ -291,9 +292,10 @@ export default function EnterResults() {
                         <TableRow>
                           <TableHead>Adm. No.</TableHead>
                           <TableHead>Student Name</TableHead>
-                          <TableHead>1st CA (20)</TableHead>
-                          <TableHead>2nd CA (20)</TableHead>
-                          <TableHead>Exam (60)</TableHead>
+                          <TableHead>1st CA (10)</TableHead>
+                          <TableHead>2nd CA (10)</TableHead>
+                          <TableHead>3rd CA (10)</TableHead>
+                          <TableHead>Exam (70)</TableHead>
                           <TableHead>Total</TableHead>
                           <TableHead>Grade</TableHead>
                           <TableHead>Remark</TableHead>
