@@ -54,9 +54,48 @@ export default function PrintResult() {
     setLoading(true);
     const students = await base44.entities.Student.filter({ admission_number: admissionNo.trim() });
     if (!students[0]) { alert('Student not found'); setLoading(false); return; }
-    const results = await base44.entities.Result.filter({ student_id: students[0].id, term: selectedTerm, session: selectedSession });
+    const student = students[0];
+    const results = await base44.entities.Result.filter({ student_id: student.id, term: selectedTerm, session: selectedSession });
+    const totalScore = results.reduce((sum, r) => sum + (r.total || 0), 0);
+
+    // Get class peers for ranking
+    const peers = await base44.entities.Student.filter({ current_class: student.current_class, status: 'Active' });
+    const totalInClass = peers.length;
+    const peerResults = await Promise.all(peers.map(async p => {
+      const pr = await base44.entities.Result.filter({ student_id: p.id, term: selectedTerm, session: selectedSession });
+      return { studentId: p.id, totalScore: pr.reduce((s, r) => s + (r.total || 0), 0), results: pr };
+    }));
+    const sortedPeers = [...peerResults].sort((a, b) => b.totalScore - a.totalScore);
+    const classPosition = sortedPeers.findIndex(p => p.studentId === student.id) + 1;
+
+    // Subject stats
+    const subjectMap = {};
+    peerResults.forEach(pr => {
+      pr.results.forEach(r => {
+        if (!subjectMap[r.subject_id]) subjectMap[r.subject_id] = [];
+        subjectMap[r.subject_id].push({ studentId: pr.studentId, total: r.total || 0 });
+      });
+    });
+    const subjectStats = {};
+    Object.entries(subjectMap).forEach(([subjId, entries]) => {
+      const avg = entries.reduce((s, e) => s + e.total, 0) / entries.length;
+      const sr = [...entries].sort((a, b) => b.total - a.total);
+      const ranks = {};
+      sr.forEach((e, idx) => { ranks[e.studentId] = idx + 1; });
+      subjectStats[subjId] = { avg: parseFloat(avg.toFixed(1)), ranks };
+    });
+
+    const enrichedResults = results.map(r => ({
+      ...r,
+      subject_position: subjectStats[r.subject_id]?.ranks[student.id] || 0,
+      class_average_score: subjectStats[r.subject_id]?.avg || 0,
+      class_position: classPosition,
+      total_in_class: totalInClass,
+      total_score_all_subjects: totalScore
+    }));
+
     const classTeacher = await resolveClassTeacher(results);
-    setPrintData([{ student: students[0], results, classTeacher }]);
+    setPrintData([{ student, results: enrichedResults, totalScore, rankings: { classPosition }, classTeacher }]);
     setLoading(false);
   };
 
@@ -64,23 +103,61 @@ export default function PrintResult() {
     if (!selectedClass || !selectedTerm || !selectedSession) return alert('Fill all fields');
     setLoading(true);
     const students = await base44.entities.Student.filter({ current_class: selectedClass, status: 'Active' });
+    const totalInClass = students.length;
 
-    // Calculate class positions based on total score
+    // Load all results for all students
     const studentResults = await Promise.all(students.map(async (s) => {
       const results = await base44.entities.Result.filter({ student_id: s.id, term: selectedTerm, session: selectedSession });
       const totalScore = results.reduce((sum, r) => sum + (r.total || 0), 0);
       return { student: s, results, totalScore };
     }));
 
-    // Sort by total score descending for ranking
-    const sorted = [...studentResults].sort((a, b) => b.totalScore - a.totalScore);
-    const withRanks = studentResults.map(d => ({
-      ...d,
-      rankings: { classPosition: sorted.findIndex(s => s.student.id === d.student.id) + 1 }
-    }));
+    // --- Compute subject positions & class averages ---
+    // Collect all subjects taught in this class
+    const subjectMap = {}; // subjectId -> [{studentId, total}]
+    studentResults.forEach(({ student, results }) => {
+      results.forEach(r => {
+        if (!subjectMap[r.subject_id]) subjectMap[r.subject_id] = [];
+        subjectMap[r.subject_id].push({ studentId: student.id, total: r.total || 0 });
+      });
+    });
+    // Compute class avg and rank per subject
+    const subjectStats = {}; // subjectId -> { avg, ranks: {studentId: rank} }
+    Object.entries(subjectMap).forEach(([subjId, entries]) => {
+      const avg = entries.reduce((s, e) => s + e.total, 0) / entries.length;
+      const sorted = [...entries].sort((a, b) => b.total - a.total);
+      const ranks = {};
+      sorted.forEach((e, idx) => { ranks[e.studentId] = idx + 1; });
+      subjectStats[subjId] = { avg: parseFloat(avg.toFixed(1)), ranks };
+    });
 
-    const classTeacher = await resolveClassTeacher(withRanks[0]?.results || []);
-    const dataArr = withRanks.filter(d => d.results.length > 0).map(d => ({ ...d, classTeacher }));
+    // Sort students by total score for class ranking
+    const sorted = [...studentResults].sort((a, b) => b.totalScore - a.totalScore);
+
+    const classTeacher = await resolveClassTeacher(studentResults[0]?.results || []);
+
+    // Build final data with computed stats
+    const dataArr = studentResults
+      .filter(d => d.results.length > 0)
+      .map(d => {
+        const classPosition = sorted.findIndex(s => s.student.id === d.student.id) + 1;
+        const enrichedResults = d.results.map(r => ({
+          ...r,
+          subject_position: subjectStats[r.subject_id]?.ranks[d.student.id] || 0,
+          class_average_score: subjectStats[r.subject_id]?.avg || 0,
+          class_position: classPosition,
+          total_in_class: totalInClass,
+          total_score_all_subjects: d.totalScore
+        }));
+        return {
+          student: d.student,
+          results: enrichedResults,
+          totalScore: d.totalScore,
+          rankings: { classPosition },
+          classTeacher
+        };
+      });
+
     setPrintData(dataArr);
     setLoading(false);
   };
