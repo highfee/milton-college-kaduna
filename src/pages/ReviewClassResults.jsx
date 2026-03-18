@@ -118,8 +118,8 @@ export default function ReviewClassResults() {
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Review Class Results</h1>
           <p className="text-gray-500">Review and comment on your class results</p>
-          {teacher?.form_teacher_class && (
-            <p className="text-[#1e3a5f] font-medium mt-2">Form Class: {teacher.form_teacher_class}</p>
+          {(teacher?.form_teacher_class || teacher?.assigned_class) && (
+            <p className="text-[#1e3a5f] font-medium mt-2">Class: {teacher.form_teacher_class || teacher.assigned_class}</p>
           )}
         </div>
 
