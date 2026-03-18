@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { 
   BookOpen, ClipboardList, FileText, Users, Calendar,
-  CheckSquare, MessageSquare, LogOut, GraduationCap, Eye, EyeOff
+  CheckSquare, MessageSquare, LogOut, GraduationCap, Eye, EyeOff, Star
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -164,13 +164,16 @@ export default function TeacherPortal() {
     return [teacher?.teacher_type];
   };
 
+  const isClassOrFormTeacher = teacher?.teacher_type === 'Class Teacher' || teacher?.teacher_type === 'Form Teacher';
+
   const quickActions = [
     { icon: FileText, label: 'Enter Results', page: 'EnterResults', color: 'bg-blue-500' },
     { icon: ClipboardList, label: 'Review Class Results', page: 'ReviewClassResults', color: 'bg-green-500' },
     { icon: CheckSquare, label: 'Manage Assignments', page: 'ManageAssignments', color: 'bg-purple-500' },
     { icon: BookOpen, label: 'Manage CBT', page: 'ManageCBT', color: 'bg-orange-500' },
     { icon: Calendar, label: 'View Timetable', page: 'ManageTimetable', color: 'bg-teal-500' },
-    { icon: Users, label: 'My Students', page: 'ManageStudents', color: 'bg-indigo-500' }
+    { icon: Users, label: 'My Students', page: 'ManageStudents', color: 'bg-indigo-500' },
+    ...(isClassOrFormTeacher ? [{ icon: Star, label: 'Enter Traits & Fees', page: 'ReviewClassResults', color: 'bg-amber-500' }] : [])
   ];
 
   const statCards = [
