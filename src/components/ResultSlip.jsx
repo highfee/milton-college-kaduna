@@ -56,6 +56,7 @@ export default function ResultSlip({ student, results, settings, term, session, 
   const avgScore = results.length ? (totalScore / results.length).toFixed(1) : 0;
   const totalInClass = results[0]?.total_in_class || 0;
   const classPosition = results[0]?.class_position || rankings?.classPosition || 0;
+  const totalScoreAllSubjects = results[0]?.total_score_all_subjects || totalScore;
   const nextTermBegins = results[0]?.next_term_begins || '';
   const feesArrears = results[0]?.school_fees_arrears || 0;
   const feesCurrent = results[0]?.school_fees_current || 0;
@@ -184,12 +185,12 @@ export default function ResultSlip({ student, results, settings, term, session, 
           gap: '3px', marginBottom: '5px', textAlign: 'center'
         }}>
           {[
-            { label: 'Total Score', value: totalScore, color: '#1e3a5f' },
+            { label: 'Total Score', value: totalScoreAllSubjects, color: '#1e3a5f' },
             { label: 'Average', value: `${avgScore}%`, color: '#16a34a' },
-            { label: 'Position', value: classPosition ? getPosition(classPosition) : '—', color: '#dc2626' },
+            { label: 'Class Position', value: classPosition ? getPosition(classPosition) : '—', color: '#dc2626' },
             { label: 'Total in Class', value: totalInClass || '—', color: '#7c3aed' },
-            { label: 'Subjects', value: results.length, color: '#b45309' },
-            { label: 'Overall Grade', value: results[0]?.overall_grade || '—', color: '#2563eb' },
+            { label: 'No. of Subjects', value: results.length, color: '#b45309' },
+            { label: 'Overall Grade', value: results.length ? getGrade(parseFloat(avgScore), section) : '—', color: '#2563eb' },
           ].map((item, i) => (
             <div key={i} style={{
               border: `1.5px solid ${item.color}`, borderRadius: '4px', padding: '3px 2px',
