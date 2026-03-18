@@ -76,12 +76,11 @@ export default function TeacherPortal() {
     if (teacherData[0]) {
       setTeacher(teacherData[0]);
 
+      const cls = teacherData[0].assigned_class || teacherData[0].form_teacher_class;
       const [assignments, subjects, students] = await Promise.all([
         base44.entities.Assignment.filter({ teacher_id: teacherData[0].id }),
         base44.entities.Subject.filter({ teacher_id: teacherData[0].id }),
-        teacherData[0].assigned_class 
-          ? base44.entities.Student.filter({ current_class: teacherData[0].assigned_class })
-          : Promise.resolve([])
+        cls ? base44.entities.Student.filter({ current_class: cls }) : Promise.resolve([])
       ]);
 
       setStats({
