@@ -21,9 +21,16 @@ export default function PortalLogin() {
     }
   };
 
+  // These portals have their own independent login (staff ID / admission number / parent ID)
+  const SELF_AUTH_PORTALS = ['TeacherPortal', 'HeadTeacherPortal', 'PrincipalPortal', 'StudentPortal', 'ParentPortal'];
+
   const handlePortalSelect = async (portal) => {
+    // Self-authenticating portals don't need platform auth
+    if (SELF_AUTH_PORTALS.includes(portal)) {
+      navigate(createPageUrl(portal));
+      return;
+    }
     const isAuth = await base44.auth.isAuthenticated();
-    
     if (!isAuth) {
       base44.auth.redirectToLogin(createPageUrl(portal));
     } else {
