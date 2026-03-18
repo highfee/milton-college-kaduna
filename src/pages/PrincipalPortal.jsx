@@ -486,7 +486,8 @@ function StudentsTab() {
   };
 
   const sections = ['All', 'Nursery', 'Primary', 'Secondary'];
-  const classesForSection = sectionFilter === 'All' ? ALL_CLASSES : (SCHOOL_CLASSES[sectionFilter] || []);
+  const allPrincipalClasses = [...(SCHOOL_CLASSES['Nursery'] || []), ...(SCHOOL_CLASSES['Primary'] || []), ...(SCHOOL_CLASSES['Secondary'] || [])];
+  const classesForSection = sectionFilter === 'All' ? allPrincipalClasses : (SCHOOL_CLASSES[sectionFilter] || []);
 
   const filtered = students.filter(s => {
     const name = `${s.first_name} ${s.last_name}`.toLowerCase();

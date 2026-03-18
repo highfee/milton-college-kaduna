@@ -168,7 +168,6 @@ export default function EnterResults() {
         grade: result.grade || '',
         remark: result.remark || '',
         teacher_id: teacher?.id,
-        section: student.section,
         status: 'Submitted'
       };
 
