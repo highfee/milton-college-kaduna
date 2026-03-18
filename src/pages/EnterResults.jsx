@@ -93,11 +93,12 @@ export default function EnterResults() {
     setResults(resultsMap);
   };
 
-  const calculateTotal = (firstCA, secondCA, exam) => {
+  const calculateTotal = (firstCA, secondCA, thirdCA, exam) => {
     const ca1 = parseFloat(firstCA) || 0;
     const ca2 = parseFloat(secondCA) || 0;
+    const ca3 = parseFloat(thirdCA) || 0;
     const ex = parseFloat(exam) || 0;
-    return ca1 + ca2 + ex;
+    return ca1 + ca2 + ca3 + ex;
   };
 
   // section is derived from the class student belongs to
@@ -107,14 +108,16 @@ export default function EnterResults() {
   const computeRemark = (total, student) => getRemark(total, getStudentSection(student));
 
   const handleScoreChange = (studentId, field, value) => {
-    const numValue = value === '' ? '' : Math.min(parseFloat(value), field === 'exam_score' ? 60 : 20);
+    const maxVal = field === 'exam_score' ? 70 : 10;
+    const numValue = value === '' ? '' : Math.min(parseFloat(value), maxVal);
     
     const currentResult = results[studentId] || {};
     const firstCA = field === 'first_ca' ? numValue : (currentResult.first_ca || 0);
     const secondCA = field === 'second_ca' ? numValue : (currentResult.second_ca || 0);
+    const thirdCA = field === 'third_ca' ? numValue : (currentResult.third_ca || 0);
     const examScore = field === 'exam_score' ? numValue : (currentResult.exam_score || 0);
     
-    const total = calculateTotal(firstCA, secondCA, examScore);
+    const total = calculateTotal(firstCA, secondCA, thirdCA, examScore);
     // find student to get section for proper grading
     const studentObj = students.find(s => s.id === studentId);
     const grade = computeGrade(total, studentObj || {});
@@ -125,6 +128,7 @@ export default function EnterResults() {
       [studentId]: {
         ...currentResult,
         [field]: numValue,
+        third_ca: field === 'third_ca' ? numValue : (currentResult.third_ca || 0),
         total,
         grade,
         remark
