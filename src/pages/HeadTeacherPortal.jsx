@@ -131,15 +131,16 @@ function EnterResultsTab({ teacher, settings }) {
   };
 
   const handleScoreChange = (studentId, field, value) => {
-    const max = field === 'exam_score' ? 60 : 20;
+    const max = field === 'exam_score' ? 70 : 10;
     const numValue = value === '' ? '' : Math.min(parseFloat(value) || 0, max);
     const cur = results[studentId] || {};
     const ca1 = field === 'first_ca' ? numValue : (cur.first_ca || 0);
     const ca2 = field === 'second_ca' ? numValue : (cur.second_ca || 0);
+    const ca3 = field === 'third_ca' ? numValue : (cur.third_ca || 0);
     const exam = field === 'exam_score' ? numValue : (cur.exam_score || 0);
-    const total = (parseFloat(ca1) || 0) + (parseFloat(ca2) || 0) + (parseFloat(exam) || 0);
+    const total = (parseFloat(ca1) || 0) + (parseFloat(ca2) || 0) + (parseFloat(ca3) || 0) + (parseFloat(exam) || 0);
     const student = students.find(s => s.id === studentId);
-    setResults(prev => ({ ...prev, [studentId]: { ...cur, [field]: numValue, total, grade: getGrade(total, student?.section || teacher.section), remark: getRemark(total, student?.section || teacher.section) } }));
+    setResults(prev => ({ ...prev, [studentId]: { ...cur, [field]: numValue, third_ca: field === 'third_ca' ? numValue : (cur.third_ca || 0), total, grade: getGrade(total, student?.section || teacher.section), remark: getRemark(total, student?.section || teacher.section) } }));
   };
 
   const handleSaveAll = async () => {
