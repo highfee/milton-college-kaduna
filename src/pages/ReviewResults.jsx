@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Search, MessageSquare, CheckCircle, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, MessageSquare, CheckCircle, TrendingUp, ArrowUp, ArrowDown, Star } from 'lucide-react';
+import EnterTraitsDialog from '@/components/EnterTraitsDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +29,7 @@ export default function ReviewResults() {
   const [selectedSession, setSelectedSession] = useState('');
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [traitsStudent, setTraitsStudent] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -220,10 +222,14 @@ export default function ReviewResults() {
                         <TableCell>
                           <Badge className="bg-blue-100 text-blue-800">Ready for Review</Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right flex gap-2 justify-end">
                           <Button size="sm" onClick={() => handleReviewStudent(student)}>
                             <MessageSquare className="w-4 h-4 mr-1" />
                             Review
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-amber-400 text-amber-700" onClick={() => setTraitsStudent(student)}>
+                            <Star className="w-4 h-4 mr-1" />
+                            Traits & Fees
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -234,6 +240,15 @@ export default function ReviewResults() {
             </CardContent>
           </Card>
         )}
+
+        {/* Traits & Fees Dialog */}
+        <EnterTraitsDialog
+          open={!!traitsStudent}
+          onClose={() => setTraitsStudent(null)}
+          student={traitsStudent}
+          term={selectedTerm}
+          session={selectedSession}
+        />
 
         {/* Review Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
