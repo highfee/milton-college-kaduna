@@ -655,7 +655,12 @@ export default function PrincipalPortal() {
             </TabsTrigger>
             <Link to={createPageUrl('PrintResult')}>
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
-                <Printer className="w-4 h-4 mr-2" /> Print Results
+                <Printer className="w-4 h-4 mr-2" /> Print/Send Results
+              </button>
+            </Link>
+            <Link to={createPageUrl('ManageNewsletter')}>
+              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                <FileText className="w-4 h-4 mr-2" /> Newsletter
               </button>
             </Link>
           </TabsList>
