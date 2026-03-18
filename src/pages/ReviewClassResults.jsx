@@ -158,6 +158,16 @@ export default function ReviewClassResults() {
           </CardContent>
         </Card>
 
+        {/* No class message */}
+        {teacher && !(teacher?.form_teacher_class || teacher?.assigned_class) && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-12 text-center text-gray-500">
+              <p className="text-lg font-medium mb-2">No Class Assigned</p>
+              <p className="text-sm">You need to have an assigned class or form teacher class to review results. Please contact the Admin.</p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Students List */}
         {(teacher?.form_teacher_class || teacher?.assigned_class) && selectedTerm && selectedSession && (
           <Card className="border-0 shadow-sm">
