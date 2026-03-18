@@ -128,6 +128,11 @@ function OverviewTab({ principal, stats, setActiveTab }) {
               <p className="font-semibold text-sm">Print Results</p>
               <p className="text-xs text-white/70 mt-1">Print individual or class result slips</p>
             </Link>
+            <Link to={createPageUrl('ManageNewsletter')} className="bg-white/10 hover:bg-white/20 rounded-lg p-4 text-left transition-colors block">
+              <FileText className="w-5 h-5 mb-2" />
+              <p className="font-semibold text-sm">Print Newsletter</p>
+              <p className="text-xs text-white/70 mt-1">Create and print term newsletters</p>
+            </Link>
           </div>
         </CardContent>
       </Card>
