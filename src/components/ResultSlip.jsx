@@ -255,7 +255,7 @@ export default function ResultSlip({ student, results, settings, term, session, 
         }}>
           {[
             { label: 'No. of Subjects Passed', value: results.filter(r => r.grade && r.grade !== 'F' && r.grade !== 'F9').length, color: '#16a34a' },
-            { label: 'No. of Credits', value: results.filter(r => ['C4','C5','C6','C'].includes(r.grade || '')).length, color: '#2563eb' },
+            { label: 'No. of Credits (C & above)', value: results.filter(r => ['A1','A','B2','B3','B','C4','C5','C6','C'].includes(r.grade || '')).length, color: '#2563eb' },
             { label: 'No. of Distinctions (A)', value: results.filter(r => r.grade === 'A1' || r.grade === 'A').length, color: '#b45309' },
             { label: 'No. of Subjects Failed', value: results.filter(r => r.grade === 'F9' || r.grade === 'F').length, color: '#dc2626' },
           ].map((item, i) => (
