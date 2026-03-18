@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Search, MessageSquare, CheckCircle, TrendingUp, ArrowUp, ArrowDown, Star } from 'lucide-react';
 import EnterTraitsDialog from '@/components/EnterTraitsDialog';

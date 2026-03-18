@@ -47,7 +47,7 @@ export default function EnterTraitsDialog({ open, onClose, student, term, sessio
     if (results[0]) {
       setAffective(results[0].affective_traits || {});
       setPsychomotor(results[0].psychomotor_skills || {});
-      setClassComment(results[0].teacher_comment || '');
+      setClassComment(results[0].class_teacher_comment || results[0].teacher_comment || '');
       setNextTerm(results[0].next_term_begins || '');
       setArrears(results[0].school_fees_arrears || '');
       setCurrentFees(results[0].school_fees_current || '');
@@ -62,6 +62,7 @@ export default function EnterTraitsDialog({ open, onClose, student, term, sessio
         affective_traits: affective,
         psychomotor_skills: psychomotor,
         teacher_comment: classComment,
+        class_teacher_comment: classComment,
         next_term_begins: nextTerm,
         school_fees_arrears: parseFloat(arrears) || 0,
         school_fees_current: parseFloat(currentFees) || 0,
