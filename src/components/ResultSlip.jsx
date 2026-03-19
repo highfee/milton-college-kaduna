@@ -101,9 +101,9 @@ export default function ResultSlip({ student, results, settings, term, session, 
       width: '210mm', minHeight: '297mm', maxHeight: '297mm',
       fontFamily: '"Times New Roman", serif',
       background: 'white', position: 'relative', overflow: 'hidden',
-      padding: '8mm 10mm', boxSizing: 'border-box',
+      padding: '7mm 9mm', boxSizing: 'border-box',
       pageBreakAfter: 'always', pageBreakInside: 'avoid',
-      fontSize: '9px', color: '#111'
+      fontSize: '10px', color: '#111'
     }}>
       {/* Watermark */}
       {logo && (
@@ -124,16 +124,16 @@ export default function ResultSlip({ student, results, settings, term, session, 
         }}>
           {logo && <img src={logo} alt="" style={{ width: '52px', height: '52px', objectFit: 'contain' }} />}
           <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#1e3a5f', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e3a5f', textTransform: 'uppercase', letterSpacing: '1px' }}>
               {schoolName}
             </div>
-            {address && <div style={{ fontSize: '8px', color: '#555', marginTop: '1px' }}>{address}</div>}
-            <div style={{ fontSize: '8px', color: '#555' }}>
+            {address && <div style={{ fontSize: '9px', color: '#555', marginTop: '1px' }}>{address}</div>}
+            <div style={{ fontSize: '9px', color: '#555' }}>
               {phone && `Tel: ${phone}`}{phone && email && ' | '}{email && `Email: ${email}`}
             </div>
-            {motto && <div style={{ fontSize: '8px', color: '#b45309', fontStyle: 'italic', marginTop: '1px' }}>"{motto}"</div>}
+            {motto && <div style={{ fontSize: '9px', color: '#b45309', fontStyle: 'italic', marginTop: '1px' }}>"{motto}"</div>}
             <div style={{
-              marginTop: '4px', fontSize: '10px', fontWeight: 'bold', color: 'white',
+              marginTop: '4px', fontSize: '11px', fontWeight: 'bold', color: 'white',
               background: '#1e3a5f', display: 'inline-block', padding: '2px 12px', borderRadius: '4px'
             }}>
               {term} RESULT — {session} SESSION
@@ -149,7 +149,7 @@ export default function ResultSlip({ student, results, settings, term, session, 
         }}>
           <div style={{
             border: '2px solid #1e3a5f', borderRadius: '4px', padding: '4px 6px',
-            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 10px', fontSize: '8.5px'
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 10px', fontSize: '9.5px'
           }}>
             <div><b style={{ color: '#1e3a5f' }}>Name:</b> <span style={{ color: '#b45309', fontWeight: 'bold' }}>{student.first_name} {student.middle_name || ''} {student.last_name}</span></div>
             <div><b style={{ color: '#1e3a5f' }}>Adm. No:</b> {student.admission_number}</div>
@@ -196,8 +196,8 @@ export default function ResultSlip({ student, results, settings, term, session, 
               border: `1.5px solid ${item.color}`, borderRadius: '4px', padding: '3px 2px',
               background: `${item.color}10`
             }}>
-              <div style={{ fontSize: '7px', color: '#555' }}>{item.label}</div>
-              <div style={{ fontSize: '11px', fontWeight: 'bold', color: item.color }}>{item.value}</div>
+              <div style={{ fontSize: '8px', color: '#555' }}>{item.label}</div>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: item.color }}>{item.value}</div>
             </div>
           ))}
         </div>
@@ -238,10 +238,10 @@ export default function ResultSlip({ student, results, settings, term, session, 
 
         {/* ===== GRADE KEY ===== */}
         <div style={{
-          display: 'flex', gap: '8px', fontSize: '7.5px', marginBottom: '5px',
+          display: 'flex', gap: '8px', fontSize: '8px', marginBottom: '5px',
           background: '#f0f4f8', padding: '3px 6px', borderRadius: '3px', border: '1px solid #c7d2e4'
         }}>
-          <b style={{ color: '#1e3a5f' }}>Grade Key:</b>
+          <b style={{ color: '#1e3a5f', fontSize: '8px' }}>Grade Key:</b>
           {isSecondary
             ? 'A1(75-100)=Excellent | B2(70-74)=V.Good | B3(65-69)=Good | C4(60-64)=Credit | C5(55-59)=Credit | C6(50-54)=Credit | D7(45-49)=Pass | E8(40-44)=Pass | F9(0-39)=Fail'
             : 'A(70-100)=Excellent | B(60-69)=V.Good | C(50-59)=Good | D(45-49)=Pass | E(40-44)=Weak Pass | F(0-39)=Fail'
@@ -251,7 +251,7 @@ export default function ResultSlip({ student, results, settings, term, session, 
         {/* ===== STATS ROW ===== */}
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '3px',
-          marginBottom: '5px', fontSize: '8px'
+          marginBottom: '5px', fontSize: '9px'
         }}>
           {[
             { label: 'No. of Subjects Passed', value: results.filter(r => r.grade && r.grade !== 'F' && r.grade !== 'F9').length, color: '#16a34a' },
@@ -263,8 +263,8 @@ export default function ResultSlip({ student, results, settings, term, session, 
               border: `1px solid ${item.color}`, borderRadius: '3px', padding: '2px 4px',
               textAlign: 'center', background: `${item.color}10`
             }}>
-              <div style={{ color: '#555', fontSize: '7px' }}>{item.label}</div>
-              <div style={{ fontWeight: 'bold', color: item.color, fontSize: '11px' }}>{item.value}</div>
+              <div style={{ color: '#555', fontSize: '8px' }}>{item.label}</div>
+              <div style={{ fontWeight: 'bold', color: item.color, fontSize: '12px' }}>{item.value}</div>
             </div>
           ))}
         </div>
@@ -275,13 +275,13 @@ export default function ResultSlip({ student, results, settings, term, session, 
           <div style={{ border: '1.5px solid #1e3a5f', borderRadius: '4px', overflow: 'hidden' }}>
             <div style={{
               background: '#1e3a5f', color: 'white', padding: '2px 6px',
-              fontSize: '8px', fontWeight: 'bold', textAlign: 'center'
+              fontSize: '9px', fontWeight: 'bold', textAlign: 'center'
             }}>AFFECTIVE TRAITS</div>
             <div style={{ padding: '3px 4px' }}>
               {AFFECTIVE_TRAITS.map(trait => (
                 <div key={trait.key} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '1px 2px', borderBottom: '1px solid #e5e7eb', fontSize: '7.5px'
+                  padding: '1px 2px', borderBottom: '1px solid #e5e7eb', fontSize: '8.5px'
                 }}>
                   <span style={{ color: '#374151' }}>{trait.label}</span>
                   <RatingDots value={affective[trait.key]} />
@@ -293,20 +293,20 @@ export default function ResultSlip({ student, results, settings, term, session, 
           <div style={{ border: '1.5px solid #7c3aed', borderRadius: '4px', overflow: 'hidden' }}>
             <div style={{
               background: '#7c3aed', color: 'white', padding: '2px 6px',
-              fontSize: '8px', fontWeight: 'bold', textAlign: 'center'
+              fontSize: '9px', fontWeight: 'bold', textAlign: 'center'
             }}>PSYCHOMOTOR SKILLS</div>
             <div style={{ padding: '3px 4px' }}>
               {PSYCHOMOTOR_SKILLS.map(skill => (
                 <div key={skill.key} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '1px 2px', borderBottom: '1px solid #e5e7eb', fontSize: '7.5px'
+                  padding: '1px 2px', borderBottom: '1px solid #e5e7eb', fontSize: '8.5px'
                 }}>
                   <span style={{ color: '#374151' }}>{skill.label}</span>
                   <RatingDots value={psychomotor[skill.key]} />
                 </div>
               ))}
               {/* Rating key */}
-              <div style={{ marginTop: '3px', fontSize: '7px', color: '#6b7280' }}>
+              <div style={{ marginTop: '3px', fontSize: '8px', color: '#6b7280' }}>
                 {RATING_KEY.map(k => k.label).join(' | ')}
               </div>
             </div>
@@ -318,30 +318,30 @@ export default function ResultSlip({ student, results, settings, term, session, 
           <div style={{ border: '1px solid #c7d2e4', borderRadius: '4px', padding: '4px 6px' }}>
             {(results[0]?.class_teacher_comment || results[0]?.teacher_comment) && (
               <div style={{ marginBottom: '3px' }}>
-                <b style={{ color: '#1e3a5f', fontSize: '7.5px' }}>Class Teacher's Remark:</b>
-                <span style={{ fontSize: '7.5px', marginLeft: '4px' }}>{results[0].class_teacher_comment || results[0].teacher_comment}</span>
+                <b style={{ color: '#1e3a5f', fontSize: '8.5px' }}>Class Teacher's Remark:</b>
+                <span style={{ fontSize: '8.5px', marginLeft: '4px' }}>{results[0].class_teacher_comment || results[0].teacher_comment}</span>
               </div>
             )}
             {isNurseryOrPrimary && results[0]?.head_teacher_comment && (
               <div style={{ marginBottom: '3px' }}>
-                <b style={{ color: '#b45309', fontSize: '7.5px' }}>Head Teacher's Remark:</b>
-                <span style={{ fontSize: '7.5px', marginLeft: '4px' }}>{results[0].head_teacher_comment}</span>
+                <b style={{ color: '#b45309', fontSize: '8.5px' }}>Head Teacher's Remark:</b>
+                <span style={{ fontSize: '8.5px', marginLeft: '4px' }}>{results[0].head_teacher_comment}</span>
               </div>
             )}
             {isSecondary && results[0]?.principal_comment && (
               <div style={{ marginBottom: '3px' }}>
-                <b style={{ color: '#7c3aed', fontSize: '7.5px' }}>Principal's Remark:</b>
-                <span style={{ fontSize: '7.5px', marginLeft: '4px' }}>{results[0].principal_comment}</span>
+                <b style={{ color: '#7c3aed', fontSize: '8.5px' }}>Principal's Remark:</b>
+                <span style={{ fontSize: '8.5px', marginLeft: '4px' }}>{results[0].principal_comment}</span>
               </div>
             )}
             {results[0]?.form_teacher_comment && (
               <div>
-                <b style={{ color: '#16a34a', fontSize: '7.5px' }}>Form Teacher's Remark:</b>
-                <span style={{ fontSize: '7.5px', marginLeft: '4px' }}>{results[0].form_teacher_comment}</span>
+                <b style={{ color: '#16a34a', fontSize: '8.5px' }}>Form Teacher's Remark:</b>
+                <span style={{ fontSize: '8.5px', marginLeft: '4px' }}>{results[0].form_teacher_comment}</span>
               </div>
             )}
           </div>
-          <div style={{ border: '1px solid #c7d2e4', borderRadius: '4px', padding: '4px 6px', fontSize: '8px' }}>
+          <div style={{ border: '1px solid #c7d2e4', borderRadius: '4px', padding: '4px 6px', fontSize: '9px' }}>
             <div style={{ marginBottom: '3px' }}>
               <b style={{ color: '#1e3a5f' }}>Next Term Begins:</b><br />
               <span style={{ color: '#16a34a', fontWeight: 'bold' }}>{nextTermBegins || '—'}</span>
@@ -364,7 +364,7 @@ export default function ResultSlip({ student, results, settings, term, session, 
           gap: '8px', marginBottom: '5px', marginTop: '4px'
         }}>
           {/* Class/Form Teacher Signature */}
-          <div style={{ textAlign: 'center', fontSize: '7.5px' }}>
+          <div style={{ textAlign: 'center', fontSize: '8.5px' }}>
             <div style={{ borderBottom: '1px solid #1e3a5f', marginBottom: '2px', paddingBottom: '12px' }}></div>
             <b style={{ color: '#1e3a5f' }}>{classTeacher?.name || 'Class/Form Teacher'}</b>
             <div style={{ color: '#555' }}>{classTeacher?.phone || ''}</div>
@@ -372,7 +372,7 @@ export default function ResultSlip({ student, results, settings, term, session, 
           </div>
           {/* HT signature for Nursery/Primary */}
           {isNurseryOrPrimary && (
-            <div style={{ textAlign: 'center', fontSize: '7.5px' }}>
+            <div style={{ textAlign: 'center', fontSize: '8.5px' }}>
               <div style={{ borderBottom: '1px solid #b45309', marginBottom: '2px', paddingBottom: '12px' }}></div>
               <b style={{ color: '#b45309' }}>{headTeacherName}</b>
               <div style={{ color: '#7c3aed' }}>Head Teacher's Signature & Date</div>
@@ -380,14 +380,14 @@ export default function ResultSlip({ student, results, settings, term, session, 
           )}
           {/* Principal signature for Secondary */}
           {isSecondary && (
-            <div style={{ textAlign: 'center', fontSize: '7.5px' }}>
+            <div style={{ textAlign: 'center', fontSize: '8.5px' }}>
               <div style={{ borderBottom: '1px solid #7c3aed', marginBottom: '2px', paddingBottom: '12px' }}></div>
               <b style={{ color: '#7c3aed' }}>{principalName}</b>
               <div style={{ color: '#7c3aed' }}>Principal's Signature & Date</div>
             </div>
           )}
           {/* Admin signature — ALL sections */}
-          <div style={{ textAlign: 'center', fontSize: '7.5px' }}>
+          <div style={{ textAlign: 'center', fontSize: '8.5px' }}>
             <div style={{ borderBottom: '1px solid #dc2626', marginBottom: '2px', paddingBottom: '12px' }}></div>
             <b style={{ color: '#dc2626' }}>Administrator</b>
             <div style={{ color: '#7c3aed' }}>Admin's Signature & Date</div>
@@ -397,7 +397,7 @@ export default function ResultSlip({ student, results, settings, term, session, 
         {/* ===== FOOTER: Class/Form Teacher contact ===== */}
         <div style={{
           borderTop: '2px solid #1e3a5f', paddingTop: '3px', marginTop: '3px',
-          textAlign: 'center', fontSize: '7.5px', color: '#555'
+          textAlign: 'center', fontSize: '8.5px', color: '#555'
         }}>
           {classTeacher
             ? <>
