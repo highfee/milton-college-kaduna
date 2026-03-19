@@ -53,16 +53,15 @@ export default function Dashboard() {
     const statsData = {};
 
     if (role?.role === 'Admin' || role?.role === 'Principal' || role?.role === 'Head Teacher') {
-      const [students, teachers, subjects, pendingPayments] = await Promise.all([
+      const [students, teachers, subjects] = await Promise.all([
         base44.entities.Student.filter({ status: 'Active' }),
         base44.entities.Teacher.filter({ status: 'Active' }),
-        base44.entities.Subject.filter({ status: 'Active' }),
-        base44.entities.FeePayment.filter({ status: 'Pending' })
+        base44.entities.Subject.filter({ status: 'Active' })
       ]);
       statsData.totalStudents = students.length;
       statsData.totalTeachers = teachers.length;
       statsData.totalSubjects = subjects.length;
-      statsData.pendingPayments = pendingPayments.length;
+      statsData.pendingPayments = 0;
     }
 
     if (role?.role === 'Teacher' || role?.role === 'Form Teacher') {
@@ -75,12 +74,8 @@ export default function Dashboard() {
     }
 
     if (role?.role === 'Accountant') {
-      const [pendingPayments, approvedPayments] = await Promise.all([
-        base44.entities.FeePayment.filter({ status: 'Pending' }),
-        base44.entities.FeePayment.filter({ status: 'Approved' })
-      ]);
-      statsData.pendingPayments = pendingPayments.length;
-      statsData.approvedPayments = approvedPayments.length;
+      statsData.pendingPayments = 0;
+      statsData.approvedPayments = 0;
     }
 
     // For students
