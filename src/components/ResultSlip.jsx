@@ -76,14 +76,14 @@ export default function ResultSlip({ student, results, settings, term, session, 
   const headTeacherName = settings?.head_teacher_name || 'The Head Teacher';
 
   const tableStyle = {
-    width: '100%', borderCollapse: 'collapse', fontSize: '8.5px', marginBottom: '6px'
+    width: '100%', borderCollapse: 'collapse', fontSize: '9.5px', marginBottom: '5px'
   };
   const thStyle = {
-    background: '#1e3a5f', color: 'white', padding: '3px 4px', border: '1px solid #1e3a5f',
-    textAlign: 'center', fontWeight: 'bold', fontSize: '8px'
+    background: '#1e3a5f', color: 'white', padding: '3px 5px', border: '1px solid #1e3a5f',
+    textAlign: 'center', fontWeight: 'bold', fontSize: '9px'
   };
   const tdStyle = {
-    padding: '2.5px 4px', border: '1px solid #b0b8c4', textAlign: 'center', fontSize: '8px'
+    padding: '2.5px 5px', border: '1px solid #b0b8c4', textAlign: 'center', fontSize: '9px'
   };
   const tdLeftStyle = { ...tdStyle, textAlign: 'left' };
 

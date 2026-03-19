@@ -32,7 +32,7 @@ export default function AssignClasses() {
   const sectionTeachers = teachers.filter(t => t.section === section);
   const classes = section === 'Primary'
     ? ['Primary 1A', 'Primary 1B', 'Primary 2A', 'Primary 2B', 'Primary 3A', 'Primary 3B', 'Primary 4A', 'Primary 4B', 'Primary 5A', 'Primary 5B']
-    : ['Reception Class'];
+    : ['Nursery 1', 'Nursery 2', 'Reception Class'];
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
