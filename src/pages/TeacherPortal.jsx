@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import React, { useState, useEffect } from 'react';
+import React2 from 'react'; // placeholder - remove below
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
