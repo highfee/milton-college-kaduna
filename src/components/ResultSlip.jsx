@@ -1,5 +1,4 @@
 import React from 'react';
-import React from 'react';
 import { getPosition, getGrade } from '@/components/GradingUtils';
 
 const RATING_KEY = [
