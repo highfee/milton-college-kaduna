@@ -462,7 +462,7 @@ export default function Home() {
             <div>
               <h4 className="font-semibold mb-4">Contact</h4>
               <ul className="space-y-2 text-gray-400 text-sm">
-                <li>📞 09067879088</li>
+                <li>📞 08033492870</li>
                 <li>📍 Kaduna, Nigeria</li>
               </ul>
             </div>
