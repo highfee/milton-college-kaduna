@@ -346,7 +346,7 @@ export default function Home() {
                   </div>
                   <div>
                     <p className="text-blue-200 text-sm">Phone</p>
-                    <a href="tel:09067879088" className="text-xl font-semibold hover:text-blue-300">09067879088</a>
+                    <a href="tel:08033492870" className="text-xl font-semibold hover:text-blue-300">08033492870</a>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
