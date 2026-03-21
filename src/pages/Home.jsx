@@ -70,14 +70,19 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-[#1e3a5f] via-[#2c4a6e] to-[#1e3a5f] text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+      <section className="relative text-white overflow-hidden min-h-screen flex flex-col">
+        {/* Full background: school building */}
+        <div className="absolute inset-0">
+          <img 
+            src="https://media.base44.com/images/public/696cc2e2095499293173480a/8e043b608_milton.jpg"
+            alt="Milton College Building"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1e3a5f]/90 via-[#1e3a5f]/70 to-[#1e3a5f]/40"></div>
         </div>
-        
-        <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
+
+        <div className="container mx-auto px-4 py-24 relative z-10 flex-1 flex items-center">
+          <div className="flex flex-col lg:flex-row items-center gap-12 w-full">
             <motion.div 
               className="flex-1 text-center lg:text-left"
               initial={{ opacity: 0, y: 30 }}
@@ -86,52 +91,73 @@ export default function Home() {
             >
               <div className="flex items-center justify-center lg:justify-start gap-4 mb-6">
                 {settings?.school_logo ? (
-                  <img src={settings.school_logo} alt="School Logo" className="w-20 h-20 object-contain bg-white rounded-full p-2" />
+                  <img src={settings.school_logo} alt="School Logo" className="w-20 h-20 object-contain bg-white rounded-full p-2 shadow-lg" />
                 ) : (
-                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
+                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30">
                     <GraduationCap className="w-10 h-10" />
                   </div>
                 )}
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight drop-shadow-lg">
                 Milton College of<br />
-                <span className="text-blue-300">Arts & Science</span>
+                <span className="text-yellow-300">Arts & Science</span>
               </h1>
-              <p className="text-lg text-blue-100 mb-4">Kaduna, Nigeria</p>
-              <p className="text-xl text-blue-200 mb-8 max-w-xl">
+              <p className="text-lg text-blue-100 mb-4 font-medium">Kaduna, Nigeria</p>
+              <p className="text-xl text-blue-100 mb-8 max-w-xl leading-relaxed">
                 {settings?.motto || 'Nurturing Excellence, Building Future Leaders'}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link to={createPageUrl('AdmissionForm')}>
-                  <Button size="lg" className="bg-white text-[#1e3a5f] hover:bg-blue-50 font-semibold px-8">
+                  <Button size="lg" className="bg-yellow-400 text-[#1e3a5f] hover:bg-yellow-300 font-bold px-8 shadow-xl">
                     Apply for Admission
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </Link>
                 <Link to={createPageUrl('PortalLogin')}>
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8">
+                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/20 px-8 backdrop-blur-sm">
                     Portal Login
                   </Button>
                 </Link>
               </div>
             </motion.div>
 
+            {/* School scenes collage */}
             <motion.div 
-              className="flex-1 grid grid-cols-2 gap-4 max-w-md"
+              className="flex-1 grid grid-cols-2 gap-3 max-w-md"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              {sections.map((section, idx) => (
-                <Card key={idx} className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all cursor-pointer">
-                  <CardContent className="p-4 text-center">
-                    <div className={`w-12 h-12 ${section.color} rounded-xl flex items-center justify-center mx-auto mb-3`}>
-                      <section.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="font-semibold text-sm">{section.name}</h3>
-                  </CardContent>
-                </Card>
-              ))}
+              <div className="col-span-2 rounded-2xl overflow-hidden h-48 shadow-2xl relative group">
+                <img 
+                  src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=600&q=80"
+                  alt="Students at school"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-3">
+                  <span className="text-white text-sm font-semibold">Our Students</span>
+                </div>
+              </div>
+              <div className="rounded-2xl overflow-hidden h-36 shadow-2xl relative group">
+                <img 
+                  src="https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400&q=80"
+                  alt="Children in school uniform"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-2">
+                  <span className="text-white text-xs font-semibold">Learning</span>
+                </div>
+              </div>
+              <div className="rounded-2xl overflow-hidden h-36 shadow-2xl relative group">
+                <img 
+                  src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80"
+                  alt="School activities"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-2">
+                  <span className="text-white text-xs font-semibold">Activities</span>
+                </div>
+              </div>
             </motion.div>
           </div>
         </div>
@@ -141,6 +167,34 @@ export default function Home() {
           <svg viewBox="0 0 1440 120" className="w-full">
             <path fill="#ffffff" d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"></path>
           </svg>
+        </div>
+      </section>
+
+      {/* School Scenes Strip */}
+      <section className="py-10 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+            {[
+              { url: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=300&q=80', label: 'Classroom' },
+              { url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=300&q=80', label: 'Study Time' },
+              { url: 'https://images.unsplash.com/photo-1567168544813-cc03465b4fa8?w=300&q=80', label: 'Assembly' },
+              { url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=300&q=80', label: 'Library' },
+              { url: 'https://images.unsplash.com/photo-1574180045827-681f8a1a9622?w=300&q=80', label: 'Sports' },
+            ].map((scene, idx) => (
+              <motion.div
+                key={idx}
+                className="rounded-xl overflow-hidden aspect-square relative group shadow-md"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.08 }}
+              >
+                <img src={scene.url} alt={scene.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1e3a5f]/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                  <span className="text-white text-xs font-semibold">{scene.label}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
