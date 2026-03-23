@@ -36,79 +36,98 @@ export default function EnterResults() {
     }
   }, [selectedClass, selectedSubject, selectedTerm, selectedSession]);
 
+  const loadSubjectsForTeacher = async (t) => {
+    const teacherType = t.teacher_type;
+    const myClass = t.assigned_class || t.form_teacher_class;
+
+    if (teacherType === 'Class Teacher' || teacherType === 'Head Teacher') {
+      // Class/Head teachers teach ALL subjects for their assigned class
+      if (myClass) {
+        setSelectedClass(myClass);
+        const allSectionSubjects = await base44.entities.Subject.filter({ section: t.section, status: 'Active' });
+        const classSubjects = allSectionSubjects.filter(s => (s.classes || []).includes(myClass));
+        setSubjects(classSubjects.length > 0 ? classSubjects : allSectionSubjects);
+      } else {
+        const allSectionSubjects = await base44.entities.Subject.filter({ section: t.section, status: 'Active' });
+        setSubjects(allSectionSubjects);
+      }
+    } else if (teacherType === 'Form Teacher') {
+      // Form teachers (Secondary): subjects mapped to their form class
+      const formClass = t.form_teacher_class || t.assigned_class;
+      if (formClass) {
+        setSelectedClass(formClass);
+        const allSecSubjects = await base44.entities.Subject.filter({ section: t.section || 'Secondary', status: 'Active' });
+        const classSubjects = allSecSubjects.filter(s => (s.classes || []).includes(formClass));
+        setSubjects(classSubjects);
+      }
+    } else {
+      // Subject Teacher / Principal: subjects assigned via teacher_id
+      const subjectsData = await base44.entities.Subject.filter({ teacher_id: t.id, status: 'Active' });
+      setSubjects(subjectsData);
+      if (myClass) setSelectedClass(myClass);
+    }
+  };
+
   const loadData = async () => {
-    const userData = await base44.auth.me();
-    setUser(userData);
+    // Check if teacher is logged in via portal session (Staff ID login)
+    const portalSessions = [
+      { key: 'teacher_portal_staff_id', type: 'teacher' },
+      { key: 'ht_portal_staff_id', type: 'ht' },
+      { key: 'principal_portal_staff_id', type: 'principal' },
+    ];
 
-    const [teacherData, settings, staffRoles] = await Promise.all([
-      base44.entities.Teacher.filter({ email: userData.email }),
-      base44.entities.SchoolSettings.list(),
-      base44.entities.StaffRole.filter({ user_email: userData.email })
-    ]);
-
+    const settings = await base44.entities.SchoolSettings.list();
     if (settings[0]) {
       setSelectedTerm(settings[0].current_term);
       setSelectedSession(settings[0].current_session);
     }
 
-    const isAdmin = userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin');
+    // Check portal session first (staff-ID-based login)
+    let portalStaffId = null;
+    for (const ps of portalSessions) {
+      const sid = sessionStorage.getItem(ps.key);
+      if (sid) { portalStaffId = sid; break; }
+    }
 
-    if (isAdmin) {
-      // Admins see all subjects and classes
-      const allSubjects = await base44.entities.Subject.filter({ status: 'Active' });
-      setSubjects(allSubjects);
-    } else if (teacherData.length > 0) {
-      // Some staff have multiple teacher records (e.g. Subject Teacher + Form Teacher same email)
-      // Pick the primary record: prefer Class/Head Teacher > Subject/Principal > Form Teacher
-      const typePriority = ['Head Teacher', 'Class Teacher', 'Principal', 'Subject Teacher', 'Form Teacher'];
-      const t = teacherData.sort((a, b) => {
-        const pa = typePriority.indexOf(a.teacher_type);
-        const pb = typePriority.indexOf(b.teacher_type);
-        return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb);
-      })[0];
-      setTeacher(t);
-
-      const teacherType = t.teacher_type;
-
-      if (teacherType === 'Class Teacher' || teacherType === 'Head Teacher') {
-        // Class teachers (Primary/Nursery) and Head Teachers teach ALL subjects for their assigned class
-        // Load all subjects in their section that include their class
-        const myClass = t.assigned_class || t.form_teacher_class;
-        if (myClass) {
-          setSelectedClass(myClass);
-          const allSectionSubjects = await base44.entities.Subject.filter({ section: t.section, status: 'Active' });
-          // Filter to subjects that include this class
-          const classSubjects = allSectionSubjects.filter(s => (s.classes || []).includes(myClass));
-          setSubjects(classSubjects);
-        } else {
-          // No class assigned yet — show all subjects in their section
-          const allSectionSubjects = await base44.entities.Subject.filter({ section: t.section, status: 'Active' });
-          setSubjects(allSectionSubjects);
-        }
-      } else if (teacherType === 'Form Teacher') {
-        // Form teachers (Secondary) only see subjects for their form class
-        // They don't enter subject scores — they add comments. But if they need to enter results,
-        // show all subjects for their form_teacher_class
-        const myClass = t.form_teacher_class;
-        if (myClass) {
-          setSelectedClass(myClass);
-          const allSecSubjects = await base44.entities.Subject.filter({ section: 'Secondary', status: 'Active' });
-          const classSubjects = allSecSubjects.filter(s => (s.classes || []).includes(myClass));
-          setSubjects(classSubjects);
-        }
-      } else if (teacherType === 'Subject Teacher' || teacherType === 'Principal') {
-        // Subject teachers and Principal only see subjects assigned to them via teacher_id
-        const subjectsData = await base44.entities.Subject.filter({ teacher_id: t.id, status: 'Active' });
-        setSubjects(subjectsData);
-        // If they also have a form_teacher_class, pre-select it
-        if (t.form_teacher_class) setSelectedClass(t.form_teacher_class);
-      } else {
-        // Fallback: show subjects by teacher_id
-        const subjectsData = await base44.entities.Subject.filter({ teacher_id: t.id, status: 'Active' });
-        setSubjects(subjectsData);
-        if (t.assigned_class) setSelectedClass(t.assigned_class);
-        else if (t.form_teacher_class) setSelectedClass(t.form_teacher_class);
+    if (portalStaffId) {
+      const teacherData = await base44.entities.Teacher.filter({ staff_id: portalStaffId });
+      if (teacherData[0]) {
+        const t = teacherData[0];
+        setTeacher(t);
+        await loadSubjectsForTeacher(t);
+        setLoading(false);
+        return;
       }
+    }
+
+    // Fallback: platform-authenticated user
+    try {
+      const userData = await base44.auth.me();
+      setUser(userData);
+
+      const [teacherData, staffRoles] = await Promise.all([
+        base44.entities.Teacher.filter({ email: userData.email }),
+        base44.entities.StaffRole.filter({ user_email: userData.email })
+      ]);
+
+      const isAdmin = userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin');
+
+      if (isAdmin) {
+        const allSubjects = await base44.entities.Subject.filter({ status: 'Active' });
+        setSubjects(allSubjects);
+      } else if (teacherData.length > 0) {
+        // Pick primary record: Head Teacher > Class Teacher > Principal > Subject Teacher > Form Teacher
+        const typePriority = ['Head Teacher', 'Class Teacher', 'Principal', 'Subject Teacher', 'Form Teacher'];
+        const t = [...teacherData].sort((a, b) => {
+          const pa = typePriority.indexOf(a.teacher_type);
+          const pb = typePriority.indexOf(b.teacher_type);
+          return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb);
+        })[0];
+        setTeacher(t);
+        await loadSubjectsForTeacher(t);
+      }
+    } catch (e) {
+      // Not platform authenticated — no access
     }
 
     setLoading(false);
