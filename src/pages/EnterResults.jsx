@@ -57,15 +57,53 @@ export default function EnterResults() {
       // Admins see all subjects and classes
       const allSubjects = await base44.entities.Subject.filter({ status: 'Active' });
       setSubjects(allSubjects);
-    } else if (teacherData[0]) {
-      setTeacher(teacherData[0]);
-      const t = teacherData[0];
-      // Teachers only see subjects assigned to them
-      const subjectsData = await base44.entities.Subject.filter({ teacher_id: t.id, status: 'Active' });
-      setSubjects(subjectsData);
-      // Pre-select their assigned class
-      if (t.assigned_class) setSelectedClass(t.assigned_class);
-      else if (t.form_teacher_class) setSelectedClass(t.form_teacher_class);
+    } else if (teacherData.length > 0) {
+      // Match teacher profile — if multiple records exist (e.g. duplicate), use the best match
+      // Prefer ones with assigned_class or form_teacher_class set
+      const t = teacherData.find(t => t.assigned_class || t.form_teacher_class) || teacherData[0];
+      setTeacher(t);
+
+      const teacherType = t.teacher_type;
+
+      if (teacherType === 'Class Teacher' || teacherType === 'Head Teacher') {
+        // Class teachers (Primary/Nursery) and Head Teachers teach ALL subjects for their assigned class
+        // Load all subjects in their section that include their class
+        const myClass = t.assigned_class || t.form_teacher_class;
+        if (myClass) {
+          setSelectedClass(myClass);
+          const allSectionSubjects = await base44.entities.Subject.filter({ section: t.section, status: 'Active' });
+          // Filter to subjects that include this class
+          const classSubjects = allSectionSubjects.filter(s => (s.classes || []).includes(myClass));
+          setSubjects(classSubjects);
+        } else {
+          // No class assigned yet — show all subjects in their section
+          const allSectionSubjects = await base44.entities.Subject.filter({ section: t.section, status: 'Active' });
+          setSubjects(allSectionSubjects);
+        }
+      } else if (teacherType === 'Form Teacher') {
+        // Form teachers (Secondary) only see subjects for their form class
+        // They don't enter subject scores — they add comments. But if they need to enter results,
+        // show all subjects for their form_teacher_class
+        const myClass = t.form_teacher_class;
+        if (myClass) {
+          setSelectedClass(myClass);
+          const allSecSubjects = await base44.entities.Subject.filter({ section: 'Secondary', status: 'Active' });
+          const classSubjects = allSecSubjects.filter(s => (s.classes || []).includes(myClass));
+          setSubjects(classSubjects);
+        }
+      } else if (teacherType === 'Subject Teacher' || teacherType === 'Principal') {
+        // Subject teachers and Principal only see subjects assigned to them via teacher_id
+        const subjectsData = await base44.entities.Subject.filter({ teacher_id: t.id, status: 'Active' });
+        setSubjects(subjectsData);
+        // If they also have a form_teacher_class, pre-select it
+        if (t.form_teacher_class) setSelectedClass(t.form_teacher_class);
+      } else {
+        // Fallback: show subjects by teacher_id
+        const subjectsData = await base44.entities.Subject.filter({ teacher_id: t.id, status: 'Active' });
+        setSubjects(subjectsData);
+        if (t.assigned_class) setSelectedClass(t.assigned_class);
+        else if (t.form_teacher_class) setSelectedClass(t.form_teacher_class);
+      }
     }
 
     setLoading(false);
