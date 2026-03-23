@@ -411,7 +411,18 @@ export default function EnterResults() {
         {(!selectedClass || !selectedSubject || !selectedTerm || !selectedSession) && (
           <Card className="border-0 shadow-sm">
             <CardContent className="p-12 text-center text-gray-500">
-              <p>Please select class, subject, term, and session to enter results</p>
+              {!loading && teacher && subjects.length === 0 ? (
+                <div>
+                  <p className="font-semibold text-gray-700 mb-2">No subjects found for your profile</p>
+                  <p className="text-sm">
+                    {teacher.teacher_type === 'Class Teacher' || teacher.teacher_type === 'Head Teacher'
+                      ? `Your assigned class (${teacher.assigned_class || teacher.form_teacher_class || 'not set'}) has no subjects linked to it yet. Please contact the admin to assign subjects.`
+                      : 'No subjects are currently assigned to you. Please contact the admin to assign subjects.'}
+                  </p>
+                </div>
+              ) : (
+                <p>Please select class, subject, term, and session to enter results</p>
+              )}
             </CardContent>
           </Card>
         )}
