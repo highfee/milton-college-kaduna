@@ -229,14 +229,27 @@ export default function EnterResults() {
   // Derive available classes from the subjects assigned (or all classes for admin)
   const availableClasses = React.useMemo(() => {
     if (subjects.length === 0) return [];
+
+    // For class teachers / form teachers, restrict to only their assigned class
+    if (teacher) {
+      const tt = teacher.teacher_type;
+      if (tt === 'Class Teacher' || tt === 'Head Teacher') {
+        const myClass = teacher.assigned_class || teacher.form_teacher_class;
+        if (myClass) return [myClass];
+      }
+      if (tt === 'Form Teacher') {
+        if (teacher.form_teacher_class) return [teacher.form_teacher_class];
+      }
+    }
+
+    // Subject Teachers, Principals and Admins: all classes across their subjects
     const classSet = new Set();
     subjects.forEach(s => (s.classes || []).forEach(c => classSet.add(c)));
-    // Sort in a logical order
     const allClassOrder = [
       ...CLASSES['Nursery'], ...CLASSES['Primary'], ...CLASSES['Secondary']
     ];
     return allClassOrder.filter(c => classSet.has(c));
-  }, [subjects]);
+  }, [subjects, teacher]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
