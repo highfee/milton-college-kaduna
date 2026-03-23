@@ -104,17 +104,14 @@ function EnterResultsTab({ teacher, settings }) {
   }, [selectedClass, selectedSubject, selectedTerm, selectedSession]);
 
   const loadSubjects = async () => {
-    const sectionClass = teacher?.assigned_class || teacher?.form_teacher_class;
-    // Get subjects assigned to this teacher + subjects for their class
-    const [byTeacher, allSubjects] = await Promise.all([
-      base44.entities.Subject.filter({ teacher_id: teacher.id, status: 'Active' }),
-      base44.entities.Subject.filter({ status: 'Active' })
-    ]);
-    // Head teacher can enter results for all subjects in their assigned class
-    const classSubjects = allSubjects.filter(s => s.classes?.includes(selectedClass || sectionClass));
-    const combined = [...byTeacher];
-    classSubjects.forEach(s => { if (!combined.find(c => c.id === s.id)) combined.push(s); });
-    setSubjects(combined.length > 0 ? combined : allSubjects.filter(s => s.section === teacher.section));
+    // Head Teacher is also a Class Teacher — load all subjects for their assigned class
+    const myClass = teacher?.assigned_class || teacher?.form_teacher_class;
+    const allSectionSubjects = await base44.entities.Subject.filter({ section: teacher.section, status: 'Active' });
+    const classSubjects = myClass
+      ? allSectionSubjects.filter(s => (s.classes || []).includes(myClass))
+      : allSectionSubjects;
+    setSubjects(classSubjects);
+    if (myClass) setSelectedClass(myClass);
   };
 
   const loadStudentsAndResults = async () => {
