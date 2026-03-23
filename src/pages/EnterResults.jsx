@@ -58,9 +58,14 @@ export default function EnterResults() {
       const allSubjects = await base44.entities.Subject.filter({ status: 'Active' });
       setSubjects(allSubjects);
     } else if (teacherData.length > 0) {
-      // Match teacher profile — if multiple records exist (e.g. duplicate), use the best match
-      // Prefer ones with assigned_class or form_teacher_class set
-      const t = teacherData.find(t => t.assigned_class || t.form_teacher_class) || teacherData[0];
+      // Some staff have multiple teacher records (e.g. Subject Teacher + Form Teacher same email)
+      // Pick the primary record: prefer Class/Head Teacher > Subject/Principal > Form Teacher
+      const typePriority = ['Head Teacher', 'Class Teacher', 'Principal', 'Subject Teacher', 'Form Teacher'];
+      const t = teacherData.sort((a, b) => {
+        const pa = typePriority.indexOf(a.teacher_type);
+        const pb = typePriority.indexOf(b.teacher_type);
+        return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb);
+      })[0];
       setTeacher(t);
 
       const teacherType = t.teacher_type;
