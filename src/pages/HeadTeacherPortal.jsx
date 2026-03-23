@@ -664,6 +664,16 @@ export default function HeadTeacherPortal() {
     }
   }, []);
 
+  const loadSubjectsForTeacher = async (t) => {
+    // Head Teacher is also a Class Teacher — load all subjects for their assigned class
+    const myClass = t.assigned_class || t.form_teacher_class;
+    if (myClass) {
+      const allSectionSubjects = await base44.entities.Subject.filter({ section: t.section, status: 'Active' });
+      return allSectionSubjects.filter(s => (s.classes || []).includes(myClass));
+    }
+    return base44.entities.Subject.filter({ teacher_id: t.id, status: 'Active' });
+  };
+
   const initPortal = async (staffId) => {
     setLoading(true);
     const [teachers, settingsData] = await Promise.all([
@@ -673,11 +683,10 @@ export default function HeadTeacherPortal() {
     if (teachers[0]) {
       setTeacher(teachers[0]);
       setSettings(settingsData[0] || {});
-      // Load stats
       const myClass = teachers[0].assigned_class || teachers[0].form_teacher_class;
       const [myStudents, mySubjects, pendingResults] = await Promise.all([
         myClass ? base44.entities.Student.filter({ current_class: myClass, status: 'Active' }) : Promise.resolve([]),
-        base44.entities.Subject.filter({ teacher_id: teachers[0].id, status: 'Active' }),
+        loadSubjectsForTeacher(teachers[0]),
         base44.entities.Result.filter({ section: teachers[0].section, status: 'Submitted' })
       ]);
       setStats({ myStudents: myStudents.length, mySubjects: mySubjects.length, pendingApproval: pendingResults.length });
@@ -693,7 +702,7 @@ export default function HeadTeacherPortal() {
     const myClass = t.assigned_class || t.form_teacher_class;
     const [myStudents, mySubjects, pendingResults] = await Promise.all([
       myClass ? base44.entities.Student.filter({ current_class: myClass, status: 'Active' }) : Promise.resolve([]),
-      base44.entities.Subject.filter({ teacher_id: t.id, status: 'Active' }),
+      loadSubjectsForTeacher(t),
       base44.entities.Result.filter({ section: t.section, status: 'Submitted' })
     ]);
     setStats({ myStudents: myStudents.length, mySubjects: mySubjects.length, pendingApproval: pendingResults.length });
