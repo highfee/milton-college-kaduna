@@ -74,13 +74,32 @@ export default function TeacherPortal() {
     setLoading(true);
     const teacherData = await base44.entities.Teacher.filter({ staff_id: sid });
     if (teacherData[0]) {
-      setTeacher(teacherData[0]);
+      const t = teacherData[0];
+      setTeacher(t);
 
-      const cls = teacherData[0].assigned_class || teacherData[0].form_teacher_class;
+      const cls = t.assigned_class || t.form_teacher_class;
+      const isClassOrHeadTeacher = t.teacher_type === 'Class Teacher' || t.teacher_type === 'Head Teacher';
+      const isFormTeacher = t.teacher_type === 'Form Teacher';
+
+      // Load subjects based on teacher type
+      let subjectsPromise;
+      if (isClassOrHeadTeacher && cls) {
+        // Class teachers teach ALL subjects in their assigned class
+        subjectsPromise = base44.entities.Subject.filter({ section: t.section, status: 'Active' })
+          .then(allSubjects => allSubjects.filter(s => (s.classes || []).includes(cls)));
+      } else if (isFormTeacher && cls) {
+        // Form teachers (Secondary) see all subjects for their form class
+        subjectsPromise = base44.entities.Subject.filter({ section: 'Secondary', status: 'Active' })
+          .then(allSubjects => allSubjects.filter(s => (s.classes || []).includes(cls)));
+      } else {
+        // Subject teachers / Principal: subjects assigned via teacher_id
+        subjectsPromise = base44.entities.Subject.filter({ teacher_id: t.id });
+      }
+
       const [assignments, subjects, students] = await Promise.all([
-        base44.entities.Assignment.filter({ teacher_id: teacherData[0].id }),
-        base44.entities.Subject.filter({ teacher_id: teacherData[0].id }),
-        cls ? base44.entities.Student.filter({ current_class: cls }) : Promise.resolve([])
+        base44.entities.Assignment.filter({ teacher_id: t.id }),
+        subjectsPromise,
+        cls ? base44.entities.Student.filter({ current_class: cls, status: 'Active' }) : Promise.resolve([])
       ]);
 
       setStats({
