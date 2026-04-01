@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Save, Search, Download, Upload } from 'lucide-react';
+import { Save, Search, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,31 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { SCHOOL_CLASSES, getGrade, getRemark } from '@/components/GradingUtils';
 
-const CLASSES = SCHOOL_CLASSES;
+// JSS classes only — no SS subjects should appear here
+const JSS_CLASSES = ['JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B'];
+const SS_CLASSES = ['SS1 Arts A', 'SS1 Arts B', 'SS1 Com A', 'SS1 Com B', 'SS1 Sci A', 'SS1 Sci B',
+  'SS2 Arts A', 'SS2 Arts B', 'SS2 Com A', 'SS2 Com B', 'SS2 Sci A', 'SS2 Sci B',
+  'SS3 Arts A', 'SS3 Arts B', 'SS3 Com A', 'SS3 Com B', 'SS3 Sci A', 'SS3 Sci B'];
+
+const isJSSClass = (cls) => JSS_CLASSES.includes(cls);
+const isSSClass = (cls) => SS_CLASSES.includes(cls);
+
+// Subject is valid for a class if it's assigned to that class AND not cross-level
+const isSubjectValidForClass = (subject, className) => {
+  if (!subject.classes?.includes(className)) return false;
+  // Prevent JSS students from getting SS-only subjects and vice versa
+  if (isJSSClass(className)) {
+    // Subject must have at least one JSS class assigned (not purely SS)
+    const hasJSS = (subject.classes || []).some(c => isJSSClass(c));
+    return hasJSS;
+  }
+  if (isSSClass(className)) {
+    // Subject must have at least one SS class assigned (not purely JSS)
+    const hasSS = (subject.classes || []).some(c => isSSClass(c));
+    return hasSS;
+  }
+  return true;
+};
 
 export default function EnterResults() {
   const [user, setUser] = useState(null);
@@ -25,14 +49,14 @@ export default function EnterResults() {
   const [selectedTerm, setSelectedTerm] = useState('');
   const [selectedSession, setSelectedSession] = useState('');
   const [search, setSearch] = useState('');
+  const [editMode, setEditMode] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   useEffect(() => {
     if (selectedClass && selectedSubject && selectedTerm && selectedSession) {
       loadStudentsAndResults();
+      setEditMode(false);
     }
   }, [selectedClass, selectedSubject, selectedTerm, selectedSession]);
 
@@ -41,27 +65,25 @@ export default function EnterResults() {
     const myClass = t.assigned_class || t.form_teacher_class;
 
     if (teacherType === 'Class Teacher' || teacherType === 'Head Teacher') {
-      // Class/Head teachers teach ALL subjects for their assigned class
       if (myClass) {
         setSelectedClass(myClass);
         const allSectionSubjects = await base44.entities.Subject.filter({ section: t.section, status: 'Active' });
-        const classSubjects = allSectionSubjects.filter(s => (s.classes || []).includes(myClass));
+        const classSubjects = allSectionSubjects.filter(s => isSubjectValidForClass(s, myClass));
         setSubjects(classSubjects.length > 0 ? classSubjects : allSectionSubjects);
       } else {
         const allSectionSubjects = await base44.entities.Subject.filter({ section: t.section, status: 'Active' });
         setSubjects(allSectionSubjects);
       }
     } else if (teacherType === 'Form Teacher') {
-      // Form teachers (Secondary): subjects mapped to their form class
       const formClass = t.form_teacher_class || t.assigned_class;
       if (formClass) {
         setSelectedClass(formClass);
         const allSecSubjects = await base44.entities.Subject.filter({ section: t.section || 'Secondary', status: 'Active' });
-        const classSubjects = allSecSubjects.filter(s => (s.classes || []).includes(formClass));
+        const classSubjects = allSecSubjects.filter(s => isSubjectValidForClass(s, formClass));
         setSubjects(classSubjects);
       }
     } else {
-      // Subject Teacher / Principal: subjects assigned via teacher_id
+      // Subject Teacher / Principal — load their assigned subjects only
       const subjectsData = await base44.entities.Subject.filter({ teacher_id: t.id, status: 'Active' });
       setSubjects(subjectsData);
       if (myClass) setSelectedClass(myClass);
@@ -69,11 +91,10 @@ export default function EnterResults() {
   };
 
   const loadData = async () => {
-    // Check if teacher is logged in via portal session (Staff ID login)
     const portalSessions = [
-      { key: 'teacher_portal_staff_id', type: 'teacher' },
-      { key: 'ht_portal_staff_id', type: 'ht' },
-      { key: 'principal_portal_staff_id', type: 'principal' },
+      'teacher_portal_staff_id',
+      'ht_portal_staff_id',
+      'principal_portal_staff_id',
     ];
 
     const settings = await base44.entities.SchoolSettings.list();
@@ -82,10 +103,9 @@ export default function EnterResults() {
       setSelectedSession(settings[0].current_session);
     }
 
-    // Check portal session first (staff-ID-based login)
     let portalStaffId = null;
-    for (const ps of portalSessions) {
-      const sid = sessionStorage.getItem(ps.key);
+    for (const key of portalSessions) {
+      const sid = sessionStorage.getItem(key);
       if (sid) { portalStaffId = sid; break; }
     }
 
@@ -100,7 +120,6 @@ export default function EnterResults() {
       }
     }
 
-    // Fallback: platform-authenticated user
     try {
       const userData = await base44.auth.me();
       setUser(userData);
@@ -116,7 +135,6 @@ export default function EnterResults() {
         const allSubjects = await base44.entities.Subject.filter({ status: 'Active' });
         setSubjects(allSubjects);
       } else if (teacherData.length > 0) {
-        // Pick primary record: Head Teacher > Class Teacher > Principal > Subject Teacher > Form Teacher
         const typePriority = ['Head Teacher', 'Class Teacher', 'Principal', 'Subject Teacher', 'Form Teacher'];
         const t = [...teacherData].sort((a, b) => {
           const pa = typePriority.indexOf(a.teacher_type);
@@ -126,21 +144,18 @@ export default function EnterResults() {
         setTeacher(t);
         await loadSubjectsForTeacher(t);
       }
-    } catch (e) {
-      // Not platform authenticated — no access
-    }
+    } catch (e) { /* not platform authenticated */ }
 
     setLoading(false);
   };
 
   const loadStudentsAndResults = async () => {
-    const studentsData = await base44.entities.Student.filter({ 
-      current_class: selectedClass, 
-      status: 'Active' 
+    const studentsData = await base44.entities.Student.filter({
+      current_class: selectedClass,
+      status: 'Active'
     });
     setStudents(studentsData);
 
-    // Load existing results
     const existingResults = await base44.entities.Result.filter({
       class: selectedClass,
       subject_id: selectedSubject,
@@ -149,52 +164,33 @@ export default function EnterResults() {
     });
 
     const resultsMap = {};
-    existingResults.forEach(r => {
-      resultsMap[r.student_id] = r;
-    });
+    existingResults.forEach(r => { resultsMap[r.student_id] = r; });
     setResults(resultsMap);
   };
 
   const calculateTotal = (firstCA, secondCA, thirdCA, exam) => {
-    const ca1 = parseFloat(firstCA) || 0;
-    const ca2 = parseFloat(secondCA) || 0;
-    const ca3 = parseFloat(thirdCA) || 0;
-    const ex = parseFloat(exam) || 0;
-    return ca1 + ca2 + ca3 + ex;
+    return (parseFloat(firstCA) || 0) + (parseFloat(secondCA) || 0) + (parseFloat(thirdCA) || 0) + (parseFloat(exam) || 0);
   };
 
-  // section is derived from the class student belongs to
   const getStudentSection = (student) => student.section || 'Primary';
-
   const computeGrade = (total, student) => getGrade(total, getStudentSection(student));
   const computeRemark = (total, student) => getRemark(total, getStudentSection(student));
 
   const handleScoreChange = (studentId, field, value) => {
     const maxVal = field === 'exam_score' ? 70 : 10;
     const numValue = value === '' ? '' : Math.min(parseFloat(value), maxVal);
-    
     const currentResult = results[studentId] || {};
     const firstCA = field === 'first_ca' ? numValue : (currentResult.first_ca || 0);
     const secondCA = field === 'second_ca' ? numValue : (currentResult.second_ca || 0);
     const thirdCA = field === 'third_ca' ? numValue : (currentResult.third_ca || 0);
     const examScore = field === 'exam_score' ? numValue : (currentResult.exam_score || 0);
-    
     const total = calculateTotal(firstCA, secondCA, thirdCA, examScore);
-    // find student to get section for proper grading
     const studentObj = students.find(s => s.id === studentId);
     const grade = computeGrade(total, studentObj || {});
     const remark = computeRemark(total, studentObj || {});
-
     setResults({
       ...results,
-      [studentId]: {
-        ...currentResult,
-        [field]: numValue,
-        third_ca: field === 'third_ca' ? numValue : (currentResult.third_ca || 0),
-        total,
-        grade,
-        remark
-      }
+      [studentId]: { ...currentResult, [field]: numValue, total, grade, remark }
     });
   };
 
@@ -203,9 +199,7 @@ export default function EnterResults() {
       alert('Please select subject, class, term, and session');
       return;
     }
-
     setSaving(true);
-
     const selectedSubjectData = subjects.find(s => s.id === selectedSubject);
 
     for (const student of students) {
@@ -233,28 +227,38 @@ export default function EnterResults() {
         status: 'Submitted'
       };
 
+      // Check if result already exists (upsert)
       if (result.id) {
         await base44.entities.Result.update(result.id, resultData);
       } else {
-        await base44.entities.Result.create(resultData);
+        // Double-check DB for existing record to prevent duplicates
+        const existing = await base44.entities.Result.filter({
+          student_id: student.id,
+          subject_id: selectedSubject,
+          term: selectedTerm,
+          session: selectedSession
+        });
+        if (existing[0]) {
+          await base44.entities.Result.update(existing[0].id, resultData);
+        } else {
+          await base44.entities.Result.create(resultData);
+        }
       }
     }
 
     setSaving(false);
+    setEditMode(false);
     alert('Results saved successfully!');
     loadStudentsAndResults();
   };
 
-  const filteredStudents = students.filter(s => 
+  const filteredStudents = students.filter(s =>
     `${s.first_name} ${s.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
     s.admission_number?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Derive available classes from the subjects assigned (or all classes for admin)
   const availableClasses = React.useMemo(() => {
     if (subjects.length === 0) return [];
-
-    // For class teachers / form teachers, restrict to only their assigned class
     if (teacher) {
       const tt = teacher.teacher_type;
       if (tt === 'Class Teacher' || tt === 'Head Teacher') {
@@ -265,15 +269,17 @@ export default function EnterResults() {
         if (teacher.form_teacher_class) return [teacher.form_teacher_class];
       }
     }
-
-    // Subject Teachers, Principals and Admins: all classes across their subjects
     const classSet = new Set();
     subjects.forEach(s => (s.classes || []).forEach(c => classSet.add(c)));
-    const allClassOrder = [
-      ...CLASSES['Nursery'], ...CLASSES['Primary'], ...CLASSES['Secondary']
-    ];
+    const allClassOrder = [...SCHOOL_CLASSES['Nursery'], ...SCHOOL_CLASSES['Primary'], ...SCHOOL_CLASSES['Secondary']];
     return allClassOrder.filter(c => classSet.has(c));
   }, [subjects, teacher]);
+
+  // Filter subjects valid for selected class (prevents cross-level entry)
+  const filteredSubjects = subjects.filter(s => !selectedClass || isSubjectValidForClass(s, selectedClass));
+
+  const hasExistingResults = Object.values(results).some(r => r.id);
+  const isReadOnly = hasExistingResults && !editMode;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -283,11 +289,8 @@ export default function EnterResults() {
           <p className="text-gray-500">Enter student CA and exam scores</p>
         </div>
 
-        {/* Selection Filters */}
         <Card className="mb-6 border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle>Select Parameters</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Select Parameters</CardTitle></CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-4 gap-4">
               <div>
@@ -304,9 +307,7 @@ export default function EnterResults() {
                 <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                   <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
                   <SelectContent>
-                    {subjects.filter(s => !selectedClass || s.classes?.includes(selectedClass)).map(s => 
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    )}
+                    {filteredSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -331,28 +332,33 @@ export default function EnterResults() {
 
         {selectedClass && selectedSubject && selectedTerm && selectedSession && (
           <>
-            {/* Search and Actions */}
             <Card className="mb-6 border-0 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
                   <div className="flex-1 relative">
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <Input
-                      placeholder="Search students..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="pl-9"
-                    />
+                    <Input placeholder="Search students..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
                   </div>
-                  <Button onClick={handleSaveAll} disabled={saving} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
-                    <Save className="w-4 h-4 mr-2" />
-                    {saving ? 'Saving...' : 'Save All Results'}
-                  </Button>
+                  <div className="flex gap-2">
+                    {hasExistingResults && !editMode && (
+                      <Button variant="outline" onClick={() => setEditMode(true)} className="border-blue-400 text-blue-700">
+                        <Edit className="w-4 h-4 mr-2" /> Edit Scores
+                      </Button>
+                    )}
+                    {(!hasExistingResults || editMode) && (
+                      <Button onClick={handleSaveAll} disabled={saving} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
+                        <Save className="w-4 h-4 mr-2" />
+                        {saving ? 'Saving...' : 'Save All Results'}
+                      </Button>
+                    )}
+                  </div>
                 </div>
+                {isReadOnly && (
+                  <p className="text-sm text-amber-600 mt-2">Results already saved. Click "Edit Scores" to modify.</p>
+                )}
               </CardContent>
             </Card>
 
-            {/* Results Entry Table */}
             <Card className="border-0 shadow-sm">
               <CardContent className="p-0">
                 {loading ? (
@@ -383,24 +389,26 @@ export default function EnterResults() {
                               <TableCell>{student.admission_number}</TableCell>
                               <TableCell className="font-medium">{student.first_name} {student.last_name}</TableCell>
                               <TableCell>
-                                <Input type="number" min="0" max="10" value={result.first_ca || ''}
-                                  onChange={(e) => handleScoreChange(student.id, 'first_ca', e.target.value)} className="w-16" />
+                                <Input type="number" min="0" max="10" value={result.first_ca ?? ''}
+                                  onChange={(e) => handleScoreChange(student.id, 'first_ca', e.target.value)}
+                                  className="w-16" disabled={isReadOnly} />
                               </TableCell>
                               <TableCell>
-                                <Input type="number" min="0" max="10" value={result.second_ca || ''}
-                                  onChange={(e) => handleScoreChange(student.id, 'second_ca', e.target.value)} className="w-16" />
+                                <Input type="number" min="0" max="10" value={result.second_ca ?? ''}
+                                  onChange={(e) => handleScoreChange(student.id, 'second_ca', e.target.value)}
+                                  className="w-16" disabled={isReadOnly} />
                               </TableCell>
                               <TableCell>
-                                <Input type="number" min="0" max="10" value={result.third_ca || ''}
-                                  onChange={(e) => handleScoreChange(student.id, 'third_ca', e.target.value)} className="w-16" />
+                                <Input type="number" min="0" max="10" value={result.third_ca ?? ''}
+                                  onChange={(e) => handleScoreChange(student.id, 'third_ca', e.target.value)}
+                                  className="w-16" disabled={isReadOnly} />
                               </TableCell>
                               <TableCell>
-                                <Input type="number" min="0" max="70" value={result.exam_score || ''}
-                                  onChange={(e) => handleScoreChange(student.id, 'exam_score', e.target.value)} className="w-16" />
+                                <Input type="number" min="0" max="70" value={result.exam_score ?? ''}
+                                  onChange={(e) => handleScoreChange(student.id, 'exam_score', e.target.value)}
+                                  className="w-16" disabled={isReadOnly} />
                               </TableCell>
-                              <TableCell>
-                                <span className="font-bold text-lg">{result.total || 0}</span>
-                              </TableCell>
+                              <TableCell><span className="font-bold text-lg">{result.total || 0}</span></TableCell>
                               <TableCell>
                                 <Badge className={
                                   (result.grade === 'A' || result.grade === 'A1') ? 'bg-green-100 text-green-800' :
@@ -408,9 +416,7 @@ export default function EnterResults() {
                                   (result.grade === 'C' || result.grade === 'C4' || result.grade === 'C5' || result.grade === 'C6') ? 'bg-yellow-100 text-yellow-800' :
                                   (result.grade === 'F' || result.grade === 'F9') ? 'bg-red-100 text-red-800' :
                                   'bg-gray-100 text-gray-800'
-                                }>
-                                  {result.grade || '-'}
-                                </Badge>
+                                }>{result.grade || '-'}</Badge>
                               </TableCell>
                               <TableCell>{result.remark || '-'}</TableCell>
                             </TableRow>
@@ -418,9 +424,7 @@ export default function EnterResults() {
                         })}
                         {filteredStudents.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={8} className="text-center py-12 text-gray-500">
-                              No students found
-                            </TableCell>
+                            <TableCell colSpan={9} className="text-center py-12 text-gray-500">No students found</TableCell>
                           </TableRow>
                         )}
                       </TableBody>
@@ -440,8 +444,8 @@ export default function EnterResults() {
                   <p className="font-semibold text-gray-700 mb-2">No subjects found for your profile</p>
                   <p className="text-sm">
                     {teacher.teacher_type === 'Class Teacher' || teacher.teacher_type === 'Head Teacher'
-                      ? `Your assigned class (${teacher.assigned_class || teacher.form_teacher_class || 'not set'}) has no subjects linked to it yet. Please contact the admin to assign subjects.`
-                      : 'No subjects are currently assigned to you. Please contact the admin to assign subjects.'}
+                      ? `Your assigned class (${teacher.assigned_class || teacher.form_teacher_class || 'not set'}) has no subjects linked to it yet.`
+                      : 'No subjects are currently assigned to you. Please contact the admin.'}
                   </p>
                 </div>
               ) : (

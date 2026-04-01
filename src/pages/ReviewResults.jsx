@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Search, MessageSquare, CheckCircle, TrendingUp, ArrowUp, ArrowDown, Star } from 'lucide-react';
+import { Search, MessageSquare, CheckCircle, TrendingUp, ArrowUp, ArrowDown, Star, Trash2 } from 'lucide-react';
 import EnterTraitsDialog from '@/components/EnterTraitsDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,6 +79,12 @@ export default function ReviewResults() {
     setComment(resultsData[0]?.[commentField] || '');
     setPromotion('');
     setIsDialogOpen(true);
+  };
+
+  const handleDeleteResult = async (resultId) => {
+    if (!confirm('Delete this subject result from this student\'s record?')) return;
+    await base44.entities.Result.delete(resultId);
+    setResults(prev => prev.filter(r => r.id !== resultId));
   };
 
   const handleSaveComment = async () => {
@@ -286,6 +292,7 @@ export default function ReviewResults() {
                         <TableHead>Total</TableHead>
                         <TableHead>Grade</TableHead>
                         <TableHead>Remark</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -295,6 +302,12 @@ export default function ReviewResults() {
                           <TableCell className="font-bold">{result.total}</TableCell>
                           <TableCell><Badge>{result.grade}</Badge></TableCell>
                           <TableCell>{result.remark}</TableCell>
+                          <TableCell className="text-right">
+                            <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteResult(result.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

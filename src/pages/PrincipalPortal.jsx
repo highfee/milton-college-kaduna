@@ -3,9 +3,9 @@ import { base44 } from '@/api/base44Client';
 import {
   Eye, EyeOff, LogOut, Users, GraduationCap, BookOpen, FileText,
   CheckCircle, MessageSquare, BarChart2, Settings, ClipboardList,
-  Save, Search, ArrowUp, ArrowDown, Star, Shield, Printer
+  Save, Search, ArrowUp, ArrowDown, Star, Shield, Printer, Trash2, Edit
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -183,6 +183,12 @@ function ReviewResultsTab({ principal, settings }) {
     loadStudents();
   };
 
+  const handleDeleteResult = async (resultId) => {
+    if (!confirm('Delete this subject result from this student\'s record?')) return;
+    await base44.entities.Result.delete(resultId);
+    setResults(prev => prev.filter(r => r.id !== resultId));
+  };
+
   const handleApprove = async () => {
     setSaving(true);
     for (const r of results) {
@@ -304,6 +310,7 @@ function ReviewResultsTab({ principal, settings }) {
                         <TableHead>Total</TableHead>
                         <TableHead>Grade</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -320,6 +327,12 @@ function ReviewResultsTab({ principal, settings }) {
                           <Badge className={r.status === 'Approved' ? 'bg-green-100 text-green-800' : r.status === 'Reviewed' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}>
                             {r.status || 'Submitted'}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700"
+                            onClick={() => handleDeleteResult(r.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -661,6 +674,11 @@ export default function PrincipalPortal() {
             <TabsTrigger value="students" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">
               <GraduationCap className="w-4 h-4 mr-2" /> Students
             </TabsTrigger>
+            <Link to={createPageUrl('EnterResults')}>
+              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                <Edit className="w-4 h-4 mr-2" /> Enter Results
+              </button>
+            </Link>
             <Link to={createPageUrl('PrintResult')}>
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                 <Printer className="w-4 h-4 mr-2" /> Print/Send Results
