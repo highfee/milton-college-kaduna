@@ -104,6 +104,28 @@ export const calculateStudentAverage = (results) => {
   };
 };
 
+/**
+ * Calculate GPA and CGPA for a student's results.
+ * Secondary uses 5-point scale (A1=5, B2=4, B3=3.5, C4=3, C5=2.5, C6=2, D7=1.5, E8=1, F9=0)
+ * Primary/Nursery uses 4-point scale (A=4, B=3, C=2, D=1.5, E=1, F=0)
+ */
+export const gradeToPoint = (grade, section) => {
+  if (section === 'Secondary') {
+    const map = { A1: 5, B2: 4, B3: 3.5, C4: 3, C5: 2.5, C6: 2, D7: 1.5, E8: 1, F9: 0 };
+    return map[grade] ?? 0;
+  } else {
+    const map = { A: 4, B: 3, C: 2, D: 1.5, E: 1, F: 0 };
+    return map[grade] ?? 0;
+  }
+};
+
+export const calculateGPA = (results) => {
+  if (!results || results.length === 0) return 0;
+  const section = results[0]?.section || 'Primary';
+  const total = results.reduce((sum, r) => sum + gradeToPoint(r.grade, section), 0);
+  return parseFloat((total / results.length).toFixed(2));
+};
+
 export const getPosition = (rank) => {
   const lastDigit = rank % 10;
   const lastTwoDigits = rank % 100;

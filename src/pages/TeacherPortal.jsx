@@ -96,11 +96,22 @@ export default function TeacherPortal() {
         subjectsPromise = base44.entities.Subject.filter({ teacher_id: t.id });
       }
 
-      const [assignments, subjects, students] = await Promise.all([
+      const [assignments, subjects, allStudentsForClass] = await Promise.all([
         base44.entities.Assignment.filter({ teacher_id: t.id }),
         subjectsPromise,
         cls ? base44.entities.Student.filter({ current_class: cls, status: 'Active' }) : Promise.resolve([])
       ]);
+
+      // For subject teachers, collect all students from all classes they teach
+      let students = allStudentsForClass;
+      if (!cls && !isClassOrHeadTeacher && !isFormTeacher) {
+        // Subject teacher — get students from all assigned subject classes
+        const resolvedSubjects = await subjectsPromise;
+        const classSet = new Set();
+        resolvedSubjects.forEach(s => (s.classes || []).forEach(c => classSet.add(c)));
+        const studentsArrays = await Promise.all([...classSet].map(c => base44.entities.Student.filter({ current_class: c, status: 'Active' })));
+        students = studentsArrays.flat();
+      }
 
       setStats({
         mySubjects: subjects.length,

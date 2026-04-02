@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-import { SCHOOL_CLASSES, HT_CLASSES, PRINCIPAL_CLASSES } from '@/components/GradingUtils';
+import { SCHOOL_CLASSES, HT_CLASSES, PRINCIPAL_CLASSES, gradeToPoint } from '@/components/GradingUtils';
 const CLASSES = SCHOOL_CLASSES;
 
 export default function ReviewResults() {
@@ -133,6 +133,15 @@ export default function ReviewResults() {
     const total = results.reduce((sum, r) => sum + (r.total || 0), 0);
     return (total / results.length).toFixed(2);
   };
+
+  const calculateGPA = () => {
+    if (results.length === 0) return 0;
+    const section = results[0]?.section || 'Secondary';
+    const total = results.reduce((sum, r) => sum + gradeToPoint(r.grade, section), 0);
+    return (total / results.length).toFixed(2);
+  };
+
+  const maxGPA = () => (results[0]?.section === 'Secondary' ? 5 : 4);
 
   const getNextClass = (currentClass) => {
     const allClasses = [...CLASSES.Nursery, ...CLASSES.Primary, ...CLASSES.Secondary];
@@ -280,6 +289,10 @@ export default function ReviewResults() {
                   <div>
                     <p className="text-sm text-gray-500">Average Score</p>
                     <p className="font-medium text-2xl text-green-600">{calculateAverage()}%</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">GPA</p>
+                    <p className="font-medium text-2xl text-blue-600">{calculateGPA()}/{maxGPA()}</p>
                   </div>
                 </div>
 

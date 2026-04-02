@@ -209,6 +209,12 @@ function ReviewResultsTab({ principal, settings }) {
   };
 
   const avg = results.length ? (results.reduce((s, r) => s + (r.total || 0), 0) / results.length).toFixed(1) : 0;
+  const gpa = results.length
+    ? (results.reduce((s, r) => {
+        const map = { A1:5, B2:4, B3:3.5, C4:3, C5:2.5, C6:2, D7:1.5, E8:1, F9:0 };
+        return s + (map[r.grade] ?? 0);
+      }, 0) / results.length).toFixed(2)
+    : 0;
   const filtered = students.filter(s => `${s.first_name} ${s.last_name}`.toLowerCase().includes(search.toLowerCase()));
 
   const getNextClass = (cls) => { const i = ALL_CLASSES.indexOf(cls); return i >= 0 ? ALL_CLASSES[i + 1] || cls : cls; };
@@ -296,6 +302,7 @@ function ReviewResultsTab({ principal, settings }) {
                 <div><p className="text-xs text-gray-500">Adm. No.</p><p className="font-semibold">{selectedStudent.admission_number}</p></div>
                 <div><p className="text-xs text-gray-500">Class</p><p className="font-semibold">{selectedStudent.current_class}</p></div>
                 <div><p className="text-xs text-gray-500">Average</p><p className="font-bold text-xl text-blue-700">{avg}%</p></div>
+                <div><p className="text-xs text-gray-500">GPA</p><p className="font-bold text-xl text-cyan-700">{gpa}/5</p></div>
                 <div><p className="text-xs text-gray-500">Subjects</p><p className="font-semibold">{results.length}</p></div>
               </div>
               <div className="overflow-x-auto">

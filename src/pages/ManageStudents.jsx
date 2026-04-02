@@ -29,6 +29,7 @@ export default function ManageStudents() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [settings, setSettings] = useState(null);
+  const [isTeacherView, setIsTeacherView] = useState(false);
   const [formData, setFormData] = useState({
     admission_number: '',
     first_name: '',
@@ -63,11 +64,7 @@ export default function ManageStudents() {
   }, []);
 
   const loadData = async () => {
-    const [studentsData, settingsData] = await Promise.all([
-      base44.entities.Student.list(),
-      base44.entities.SchoolSettings.list()
-    ]);
-    setStudents(studentsData);
+    const settingsData = await base44.entities.SchoolSettings.list();
     setSettings(settingsData[0]);
     if (settingsData[0]) {
       setFormData(prev => ({
@@ -75,6 +72,48 @@ export default function ManageStudents() {
         current_term: settingsData[0].current_term,
         current_session: settingsData[0].current_session
       }));
+    }
+
+    // Detect teacher portal session — filter students accordingly
+    const portalKeys = ['teacher_portal_staff_id', 'ht_portal_staff_id', 'principal_portal_staff_id'];
+    let portalStaffId = null;
+    for (const key of portalKeys) { const sid = sessionStorage.getItem(key); if (sid) { portalStaffId = sid; break; } }
+
+    if (portalStaffId) {
+      setIsTeacherView(true);
+      const teacherData = await base44.entities.Teacher.filter({ staff_id: portalStaffId });
+      const t = teacherData[0];
+      if (t) {
+        const cls = t.assigned_class || t.form_teacher_class;
+        if (t.teacher_type === 'Class Teacher' || t.teacher_type === 'Head Teacher') {
+          // Show students in assigned class only
+          const studentsData = cls ? await base44.entities.Student.filter({ current_class: cls, status: 'Active' }) : [];
+          setStudents(studentsData);
+        } else if (t.teacher_type === 'Form Teacher') {
+          // Form teacher: students in form class
+          const formCls = t.form_teacher_class || t.assigned_class;
+          const studentsData = formCls ? await base44.entities.Student.filter({ current_class: formCls, status: 'Active' }) : [];
+          setStudents(studentsData);
+        } else {
+          // Subject teacher: students across all subject classes
+          const subjects = await base44.entities.Subject.filter({ teacher_id: t.id, status: 'Active' });
+          const classSet = new Set();
+          subjects.forEach(s => (s.classes || []).forEach(c => classSet.add(c)));
+          if (classSet.size > 0) {
+            const arrays = await Promise.all([...classSet].map(c => base44.entities.Student.filter({ current_class: c, status: 'Active' })));
+            const all = arrays.flat();
+            // Deduplicate
+            const seen = new Set();
+            setStudents(all.filter(s => { if (seen.has(s.id)) return false; seen.add(s.id); return true; }));
+          } else {
+            setStudents([]);
+          }
+        }
+      }
+    } else {
+      // Admin/platform user — show all
+      const studentsData = await base44.entities.Student.list();
+      setStudents(studentsData);
     }
     setLoading(false);
   };
@@ -184,12 +223,14 @@ export default function ManageStudents() {
             <p className="text-gray-500">Add, edit, and manage students</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-            <DialogTrigger asChild>
-              <Button className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Student
-              </Button>
-            </DialogTrigger>
+            {!isTeacherView && (
+              <DialogTrigger asChild>
+                <Button className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Student
+                </Button>
+              </DialogTrigger>
+            )}
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingStudent ? 'Edit Student' : 'Add New Student'}</DialogTitle>

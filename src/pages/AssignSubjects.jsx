@@ -14,6 +14,24 @@ const CLASSES = {
   'Secondary': ['JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SS1 Arts A', 'SS1 Arts B', 'SS1 Com A', 'SS1 Com B', 'SS1 Sci A', 'SS1 Sci B', 'SS2 Arts A', 'SS2 Arts B', 'SS2 Com A', 'SS2 Com B', 'SS2 Sci A', 'SS2 Sci B', 'SS3 Arts A', 'SS3 Arts B', 'SS3 Com A', 'SS3 Com B', 'SS3 Sci A', 'SS3 Sci B']
 };
 
+// JSS classes that only JSS subjects should be assignable to
+const JSS_ONLY_CLASSES = ['JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B'];
+const SS_ONLY_CLASSES = ['SS1 Arts A', 'SS1 Arts B', 'SS1 Com A', 'SS1 Com B', 'SS1 Sci A', 'SS1 Sci B',
+  'SS2 Arts A', 'SS2 Arts B', 'SS2 Com A', 'SS2 Com B', 'SS2 Sci A', 'SS2 Sci B',
+  'SS3 Arts A', 'SS3 Arts B', 'SS3 Com A', 'SS3 Com B', 'SS3 Sci A', 'SS3 Sci B'];
+
+// A subject that already has SS classes assigned cannot also be assigned to JSS and vice versa
+const canToggleClass = (subject, className) => {
+  const currentClasses = subject.classes || [];
+  // If already checked, allow uncheck
+  if (currentClasses.includes(className)) return true;
+  const hasJSS = currentClasses.some(c => JSS_ONLY_CLASSES.includes(c));
+  const hasSS = currentClasses.some(c => SS_ONLY_CLASSES.includes(c));
+  if (JSS_ONLY_CLASSES.includes(className) && hasSS) return false;
+  if (SS_ONLY_CLASSES.includes(className) && hasJSS) return false;
+  return true;
+};
+
 export default function AssignSubjects() {
   const [user, setUser] = useState(null);
   const [subjects, setSubjects] = useState([]);
@@ -94,19 +112,24 @@ export default function AssignSubjects() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                    {(CLASSES[section] || []).map(className => (
-                      <div key={className} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50">
-                        <Checkbox
-                          id={`${subject.id}-${className}`}
-                          checked={subject.classes?.includes(className)}
-                          onCheckedChange={() => handleClassToggle(subject, className)}
-                        />
-                        <label htmlFor={`${subject.id}-${className}`} className="text-sm cursor-pointer flex-1">
-                          {className}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
+                    {(CLASSES[section] || []).map(className => {
+                      const allowed = canToggleClass(subject, className);
+                      return (
+                        <div key={className} className={`flex items-center space-x-2 p-2 rounded-lg ${allowed ? 'hover:bg-gray-50' : 'opacity-40'}`}>
+                          <Checkbox
+                            id={`${subject.id}-${className}`}
+                            checked={subject.classes?.includes(className)}
+                            onCheckedChange={() => allowed && handleClassToggle(subject, className)}
+                            disabled={!allowed}
+                          />
+                          <label htmlFor={`${subject.id}-${className}`} className={`text-sm flex-1 ${allowed ? 'cursor-pointer' : 'cursor-not-allowed text-gray-400'}`}>
+                            {className}
+                            </label>
+                            </div>
+                            );
+                            })}
+                            </div>
+
                 </CardContent>
               </Card>
             ))}

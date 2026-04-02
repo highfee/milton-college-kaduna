@@ -1,5 +1,5 @@
 import React from 'react';
-import { getPosition, getGrade } from '@/components/GradingUtils';
+import { getPosition, getGrade, gradeToPoint } from '@/components/GradingUtils';
 
 const RATING_KEY = [
   { score: 5, label: '5 = Excellent' },
@@ -54,6 +54,11 @@ export default function ResultSlip({ student, results, settings, term, session, 
   // Calculate totals and averages
   const totalScore = results.reduce((s, r) => s + (r.total || 0), 0);
   const avgScore = results.length ? (totalScore / results.length).toFixed(1) : 0;
+  // GPA calculation
+  const gpa = results.length
+    ? parseFloat((results.reduce((sum, r) => sum + gradeToPoint(r.grade, section), 0) / results.length).toFixed(2))
+    : 0;
+  const maxGPA = section === 'Secondary' ? 5 : 4;
   const totalInClass = results[0]?.total_in_class || 0;
   const classPosition = results[0]?.class_position || rankings?.classPosition || 0;
   const totalScoreAllSubjects = results[0]?.total_score_all_subjects || totalScore;
@@ -189,7 +194,7 @@ export default function ResultSlip({ student, results, settings, term, session, 
             { label: 'Average', value: `${avgScore}%`, color: '#16a34a' },
             { label: 'Class Position', value: classPosition ? getPosition(classPosition) : '—', color: '#dc2626' },
             { label: 'Total in Class', value: totalInClass || '—', color: '#7c3aed' },
-            { label: 'No. of Subjects', value: results.length, color: '#b45309' },
+            { label: 'GPA', value: `${gpa}/${maxGPA}`, color: '#0891b2' },
             { label: 'Overall Grade', value: results.length ? getGrade(parseFloat(avgScore), section) : '—', color: '#2563eb' },
           ].map((item, i) => (
             <div key={i} style={{
