@@ -25,7 +25,8 @@ export default function PrintResult() {
   const [waStudents, setWaStudents] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [waClass, setWaClass] = useState('');
-  const [waSending, setWaSending] = useState(false);
+  const [waTerm, setWaTerm] = useState('');
+  const [waSession, setWaSession] = useState('');
   const [waMessage, setWaMessage] = useState('');
   const [activeTab, setActiveTab] = useState('print'); // 'print' | 'whatsapp'
 
@@ -35,7 +36,8 @@ export default function PrintResult() {
       setSettings(s0);
       setSelectedTerm(s0.current_term || '');
       setSelectedSession(s0.current_session || '');
-      setWaMessage(`Dear Parent, please find your ward's result for ${s0.current_term || 'this term'}. Log in to the school portal to view the full result.`);
+      setWaTerm(s0.current_term || '');
+      setWaSession(s0.current_session || '');
     });
   }, []);
 
@@ -176,10 +178,20 @@ export default function PrintResult() {
     setSelectedStudents(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const sendWhatsApp = (student) => {
+  const sendWhatsApp = async (student) => {
     const phone = student.parent_phone?.replace(/\D/g, '').replace(/^0/, '234');
     if (!phone) return alert(`No phone number for ${student.first_name} ${student.last_name}'s parent`);
-    const text = encodeURIComponent(`${waMessage}\n\nStudent: ${student.first_name} ${student.last_name}\nClass: ${student.current_class}\nAdm. No: ${student.admission_number}`);
+    // Build portal link for parent to view their child's result
+    const portalUrl = `${window.location.origin}/ParentPortal`;
+    const text = encodeURIComponent(
+      `Dear Parent of ${student.first_name} ${student.last_name} (${student.current_class}, Adm: ${student.admission_number}),\n\n` +
+      `Your ward's ${waTerm} ${waSession} RESULT is ready.\n\n` +
+      `📋 *To view the FULL RESULT SLIP:*\n` +
+      `1. Visit: ${portalUrl}\n` +
+      `2. Login with your Parent ID and Phone Number\n` +
+      `3. Go to Results tab → View Slip\n\n` +
+      `For questions, call: 08033492870\n\nMilton College of Arts & Science, Kaduna.`
+    );
     window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
   };
 
@@ -293,9 +305,12 @@ export default function PrintResult() {
           {activeTab === 'whatsapp' && (
             <div className="space-y-4">
               <Card>
-                <CardHeader><CardTitle>Send Result Notification via WhatsApp</CardTitle></CardHeader>
+                <CardHeader><CardTitle>📱 Send Final Result to Parents via WhatsApp</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                    <strong>Note:</strong> This sends a WhatsApp message with a link directing parents to log in to the Parent Portal to view their child's <strong>full PDF result slip</strong>.
+                  </div>
+                  <div className="grid md:grid-cols-3 gap-4">
                     <div>
                       <Label>Select Class</Label>
                       <Select value={waClass} onValueChange={setWaClass}>
@@ -304,8 +319,19 @@ export default function PrintResult() {
                       </Select>
                     </div>
                     <div>
-                      <Label>Message to Parents</Label>
-                      <Input value={waMessage} onChange={e => setWaMessage(e.target.value)} />
+                      <Label>Term</Label>
+                      <Select value={waTerm} onValueChange={setWaTerm}>
+                        <SelectTrigger><SelectValue placeholder="Select term" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="First Term">First Term</SelectItem>
+                          <SelectItem value="Second Term">Second Term</SelectItem>
+                          <SelectItem value="Third Term">Third Term</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Session</Label>
+                      <Input value={waSession} onChange={e => setWaSession(e.target.value)} placeholder="2024/2025" />
                     </div>
                   </div>
                   {waStudents.length > 0 && (

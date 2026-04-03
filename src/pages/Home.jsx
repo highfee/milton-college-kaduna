@@ -382,6 +382,35 @@ export default function Home() {
         </div>
       </section>
 
+      {/* School Account Details Section */}
+      <section className="py-12 bg-gradient-to-r from-green-700 to-emerald-700 text-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <Badge className="bg-white/20 text-white mb-4">School Account Details</Badge>
+            <h2 className="text-2xl md:text-3xl font-bold mb-6">Pay School Fees via Bank Transfer</h2>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/20">
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <p className="text-green-200 text-sm mb-1">Account Name</p>
+                  <p className="text-xl font-bold">Milton College</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-green-200 text-sm mb-1">Account Number</p>
+                  <p className="text-3xl font-bold tracking-widest">0232002677</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-green-200 text-sm mb-1">Bank Name</p>
+                  <p className="text-xl font-bold">EcoBank Nigeria Plc</p>
+                </div>
+              </div>
+              <p className="text-green-200 text-sm mt-5">
+                Please use your child's <strong className="text-white">Admission Number</strong> as payment narration, then send proof of payment to us via WhatsApp.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Contact Section */}
       <section className="py-20 bg-[#1e3a5f] text-white">
         <div className="container mx-auto px-4">
