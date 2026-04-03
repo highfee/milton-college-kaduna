@@ -114,7 +114,7 @@ export default function Home() {
                   </Button>
                 </Link>
                 <Link to={createPageUrl('PortalLogin')}>
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/20 px-8 backdrop-blur-sm">
+                  <Button size="lg" className="border-2 border-white bg-white/10 text-white hover:bg-white/25 px-8 backdrop-blur-sm font-semibold">
                     Portal Login
                   </Button>
                 </Link>
@@ -130,8 +130,8 @@ export default function Home() {
             >
               <div className="col-span-2 rounded-2xl overflow-hidden h-48 shadow-2xl relative group">
                 <img 
-                  src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=600&q=80"
-                  alt="Students at school"
+                  src="https://base44.app/api/apps/696cc2e2095499293173480a/files/public/696cc2e2095499293173480a/e1bdf51d9_IMG_20250312_133940_576.jpg"
+                  alt="General Assembly"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-3">
@@ -140,8 +140,8 @@ export default function Home() {
               </div>
               <div className="rounded-2xl overflow-hidden h-36 shadow-2xl relative group">
                 <img 
-                  src="https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400&q=80"
-                  alt="Children in school uniform"
+                  src="https://base44.app/api/apps/696cc2e2095499293173480a/files/public/696cc2e2095499293173480a/15182ec35_IMG_20250312_133852_628.jpg"
+                  alt="Computer Laboratory"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-2">
@@ -150,8 +150,8 @@ export default function Home() {
               </div>
               <div className="rounded-2xl overflow-hidden h-36 shadow-2xl relative group">
                 <img 
-                  src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80"
-                  alt="School activities"
+                  src="https://base44.app/api/apps/696cc2e2095499293173480a/files/public/696cc2e2095499293173480a/fda2f4c43_WhatsAppImage2026-01-19at34608PM.jpeg"
+                  alt="Matching"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-2">
