@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { SCHOOL_CLASSES } from '@/components/GradingUtils';
 import ResultSlip from '@/components/ResultSlip';
@@ -27,7 +27,7 @@ export default function PrintResult() {
   const [waClass, setWaClass] = useState('');
   const [waTerm, setWaTerm] = useState('');
   const [waSession, setWaSession] = useState('');
-  const [waMessage, setWaMessage] = useState('');
+  const [waPrintStudent, setWaPrintStudent] = useState(null); // { student, results }
   const [activeTab, setActiveTab] = useState('print'); // 'print' | 'whatsapp'
 
   useEffect(() => {
@@ -178,21 +178,71 @@ export default function PrintResult() {
     setSelectedStudents(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
+  // Load result data for a single student for WhatsApp PDF sending
+  const loadStudentResultData = async (student) => {
+    const results = await base44.entities.Result.filter({ student_id: student.id, term: waTerm, session: waSession });
+    if (results.length === 0) return null;
+
+    const peers = await base44.entities.Student.filter({ current_class: student.current_class, status: 'Active' });
+    const totalInClass = peers.length;
+    const peerResults = await Promise.all(peers.map(async p => {
+      const pr = await base44.entities.Result.filter({ student_id: p.id, term: waTerm, session: waSession });
+      return { studentId: p.id, totalScore: pr.reduce((s, r) => s + (r.total || 0), 0), results: pr };
+    }));
+    const sorted = [...peerResults].sort((a, b) => b.totalScore - a.totalScore);
+    const classPosition = sorted.findIndex(p => p.studentId === student.id) + 1;
+    const subjectMap = {};
+    peerResults.forEach(pr => pr.results.forEach(r => {
+      if (!subjectMap[r.subject_id]) subjectMap[r.subject_id] = [];
+      subjectMap[r.subject_id].push({ studentId: pr.studentId, total: r.total || 0 });
+    }));
+    const subjectStats = {};
+    Object.entries(subjectMap).forEach(([subjId, entries]) => {
+      const avg = entries.reduce((s, e) => s + e.total, 0) / entries.length;
+      const sr = [...entries].sort((a, b) => b.total - a.total);
+      const ranks = {};
+      sr.forEach((e, idx) => { ranks[e.studentId] = idx + 1; });
+      subjectStats[subjId] = { avg: parseFloat(avg.toFixed(1)), ranks };
+    });
+    const totalScore = results.reduce((s, r) => s + (r.total || 0), 0);
+    const enrichedResults = results.map(r => ({
+      ...r,
+      subject_position: subjectStats[r.subject_id]?.ranks[student.id] || 0,
+      class_average_score: subjectStats[r.subject_id]?.avg || 0,
+      class_position: classPosition,
+      total_in_class: totalInClass,
+      total_score_all_subjects: totalScore
+    }));
+    return { student, results: enrichedResults };
+  };
+
   const sendWhatsApp = async (student) => {
+    if (!waTerm || !waSession) return alert('Please select Term and Session first');
     const phone = student.parent_phone?.replace(/\D/g, '').replace(/^0/, '234');
     if (!phone) return alert(`No phone number for ${student.first_name} ${student.last_name}'s parent`);
-    // Build portal link for parent to view their child's result
-    const portalUrl = `${window.location.origin}/ParentPortal`;
-    const text = encodeURIComponent(
-      `Dear Parent of ${student.first_name} ${student.last_name} (${student.current_class}, Adm: ${student.admission_number}),\n\n` +
-      `Your ward's ${waTerm} ${waSession} RESULT is ready.\n\n` +
-      `📋 *To view the FULL RESULT SLIP:*\n` +
-      `1. Visit: ${portalUrl}\n` +
-      `2. Login with your Parent ID and Phone Number\n` +
-      `3. Go to Results tab → View Slip\n\n` +
-      `For questions, call: 08033492870\n\nMilton College of Arts & Science, Kaduna.`
-    );
-    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+
+    // Load results and open print window with result slip
+    const data = await loadStudentResultData(student);
+    if (!data) {
+      alert(`No results found for ${student.first_name} ${student.last_name} in ${waTerm} ${waSession}`);
+      return;
+    }
+
+    // Render result slip in a new window for the user to print as PDF then send
+    setWaPrintStudent(data);
+    setTimeout(() => {
+      window.print();
+      // After print, open WhatsApp with instruction message
+      const text = encodeURIComponent(
+        `Dear Parent of ${student.first_name} ${student.last_name} (${student.current_class}, Adm: ${student.admission_number}),\n\n` +
+        `Please find your ward's *${waTerm} ${waSession} FINAL RESULT* attached as PDF.\n\n` +
+        `For questions, call: 08033492870\n\nMilton College of Arts & Science, Kaduna.`
+      );
+      setTimeout(() => {
+        setWaPrintStudent(null);
+        window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+      }, 1500);
+    }, 500);
   };
 
   const sendAllSelected = () => {
@@ -308,7 +358,7 @@ export default function PrintResult() {
                 <CardHeader><CardTitle>📱 Send Final Result to Parents via WhatsApp</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-                    <strong>Note:</strong> This sends a WhatsApp message with a link directing parents to log in to the Parent Portal to view their child's <strong>full PDF result slip</strong>.
+                    <strong>How it works:</strong> Clicking <em>Send</em> will open the Print dialog so you can save the result as a PDF, then automatically open WhatsApp with a message for the parent. <strong>Save the PDF first, then attach it in WhatsApp.</strong>
                   </div>
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
@@ -396,7 +446,7 @@ export default function PrintResult() {
           )}
         </div>
 
-        {/* Print Area */}
+        {/* Print Area — regular */}
         {printData.map((d, i) => (
           <ResultSlip
             key={i}
@@ -409,6 +459,16 @@ export default function PrintResult() {
             rankings={d.rankings}
           />
         ))}
+        {/* Print Area — WhatsApp single student PDF */}
+        {waPrintStudent && (
+          <ResultSlip
+            student={waPrintStudent.student}
+            results={waPrintStudent.results}
+            settings={settings}
+            term={waTerm}
+            session={waSession}
+          />
+        )}
       </div>
     </div>
   );

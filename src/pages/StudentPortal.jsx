@@ -106,18 +106,18 @@ export default function StudentPortal() {
   };
 
   const quickActions = [
-    { icon: FileText, label: 'View Results', page: 'ViewResult', color: 'bg-blue-500' },
-    { icon: ClipboardList, label: 'My Assignments', page: 'ManageAssignments', color: 'bg-green-500' },
+    { icon: FileText, label: 'View My Results', page: 'ViewResult', color: 'bg-blue-500' },
+    { icon: ClipboardList, label: 'View Assignments & Homework', page: 'ManageAssignments', color: 'bg-green-500' },
     { icon: BookOpen, label: 'Take CBT Exam', page: 'TakeCBT', color: 'bg-purple-500' },
-    { icon: TrendingUp, label: 'CBT Results', page: 'ViewCBTResults', color: 'bg-orange-500' },
+    { icon: TrendingUp, label: 'My CBT Results', page: 'ViewCBTResults', color: 'bg-orange-500' },
     { icon: Calendar, label: 'School Calendar', page: 'ManageCalendar', color: 'bg-teal-500' }
   ];
 
   const statCards = [
     { label: 'My Subjects', value: stats.totalSubjects, icon: BookOpen, color: 'text-blue-600' },
     { label: 'Results Available', value: stats.completedSubjects, icon: TrendingUp, color: 'text-green-600' },
-    { label: 'Active Assignments', value: stats.activeAssignments, icon: ClipboardList, color: 'text-orange-600' },
-    { label: 'Available CBT', value: stats.availableCBT, icon: FileText, color: 'text-purple-600' }
+    { label: 'Assignments & Homework', value: stats.activeAssignments, icon: ClipboardList, color: 'text-orange-600' },
+    { label: 'CBT Exams Available', value: stats.availableCBT, icon: FileText, color: 'text-purple-600' }
   ];
 
   if (loading) {

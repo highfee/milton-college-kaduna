@@ -538,36 +538,55 @@ export default function ParentPortal() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-purple-600" />
-                    Current Term Academic Progress
+                    Current Term Final Results
                     <Badge variant="outline" className="ml-auto text-xs">{currentTerm} · {currentSession}</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {dataLoading ? <LoadingSpinner /> : progressResults.length === 0 ? (
-                    <p className="text-gray-500 text-sm text-center py-4">No scores uploaded yet for this term.</p>
+                  {dataLoading ? <LoadingSpinner /> : currentResults.length === 0 ? (
+                    <p className="text-gray-500 text-sm text-center py-4">No approved results available for this term yet.</p>
                   ) : (
-                    <div className="space-y-3">
-                      {progressResults.map((r, i) => (
-                        <div key={i} className="bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-sm">{r.subject_name}</span>
-                            <div className="flex gap-1 flex-wrap justify-end">
-                              {r.first_ca != null && <Badge className="bg-blue-100 text-blue-700 text-xs border-0">CA1: {r.first_ca}</Badge>}
-                              {r.second_ca != null && <Badge className="bg-green-100 text-green-700 text-xs border-0">CA2: {r.second_ca}</Badge>}
-                              {r.third_ca != null && <Badge className="bg-yellow-100 text-yellow-700 text-xs border-0">CA3: {r.third_ca}</Badge>}
-                              {r.total != null && <Badge className="bg-purple-100 text-purple-700 text-xs border-0">Total: {r.total}</Badge>}
-                            </div>
-                          </div>
-                          {r.total != null && (
-                            <div className="w-full bg-gray-200 rounded-full h-1.5">
-                              <div
-                                className={`h-1.5 rounded-full ${r.total >= 70 ? 'bg-green-500' : r.total >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                                style={{ width: `${Math.min(r.total, 100)}%` }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-[#1e3a5f] text-white">
+                            <th className="text-left px-3 py-2 rounded-tl-lg text-xs">Subject</th>
+                            <th className="text-center px-2 py-2 text-xs">CA1</th>
+                            <th className="text-center px-2 py-2 text-xs">CA2</th>
+                            <th className="text-center px-2 py-2 text-xs">Exam</th>
+                            <th className="text-center px-2 py-2 text-xs font-bold">Total</th>
+                            <th className="text-center px-2 py-2 text-xs">Grade</th>
+                            <th className="text-left px-2 py-2 rounded-tr-lg text-xs">Remark</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentResults.map((r, i) => (
+                            <tr key={i} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                              <td className="px-3 py-2 font-medium text-gray-800">{r.subject_name}</td>
+                              <td className="px-2 py-2 text-center text-gray-600">{r.first_ca ?? '—'}</td>
+                              <td className="px-2 py-2 text-center text-gray-600">{r.second_ca ?? '—'}</td>
+                              <td className="px-2 py-2 text-center text-gray-600">{r.exam_score ?? '—'}</td>
+                              <td className="px-2 py-2 text-center font-bold text-[#1e3a5f]">{r.total ?? '—'}</td>
+                              <td className="px-2 py-2 text-center">
+                                <Badge className={`text-xs border-0 ${
+                                  (r.total || 0) >= 70 ? 'bg-green-100 text-green-700' :
+                                  (r.total || 0) >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                                }`}>{r.grade || '—'}</Badge>
+                              </td>
+                              <td className="px-2 py-2 text-xs text-gray-500">{r.remark || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        {currentAvg && (
+                          <tfoot>
+                            <tr className="bg-purple-50 border-t-2 border-purple-200">
+                              <td className="px-3 py-2 font-bold text-purple-700" colSpan={4}>Average</td>
+                              <td className="px-2 py-2 text-center font-bold text-purple-700">{currentAvg}%</td>
+                              <td colSpan={2}></td>
+                            </tr>
+                          </tfoot>
+                        )}
+                      </table>
                     </div>
                   )}
                 </CardContent>
@@ -666,33 +685,55 @@ export default function ParentPortal() {
                 <Card className="border-0 shadow-sm">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center justify-between">
-                      <span>{currentTerm} Results ({currentSession})</span>
+                      <span>{currentTerm} Final Results ({currentSession})</span>
                       <Button size="sm" variant="outline" className="text-xs h-7"
                         onClick={() => setShowResultSlip({ term: currentTerm, session: currentSession })}>
-                        <Eye className="w-3 h-3 mr-1" /> View Slip
+                        <Eye className="w-3 h-3 mr-1" /> Full Slip
                       </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2" style={{ userSelect: 'none' }}>
-                      {currentResults.map((r, i) => (
-                        <div key={i} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
-                          <span className="text-sm font-medium text-gray-800">{r.subject_name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">{r.total ?? '—'}/100</span>
-                            <Badge className={`text-xs border-0 ${
-                              (r.total || 0) >= 70 ? 'bg-green-100 text-green-700' :
-                              (r.total || 0) >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                            }`}>{r.grade}</Badge>
-                          </div>
-                        </div>
-                      ))}
-                      {currentAvg && (
-                        <div className="flex items-center justify-between py-2 px-3 bg-purple-50 rounded-lg mt-2">
-                          <span className="text-sm font-bold text-purple-700">Average</span>
-                          <span className="font-bold text-purple-700">{currentAvg}%</span>
-                        </div>
-                      )}
+                    <div className="overflow-x-auto" style={{ userSelect: 'none' }}>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-[#1e3a5f] text-white">
+                            <th className="text-left px-3 py-2 text-xs rounded-tl-lg">Subject</th>
+                            <th className="text-center px-2 py-2 text-xs">CA1</th>
+                            <th className="text-center px-2 py-2 text-xs">CA2</th>
+                            <th className="text-center px-2 py-2 text-xs">Exam</th>
+                            <th className="text-center px-2 py-2 text-xs font-bold">Total</th>
+                            <th className="text-center px-2 py-2 text-xs">Grade</th>
+                            <th className="text-left px-2 py-2 text-xs rounded-tr-lg">Remark</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentResults.map((r, i) => (
+                            <tr key={i} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                              <td className="px-3 py-2 font-medium text-gray-800">{r.subject_name}</td>
+                              <td className="px-2 py-2 text-center text-gray-600">{r.first_ca ?? '—'}</td>
+                              <td className="px-2 py-2 text-center text-gray-600">{r.second_ca ?? '—'}</td>
+                              <td className="px-2 py-2 text-center text-gray-600">{r.exam_score ?? '—'}</td>
+                              <td className="px-2 py-2 text-center font-bold text-[#1e3a5f]">{r.total ?? '—'}</td>
+                              <td className="px-2 py-2 text-center">
+                                <Badge className={`text-xs border-0 ${
+                                  (r.total || 0) >= 70 ? 'bg-green-100 text-green-700' :
+                                  (r.total || 0) >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                                }`}>{r.grade || '—'}</Badge>
+                              </td>
+                              <td className="px-2 py-2 text-xs text-gray-500">{r.remark || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        {currentAvg && (
+                          <tfoot>
+                            <tr className="bg-purple-50 border-t-2 border-purple-200">
+                              <td className="px-3 py-2 font-bold text-purple-700" colSpan={4}>Average</td>
+                              <td className="px-2 py-2 text-center font-bold text-purple-700">{currentAvg}%</td>
+                              <td colSpan={2}></td>
+                            </tr>
+                          </tfoot>
+                        )}
+                      </table>
                     </div>
                   </CardContent>
                 </Card>
