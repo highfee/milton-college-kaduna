@@ -53,7 +53,9 @@ export default function ParentPortal() {
   const [timetables, setTimetables] = useState([]);
   const [schoolSettings, setSchoolSettings] = useState(null);
   const [dataLoading, setDataLoading] = useState(false);
-  const [showResultSlip, setShowResultSlip] = useState(null);
+  const [showResultSlip, setShowResultSlip] = useState(null); // { term, session }
+  const [enrichedSlipResults, setEnrichedSlipResults] = useState([]);
+  const [slipLoading, setSlipLoading] = useState(false);
 
   // Rating state
   const [rating, setRating] = useState(5);
@@ -165,6 +167,43 @@ export default function ParentPortal() {
     setDataLoading(false);
   };
 
+  // Computes enriched results (with class position, subject positions, averages) for a given term/session
+  const computeEnrichedResults = async (student, term, session) => {
+    const rawResults = results.filter(r => r.term === term && r.session === session && r.status === 'Approved');
+    if (rawResults.length === 0) return [];
+    // Fetch peers for ranking
+    const peers = await base44.entities.Student.filter({ current_class: student.current_class, status: 'Active' });
+    const totalInClass = peers.length;
+    const peerResults = await Promise.all(peers.map(async p => {
+      const pr = await base44.entities.Result.filter({ student_id: p.id, term, session });
+      return { studentId: p.id, totalScore: pr.reduce((s, r) => s + (r.total || 0), 0), results: pr };
+    }));
+    const sorted = [...peerResults].sort((a, b) => b.totalScore - a.totalScore);
+    const classPosition = sorted.findIndex(p => p.studentId === student.id) + 1;
+    const subjectMap = {};
+    peerResults.forEach(pr => pr.results.forEach(r => {
+      if (!subjectMap[r.subject_id]) subjectMap[r.subject_id] = [];
+      subjectMap[r.subject_id].push({ studentId: pr.studentId, total: r.total || 0 });
+    }));
+    const subjectStats = {};
+    Object.entries(subjectMap).forEach(([subjId, entries]) => {
+      const avg = entries.reduce((s, e) => s + e.total, 0) / entries.length;
+      const sr = [...entries].sort((a, b) => b.total - a.total);
+      const ranks = {};
+      sr.forEach((e, idx) => { ranks[e.studentId] = idx + 1; });
+      subjectStats[subjId] = { avg: parseFloat(avg.toFixed(1)), ranks };
+    });
+    const totalScore = rawResults.reduce((s, r) => s + (r.total || 0), 0);
+    return rawResults.map(r => ({
+      ...r,
+      subject_position: subjectStats[r.subject_id]?.ranks[student.id] || 0,
+      class_average_score: subjectStats[r.subject_id]?.avg || 0,
+      class_position: classPosition,
+      total_in_class: totalInClass,
+      total_score_all_subjects: totalScore
+    }));
+  };
+
   const handleChangePassword = async () => {
     setPwError('');
     setPwSuccess('');
@@ -190,6 +229,7 @@ export default function ParentPortal() {
     setResults([]);
     setAttendance([]);
     setShowResultSlip(null);
+    setEnrichedSlipResults([]);
     setIsFirstLogin(false);
   };
 
@@ -205,6 +245,14 @@ export default function ParentPortal() {
     setMessageSent(true);
     setMessageText('');
     setTimeout(() => setMessageSent(false), 3000);
+  };
+
+  const openResultSlip = async (term, session) => {
+    setSlipLoading(true);
+    const enriched = await computeEnrichedResults(selectedChild, term, session);
+    setEnrichedSlipResults(enriched);
+    setShowResultSlip({ term, session });
+    setSlipLoading(false);
   };
 
   const handleRatingSubmit = async () => {
@@ -349,14 +397,8 @@ export default function ParentPortal() {
     );
   }
 
-  // ---- RESULT SLIP VIEW (view only, no download/screenshot) ----
+  // ---- RESULT SLIP VIEW (full PDF-quality ResultSlip) ----
   if (showResultSlip) {
-    const slipResults = results.filter(r =>
-      r.term === showResultSlip.term &&
-      r.session === showResultSlip.session &&
-      r.student_id === selectedChild.id &&
-      r.status === 'Approved'
-    );
     return (
       <div className="min-h-screen bg-gray-50" style={{ userSelect: 'none' }}>
         <style>{`
@@ -367,18 +409,26 @@ export default function ParentPortal() {
           <Button variant="outline" size="sm" onClick={() => setShowResultSlip(null)}>← Back</Button>
           <span className="font-semibold text-sm">{showResultSlip.term} — {showResultSlip.session} Result</span>
           <Badge className="ml-2 bg-green-100 text-green-700 border-0 text-xs">
-            <ShieldCheck className="w-3 h-3 mr-1" /> View Only
+            <ShieldCheck className="w-3 h-3 mr-1" /> Official Result Slip
           </Badge>
         </div>
-        <div className="p-4 overflow-auto" onContextMenu={(e) => e.preventDefault()}>
-          <ResultSlip
-            student={selectedChild}
-            results={slipResults}
-            settings={schoolSettings}
-            term={showResultSlip.term}
-            session={showResultSlip.session}
-          />
-        </div>
+        {slipLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full"></div>
+          </div>
+        ) : enrichedSlipResults.length === 0 ? (
+          <div className="text-center py-20 text-gray-500">No approved results found for this term.</div>
+        ) : (
+          <div className="p-4 overflow-auto" onContextMenu={(e) => e.preventDefault()}>
+            <ResultSlip
+              student={selectedChild}
+              results={enrichedSlipResults}
+              settings={schoolSettings}
+              term={showResultSlip.term}
+              session={showResultSlip.session}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -687,8 +737,9 @@ export default function ParentPortal() {
                     <CardTitle className="text-base flex items-center justify-between">
                       <span>{currentTerm} Final Results ({currentSession})</span>
                       <Button size="sm" variant="outline" className="text-xs h-7"
-                        onClick={() => setShowResultSlip({ term: currentTerm, session: currentSession })}>
-                        <Eye className="w-3 h-3 mr-1" /> Full Slip
+                        onClick={() => openResultSlip(currentTerm, currentSession)}
+                        disabled={slipLoading}>
+                        <Eye className="w-3 h-3 mr-1" /> {slipLoading ? 'Loading...' : 'Full Slip'}
                       </Button>
                     </CardTitle>
                   </CardHeader>
@@ -764,8 +815,9 @@ export default function ParentPortal() {
                               <div className="flex items-center gap-2">
                                 <span className={`text-lg font-bold ${Number(avg) >= 70 ? 'text-green-600' : Number(avg) >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>{avg}%</span>
                                 <Button size="sm" variant="outline" className="text-xs h-7"
-                                  onClick={() => setShowResultSlip({ term: th.term, session: th.session })}>
-                                  <Eye className="w-3 h-3 mr-1" /> View
+                                  onClick={() => openResultSlip(th.term, th.session)}
+                                  disabled={slipLoading}>
+                                  <Eye className="w-3 h-3 mr-1" /> View Slip
                                 </Button>
                               </div>
                             </div>
