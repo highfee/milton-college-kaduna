@@ -1,0 +1,140 @@
+{
+  "name": "ReportCard",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string"
+    },
+    "student_name": {
+      "type": "string"
+    },
+    "admission_number": {
+      "type": "string"
+    },
+    "class": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "Nursery",
+        "Primary",
+        "Secondary"
+      ]
+    },
+    "term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "session": {
+      "type": "string"
+    },
+    "subjects_data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "subject_name": {
+            "type": "string"
+          },
+          "first_ca": {
+            "type": "number"
+          },
+          "second_ca": {
+            "type": "number"
+          },
+          "exam_score": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "grade": {
+            "type": "string"
+          },
+          "remark": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "total_score": {
+      "type": "number"
+    },
+    "average": {
+      "type": "number"
+    },
+    "overall_grade": {
+      "type": "string"
+    },
+    "position": {
+      "type": "number",
+      "description": "Class position"
+    },
+    "total_students": {
+      "type": "number"
+    },
+    "credits_count": {
+      "type": "number"
+    },
+    "fails_count": {
+      "type": "number"
+    },
+    "a_grade_count": {
+      "type": "number"
+    },
+    "b_grade_count": {
+      "type": "number"
+    },
+    "passes_count": {
+      "type": "number"
+    },
+    "attendance_present": {
+      "type": "number"
+    },
+    "attendance_total": {
+      "type": "number"
+    },
+    "class_teacher_comment": {
+      "type": "string"
+    },
+    "form_teacher_comment": {
+      "type": "string"
+    },
+    "head_teacher_comment": {
+      "type": "string"
+    },
+    "principal_comment": {
+      "type": "string"
+    },
+    "next_term_begins": {
+      "type": "string",
+      "format": "date"
+    },
+    "pdf_url": {
+      "type": "string",
+      "description": "URL to the auto-generated PDF report card"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Generated",
+        "Published"
+      ],
+      "default": "Generated"
+    },
+    "generated_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "student_id",
+    "class",
+    "term",
+    "session"
+  ]
+}

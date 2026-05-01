@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Search, MessageSquare, CheckCircle, TrendingUp, ArrowUp, ArrowDown, Star, Trash2 } from 'lucide-react';
+import { Search, MessageSquare, CheckCircle, TrendingUp, ArrowUp, ArrowDown, Star, Trash2, Loader2, FileText } from 'lucide-react';
 import EnterTraitsDialog from '@/components/EnterTraitsDialog';
+import { generateResultPDF } from '@/lib/generateResultPDF';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +31,8 @@ export default function ReviewResults() {
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [traitsStudent, setTraitsStudent] = useState(null);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [schoolSettings, setSchoolSettings] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -52,6 +55,7 @@ export default function ReviewResults() {
     if (settings[0]) {
       setSelectedTerm(settings[0].current_term);
       setSelectedSession(settings[0].current_session);
+      setSchoolSettings(settings[0]);
     }
 
     setLoading(false);
@@ -132,9 +136,60 @@ export default function ReviewResults() {
       });
     }
 
-    alert('Results approved successfully' + (isPromoted ? ` — Student promoted to ${promotion}` : ''));
+    // Re-fetch approved results to get updated status for PDF
+    const approvedResults = await base44.entities.Result.filter({
+      student_id: selectedStudent.id,
+      term: selectedTerm,
+      session: selectedSession
+    });
+
+    // Compute class position & rankings
+    const peers = await base44.entities.Student.filter({ current_class: selectedStudent.current_class, status: 'Active' });
+    const peerResults = await Promise.all(peers.map(async p => {
+      const pr = await base44.entities.Result.filter({ student_id: p.id, term: selectedTerm, session: selectedSession });
+      return { studentId: p.id, totalScore: pr.reduce((s, r) => s + (r.total || 0), 0) };
+    }));
+    const sorted = [...peerResults].sort((a, b) => b.totalScore - a.totalScore);
+    const classPosition = sorted.findIndex(p => p.studentId === selectedStudent.id) + 1;
+
+    // Find class teacher
+    const allTeachers = await base44.entities.Teacher.filter({ status: 'Active' });
+    const ct = allTeachers.find(t =>
+      (t.teacher_type === 'Class Teacher' && t.assigned_class === selectedStudent.current_class) ||
+      (t.teacher_type === 'Form Teacher' && t.form_teacher_class === selectedStudent.current_class)
+    );
+    const classTeacher = ct ? { name: `${ct.first_name} ${ct.last_name}`, phone: ct.phone, email: ct.email } : null;
+
+    const enrichedResults = approvedResults.map(r => ({
+      ...r,
+      class_position: classPosition,
+      total_in_class: peers.length,
+      total_score_all_subjects: approvedResults.reduce((s, x) => s + (x.total || 0), 0),
+    }));
+
+    // Generate PDF in background
+    setPdfGenerating(true);
     setIsDialogOpen(false);
     loadStudents();
+    alert('Results approved successfully' + (isPromoted ? ` — Student promoted to ${promotion}` : '') + '\n\nGenerating PDF report card...');
+
+    try {
+      const pdfUrl = await generateResultPDF({
+        student: selectedStudent,
+        results: enrichedResults,
+        settings: schoolSettings,
+        term: selectedTerm,
+        session: selectedSession,
+        classTeacher,
+        rankings: { classPosition, promoted: isPromoted },
+      });
+      alert(`✅ PDF Report Card generated successfully!\n\nDownload: ${pdfUrl}`);
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      alert('Results approved, but PDF generation failed. You can regenerate from the Print Result page.');
+    } finally {
+      setPdfGenerating(false);
+    }
   };
 
   const calculateAverage = () => {
@@ -181,6 +236,16 @@ export default function ReviewResults() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Review Student Results</h1>
           <p className="text-gray-500">Review, comment and approve student results</p>
         </div>
+
+        {pdfGenerating && (
+          <div className="mb-4 flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+            <Loader2 className="w-5 h-5 text-blue-600 animate-spin flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-blue-800 text-sm">Generating PDF Report Card...</p>
+              <p className="text-blue-600 text-xs">This may take a few seconds. You can continue working.</p>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <Card className="mb-6 border-0 shadow-sm">
@@ -388,9 +453,9 @@ export default function ReviewResults() {
                     <MessageSquare className="w-4 h-4 mr-2" />
                     Save Comment
                   </Button>
-                  <Button onClick={handleApproveResults} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Approve Results
+                  <Button onClick={handleApproveResults} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]" disabled={pdfGenerating}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Approve & Generate PDF
                   </Button>
                 </div>
               </div>
