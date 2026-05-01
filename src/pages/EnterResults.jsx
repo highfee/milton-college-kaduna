@@ -204,7 +204,11 @@ export default function EnterResults() {
 
     for (const student of students) {
       const result = results[student.id];
-      if (!result || (!result.first_ca && !result.second_ca && !result.exam_score)) continue;
+      // Skip students with no scores entered at all (don't overwrite existing data with blanks)
+      if (!result) continue;
+      const hasAnyScore = result.first_ca || result.second_ca || result.third_ca || result.exam_score;
+      // If record already exists in DB and no scores entered, skip (preserve existing data)
+      if (!hasAnyScore && !result.id) continue;
 
       const resultData = {
         student_id: student.id,

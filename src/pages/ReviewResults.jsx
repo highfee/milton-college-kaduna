@@ -82,7 +82,11 @@ export default function ReviewResults() {
   };
 
   const handleDeleteResult = async (resultId) => {
-    if (!confirm('Delete this subject result from this student\'s record?')) return;
+    const result = results.find(r => r.id === resultId);
+    const confirmed = confirm(
+      `⚠️ WARNING: You are about to PERMANENTLY DELETE the ${result?.subject_name || 'subject'} result for ${selectedStudent?.first_name} ${selectedStudent?.last_name}.\n\nThis action CANNOT be undone. Are you absolutely sure?`
+    );
+    if (!confirmed) return;
     await base44.entities.Result.delete(resultId);
     setResults(prev => prev.filter(r => r.id !== resultId));
   };
@@ -108,11 +112,16 @@ export default function ReviewResults() {
   };
 
   const handleApproveResults = async () => {
+    const isPromoted = selectedTerm === 'Third Term' && promotion &&
+      promotion !== selectedStudent.current_class &&
+      promotion === getNextClass(selectedStudent.current_class);
+
     for (const result of results) {
       await base44.entities.Result.update(result.id, {
         status: 'Approved',
         approved_by: user.email,
-        approved_date: new Date().toISOString().split('T')[0]
+        approved_date: new Date().toISOString().split('T')[0],
+        ...(selectedTerm === 'Third Term' && promotion ? { promoted_to: promotion, is_promoted: isPromoted } : {})
       });
     }
 
@@ -123,7 +132,7 @@ export default function ReviewResults() {
       });
     }
 
-    alert('Results approved successfully');
+    alert('Results approved successfully' + (isPromoted ? ` — Student promoted to ${promotion}` : ''));
     setIsDialogOpen(false);
     loadStudents();
   };

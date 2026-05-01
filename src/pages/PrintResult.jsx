@@ -42,13 +42,18 @@ export default function PrintResult() {
   }, []);
 
   // ---- Helpers ----
-  const resolveClassTeacher = async (classResults) => {
-    const teacherId = classResults[0]?.teacher_id;
-    if (!teacherId) return null;
-    const teachers = await base44.entities.Teacher.filter({ id: teacherId });
-    const t = teachers[0];
-    if (!t) return null;
-    return { name: `${t.first_name} ${t.last_name}`, phone: t.phone, email: t.email };
+  // Find the class/form teacher for a given class (not the subject teacher)
+  const resolveClassTeacher = async (className) => {
+    if (!className) return null;
+    // Try to find a Class Teacher or Form Teacher assigned to this class
+    const allTeachers = await base44.entities.Teacher.filter({ status: 'Active' });
+    const classTeacher = allTeachers.find(t =>
+      (t.teacher_type === 'Class Teacher' && t.assigned_class === className) ||
+      (t.teacher_type === 'Form Teacher' && t.form_teacher_class === className) ||
+      (t.teacher_type === 'Head Teacher' && t.assigned_class === className)
+    );
+    if (!classTeacher) return null;
+    return { name: `${classTeacher.first_name} ${classTeacher.last_name}`, phone: classTeacher.phone, email: classTeacher.email };
   };
 
   const loadIndividual = async () => {
@@ -96,8 +101,9 @@ export default function PrintResult() {
       total_score_all_subjects: totalScore
     }));
 
-    const classTeacher = await resolveClassTeacher(results);
-    setPrintData([{ student, results: enrichedResults, totalScore, rankings: { classPosition }, classTeacher }]);
+    const classTeacher = await resolveClassTeacher(student.current_class);
+    const isPromoted = enrichedResults[0]?.is_promoted === true;
+    setPrintData([{ student, results: enrichedResults, totalScore, rankings: { classPosition, promoted: isPromoted }, classTeacher }]);
     setLoading(false);
   };
 
@@ -136,7 +142,7 @@ export default function PrintResult() {
     // Sort students by total score for class ranking
     const sorted = [...studentResults].sort((a, b) => b.totalScore - a.totalScore);
 
-    const classTeacher = await resolveClassTeacher(studentResults[0]?.results || []);
+    const classTeacher = await resolveClassTeacher(selectedClass);
 
     // Build final data with computed stats
     const dataArr = studentResults
@@ -151,11 +157,12 @@ export default function PrintResult() {
           total_in_class: totalInClass,
           total_score_all_subjects: d.totalScore
         }));
+        const isPromoted = enrichedResults[0]?.is_promoted === true;
         return {
           student: d.student,
           results: enrichedResults,
           totalScore: d.totalScore,
-          rankings: { classPosition },
+          rankings: { classPosition, promoted: isPromoted },
           classTeacher
         };
       });
@@ -213,7 +220,8 @@ export default function PrintResult() {
       total_in_class: totalInClass,
       total_score_all_subjects: totalScore
     }));
-    return { student, results: enrichedResults };
+    const classTeacher = await resolveClassTeacher(student.current_class);
+    return { student, results: enrichedResults, classTeacher };
   };
 
   const sendWhatsApp = async (student) => {
@@ -467,6 +475,7 @@ export default function PrintResult() {
             settings={settings}
             term={waTerm}
             session={waSession}
+            classTeacher={waPrintStudent.classTeacher}
           />
         )}
       </div>

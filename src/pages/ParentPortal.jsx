@@ -56,6 +56,8 @@ export default function ParentPortal() {
   const [showResultSlip, setShowResultSlip] = useState(null); // { term, session }
   const [enrichedSlipResults, setEnrichedSlipResults] = useState([]);
   const [slipLoading, setSlipLoading] = useState(false);
+  const [slipClassTeacher, setSlipClassTeacher] = useState(null);
+  const [slipRankings, setSlipRankings] = useState(null);
 
   // Rating state
   const [rating, setRating] = useState(5);
@@ -251,6 +253,16 @@ export default function ParentPortal() {
     setSlipLoading(true);
     const enriched = await computeEnrichedResults(selectedChild, term, session);
     setEnrichedSlipResults(enriched);
+    // Resolve class teacher
+    const allTeachers = await base44.entities.Teacher.filter({ status: 'Active' });
+    const ct = allTeachers.find(t =>
+      (t.teacher_type === 'Class Teacher' && t.assigned_class === selectedChild.current_class) ||
+      (t.teacher_type === 'Form Teacher' && t.form_teacher_class === selectedChild.current_class) ||
+      (t.teacher_type === 'Head Teacher' && t.assigned_class === selectedChild.current_class)
+    );
+    setSlipClassTeacher(ct ? { name: `${ct.first_name} ${ct.last_name}`, phone: ct.phone, email: ct.email } : null);
+    const isPromoted = enriched[0]?.is_promoted === true;
+    setSlipRankings({ classPosition: enriched[0]?.class_position || 0, promoted: isPromoted });
     setShowResultSlip({ term, session });
     setSlipLoading(false);
   };
@@ -426,6 +438,8 @@ export default function ParentPortal() {
               settings={schoolSettings}
               term={showResultSlip.term}
               session={showResultSlip.session}
+              classTeacher={slipClassTeacher}
+              rankings={slipRankings}
             />
           </div>
         )}

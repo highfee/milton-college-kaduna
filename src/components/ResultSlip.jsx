@@ -44,12 +44,27 @@ function RatingDots({ value }) {
   );
 }
 
+// SS classes where class/subject position is hidden
+const SS_CLASSES = ['SS1 Arts A', 'SS1 Arts B', 'SS1 Com A', 'SS1 Com B', 'SS1 Sci A', 'SS1 Sci B',
+  'SS2 Arts A', 'SS2 Arts B', 'SS2 Com A', 'SS2 Com B', 'SS2 Sci A', 'SS2 Sci B',
+  'SS3 Arts A', 'SS3 Arts B', 'SS3 Com A', 'SS3 Com B', 'SS3 Sci A', 'SS3 Sci B'];
+
+// Stamp images (transparent background versions via mix-blend-mode)
+const PRINCIPAL_STAMP_URL = 'https://media.base44.com/images/public/696cc2e2095499293173480a/5d06336a7_IMG_20260501_070943_677.jpg';
+const PROMOTED_STAMP_URL = 'https://media.base44.com/images/public/696cc2e2095499293173480a/4db5eb657_download31.jpg';
+
 export default function ResultSlip({ student, results, settings, term, session, classTeacher, rankings }) {
   if (!student || !results) return null;
 
   const section = student.section || 'Primary';
   const isSecondary = section === 'Secondary';
   const isNurseryOrPrimary = section === 'Nursery' || section === 'Primary';
+  const isSS = SS_CLASSES.includes(student.current_class);
+  const isThirdTerm = term === 'Third Term';
+
+  // Determine if result is approved and if student was promoted
+  const isApproved = results[0]?.status === 'Approved';
+  const isPromoted = isThirdTerm && isApproved && rankings?.promoted === true;
 
   // Calculate totals and averages
   const totalScore = results.reduce((s, r) => s + (r.total || 0), 0);
@@ -186,14 +201,16 @@ export default function ResultSlip({ student, results, settings, term, session, 
 
         {/* ===== PERFORMANCE SUMMARY ===== */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)',
+          display: 'grid', gridTemplateColumns: isSS ? 'repeat(4, 1fr)' : 'repeat(6, 1fr)',
           gap: '3px', marginBottom: '5px', textAlign: 'center'
         }}>
           {[
             { label: 'Total Score', value: totalScoreAllSubjects, color: '#1e3a5f' },
             { label: 'Average', value: `${avgScore}%`, color: '#16a34a' },
-            { label: 'Class Position', value: classPosition ? getPosition(classPosition) : '—', color: '#dc2626' },
-            { label: 'Total in Class', value: totalInClass || '—', color: '#7c3aed' },
+            ...(!isSS ? [
+              { label: 'Class Position', value: classPosition ? getPosition(classPosition) : '—', color: '#dc2626' },
+              { label: 'Total in Class', value: totalInClass || '—', color: '#7c3aed' },
+            ] : []),
             { label: 'GPA', value: `${gpa}/${maxGPA}`, color: '#0891b2' },
             { label: 'Overall Grade', value: results.length ? getGrade(parseFloat(avgScore), section) : '—', color: '#2563eb' },
           ].map((item, i) => (
@@ -211,14 +228,14 @@ export default function ResultSlip({ student, results, settings, term, session, 
         <table style={tableStyle}>
           <thead>
             <tr>
-              <th style={{ ...thStyle, textAlign: 'left', width: '22%' }}>Subject</th>
+              <th style={{ ...thStyle, textAlign: 'left', width: isSS ? '26%' : '22%' }}>Subject</th>
               <th style={{ ...thStyle, width: '7%' }}>1st CA<br />(10)</th>
               <th style={{ ...thStyle, width: '7%' }}>2nd CA<br />(10)</th>
               <th style={{ ...thStyle, width: '7%' }}>3rd CA<br />(10)</th>
               <th style={{ ...thStyle, width: '8%' }}>Exam<br />(70)</th>
               <th style={{ ...thStyle, width: '8%', background: '#2563eb' }}>Total<br />(100)</th>
               <th style={{ ...thStyle, width: '8%' }}>Class<br />Avg</th>
-              <th style={{ ...thStyle, width: '7%' }}>Subj.<br />Pos.</th>
+              {!isSS && <th style={{ ...thStyle, width: '7%' }}>Subj.<br />Pos.</th>}
               <th style={{ ...thStyle, width: '6%' }}>Grade</th>
               <th style={{ ...thStyle, width: '10%' }}>Remark</th>
             </tr>
@@ -233,7 +250,7 @@ export default function ResultSlip({ student, results, settings, term, session, 
                 <td style={tdStyle}>{r.exam_score ?? '—'}</td>
                 <td style={{ ...tdStyle, fontWeight: 'bold', fontSize: '9px', background: '#dbeafe', color: '#1e40af' }}>{r.total ?? '—'}</td>
                 <td style={{ ...tdStyle, color: '#6b7280' }}>{r.class_average_score ? parseFloat(r.class_average_score).toFixed(1) : '—'}</td>
-                <td style={{ ...tdStyle, color: '#7c3aed', fontWeight: 'bold' }}>{r.subject_position ? getPosition(r.subject_position) : '—'}</td>
+                {!isSS && <td style={{ ...tdStyle, color: '#7c3aed', fontWeight: 'bold' }}>{r.subject_position ? getPosition(r.subject_position) : '—'}</td>}
                 <td style={{ ...tdStyle, fontWeight: 'bold', color: gradeColor(r.grade) }}>{r.grade || '—'}</td>
                 <td style={{ ...tdStyle, fontSize: '7.5px' }}>{r.remark || '—'}</td>
               </tr>
@@ -415,6 +432,40 @@ export default function ResultSlip({ student, results, settings, term, session, 
           }
           <span style={{ color: '#1e3a5f', fontStyle: 'italic' }}>{schoolName} — {term} {session}</span>
         </div>
+
+        {/* ===== APPROVAL STAMP ===== */}
+        {isApproved && (
+          <div style={{
+            position: 'absolute', bottom: '18mm', right: '10mm',
+            width: '90px', height: '65px', zIndex: 10, pointerEvents: 'none'
+          }}>
+            <img
+              src={PRINCIPAL_STAMP_URL}
+              alt="Approved"
+              style={{
+                width: '100%', height: '100%', objectFit: 'contain',
+                mixBlendMode: 'multiply', opacity: 0.88
+              }}
+            />
+          </div>
+        )}
+
+        {/* ===== PROMOTED STAMP ===== */}
+        {isPromoted && (
+          <div style={{
+            position: 'absolute', bottom: '18mm', left: '10mm',
+            width: '80px', height: '80px', zIndex: 10, pointerEvents: 'none'
+          }}>
+            <img
+              src={PROMOTED_STAMP_URL}
+              alt="Promoted"
+              style={{
+                width: '100%', height: '100%', objectFit: 'contain',
+                mixBlendMode: 'multiply', opacity: 0.9
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
