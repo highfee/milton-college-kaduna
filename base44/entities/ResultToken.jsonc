@@ -1,0 +1,72 @@
+{
+  "name": "ResultToken",
+  "type": "object",
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "Unique result token/PIN"
+    },
+    "student_id": {
+      "type": "string"
+    },
+    "student_name": {
+      "type": "string"
+    },
+    "admission_number": {
+      "type": "string"
+    },
+    "class": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "Nursery",
+        "Primary",
+        "Secondary"
+      ]
+    },
+    "term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "session": {
+      "type": "string"
+    },
+    "generated_by": {
+      "type": "string"
+    },
+    "generated_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Used",
+        "Expired",
+        "Revoked"
+      ],
+      "default": "Active"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Admin or Accountant who approved"
+    },
+    "approved_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "token",
+    "student_id",
+    "term",
+    "session"
+  ]
+}

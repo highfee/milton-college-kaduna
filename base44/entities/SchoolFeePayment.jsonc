@@ -1,0 +1,111 @@
+{
+  "name": "SchoolFeePayment",
+  "type": "object",
+  "properties": {
+    "receipt_number": {
+      "type": "string",
+      "description": "Auto-generated unique receipt number"
+    },
+    "student_id": {
+      "type": "string"
+    },
+    "student_name": {
+      "type": "string"
+    },
+    "admission_number": {
+      "type": "string"
+    },
+    "class": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "Nursery",
+        "Primary",
+        "Secondary"
+      ]
+    },
+    "term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "session": {
+      "type": "string"
+    },
+    "parent_name": {
+      "type": "string"
+    },
+    "parent_phone": {
+      "type": "string"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "Cash",
+        "Bank Transfer",
+        "Online",
+        "Cheque"
+      ],
+      "default": "Cash"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_name": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "total_amount": {
+      "type": "number"
+    },
+    "amount_paid": {
+      "type": "number"
+    },
+    "balance": {
+      "type": "number",
+      "default": 0
+    },
+    "previous_balance": {
+      "type": "number",
+      "default": 0
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "recorded_by": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Paid",
+        "Partial",
+        "Pending"
+      ],
+      "default": "Paid"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "student_name",
+    "class",
+    "term",
+    "session",
+    "total_amount"
+  ]
+}

@@ -85,6 +85,13 @@ import ViewCBTResults from './pages/ViewCBTResults';
 import ViewResults from './pages/ViewResults';
 import PrintResult from './pages/PrintResult';
 import ViewResult from './pages/ViewResult';
+import ManageNonAcademicStaff from './pages/ManageNonAcademicStaff';
+import AccountantPortal from './pages/AccountantPortal';
+import FeeReceipt from './pages/FeeReceipt';
+import FeePayments from './pages/FeePayments';
+import FeeDefaulters from './pages/FeeDefaulters';
+import MasterList from './pages/MasterList';
+import ResultTokens from './pages/ResultTokens';
 
 
 export const PAGES = {
@@ -126,6 +133,13 @@ export const PAGES = {
     "ViewResults": ViewResults,
     "PrintResult": PrintResult,
     "ViewResult": ViewResult,
+    "ManageNonAcademicStaff": ManageNonAcademicStaff,
+    "AccountantPortal": AccountantPortal,
+    "FeeReceipt": FeeReceipt,
+    "FeePayments": FeePayments,
+    "FeeDefaulters": FeeDefaulters,
+    "MasterList": MasterList,
+    "ResultTokens": ResultTokens,
 }
 
 export const pagesConfig = {
