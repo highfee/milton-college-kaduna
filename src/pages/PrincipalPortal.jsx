@@ -33,7 +33,7 @@ function LoginScreen({ onLogin }) {
 
   const handleLogin = async () => {
     if (!staffId || !password) { setError('Please enter Staff ID and password'); return; }
-    if (password !== DEFAULT_PASSWORD) { setError('Incorrect password. Default: User123'); return; }
+    if (password !== DEFAULT_PASSWORD) { setError('Incorrect password. Please try again.'); return; }
     setLoading(true); setError('');
     const teachers = await base44.entities.Teacher.filter({ staff_id: staffId.trim() });
     if (!teachers[0]) { setError('Staff ID not found.'); setLoading(false); return; }
@@ -64,7 +64,7 @@ function LoginScreen({ onLogin }) {
           <div>
             <Label>Password</Label>
             <div className="relative">
-              <Input type={showPw ? 'text' : 'password'} placeholder="Password" value={password}
+              <Input type={showPw ? 'text' : 'password'} placeholder="Enter your password" value={password}
                 onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} className="pr-10" />
               <button type="button" className="absolute right-3 top-2.5 text-gray-400" onClick={() => setShowPw(!showPw)}>
                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

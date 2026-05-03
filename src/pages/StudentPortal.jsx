@@ -42,7 +42,7 @@ export default function StudentPortal() {
       return;
     }
     if (password !== DEFAULT_PASSWORD) {
-      setLoginError('Incorrect password. Default password is User123');
+      setLoginError('Incorrect password. Please try again.');
       return;
     }
     setLoginLoading(true);
@@ -154,7 +154,7 @@ export default function StudentPortal() {
               <div className="relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}

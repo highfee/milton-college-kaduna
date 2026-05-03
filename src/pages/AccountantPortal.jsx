@@ -40,13 +40,14 @@ export default function AccountantPortal() {
   }, []);
 
   const handleLogin = async () => {
-    if (!staffId || !password) { setLoginError('Please enter Staff ID and password'); return; }
+    if (!staffId || !password) { setLoginError('Please enter username and password'); return; }
     setLoginLoading(true);
     setLoginError('');
     const staff = await base44.entities.NonAcademicStaff.filter({ staff_id: staffId.trim(), role: 'Accountant' });
-    if (!staff[0]) { setLoginError('Staff ID not found or not an Accountant.'); setLoginLoading(false); return; }
-    if (password !== 'User123' && password !== staff[0].phone) {
-      setLoginError('Incorrect password. Default password is User123 or your phone number.'); setLoginLoading(false); return;
+    if (!staff[0]) { setLoginError('Invalid username or password.'); setLoginLoading(false); return; }
+    const expectedPassword = staff[0].custom_password || 'admin220';
+    if (password !== expectedPassword) {
+      setLoginError('Invalid username or password.'); setLoginLoading(false); return;
     }
     sessionStorage.setItem('accountant_portal_logged_in', 'true');
     sessionStorage.setItem('accountant_data', JSON.stringify(staff[0]));
@@ -97,14 +98,14 @@ export default function AccountantPortal() {
           </div>
           <CardContent className="p-6 space-y-4">
             <div>
-              <Label>Staff ID</Label>
-              <Input placeholder="Enter your Staff ID (e.g. NAS001)" value={staffId}
+              <Label>Username</Label>
+              <Input placeholder="Enter your username" value={staffId}
                 onChange={e => setStaffId(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
             </div>
             <div>
               <Label>Password</Label>
               <div className="relative">
-                <Input type={showPw ? 'text' : 'password'} placeholder="Default: User123 or phone number"
+                <Input type={showPw ? 'text' : 'password'} placeholder="Enter your password"
                   value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} className="pr-10" />
                 <button type="button" className="absolute right-3 top-2.5 text-gray-400" onClick={() => setShowPw(!showPw)}>
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

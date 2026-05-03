@@ -336,7 +336,7 @@ export default function ParentPortal() {
             <CardContent className="p-8 space-y-5">
               <div className="text-center mb-2">
                 <h2 className="text-xl font-bold text-gray-800">Sign In</h2>
-                <p className="text-gray-500 text-sm mt-1">Username: Parent ID | Default Password: Phone Number</p>
+                <p className="text-gray-500 text-sm mt-1">Sign in to access your child's portal</p>
               </div>
               <div>
                 <Label className="text-gray-700 font-medium">Parent ID (Username)</Label>
@@ -357,7 +357,7 @@ export default function ParentPortal() {
                   <Lock className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                   <Input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Default: your phone number"
+                    placeholder="Enter your password"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
@@ -386,7 +386,7 @@ export default function ParentPortal() {
                 ) : 'Sign In'}
               </Button>
               <p className="text-xs text-gray-400 text-center">
-                Contact the school admin if you cannot log in
+                Contact the school admin if you need assistance
               </p>
             </CardContent>
           </Card>
