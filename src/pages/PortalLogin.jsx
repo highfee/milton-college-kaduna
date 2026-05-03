@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '../utils';
-import { School, Users, GraduationCap, UserCircle, Shield, Star, BookOpen } from 'lucide-react';
+import { School, Users, GraduationCap, UserCircle, Shield, Star, BookOpen, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -22,7 +22,7 @@ export default function PortalLogin() {
   };
 
   // These portals have their own independent login (staff ID / admission number / parent ID)
-  const SELF_AUTH_PORTALS = ['TeacherPortal', 'HeadTeacherPortal', 'PrincipalPortal', 'StudentPortal', 'ParentPortal'];
+  const SELF_AUTH_PORTALS = ['TeacherPortal', 'HeadTeacherPortal', 'PrincipalPortal', 'StudentPortal', 'ParentPortal', 'AccountantPortal'];
 
   const handlePortalSelect = async (portal) => {
     // Self-authenticating portals don't need platform auth
@@ -86,6 +86,14 @@ export default function PortalLogin() {
       icon: Shield,
       color: 'bg-[#1e3a5f]',
       hoverColor: 'hover:bg-[#2c4a6e]'
+    },
+    {
+      id: 'AccountantPortal',
+      title: 'Accountant Portal',
+      description: 'Manage school fees, issue receipts and track payments',
+      icon: DollarSign,
+      color: 'bg-emerald-600',
+      hoverColor: 'hover:bg-emerald-700'
     }
   ];
 

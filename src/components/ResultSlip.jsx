@@ -50,7 +50,7 @@ const SS_CLASSES = ['SS1 Arts A', 'SS1 Arts B', 'SS1 Com A', 'SS1 Com B', 'SS1 S
   'SS3 Arts A', 'SS3 Arts B', 'SS3 Com A', 'SS3 Com B', 'SS3 Sci A', 'SS3 Sci B'];
 
 // Stamp images (transparent background versions via mix-blend-mode)
-const PRINCIPAL_STAMP_URL = 'https://media.base44.com/images/public/696cc2e2095499293173480a/5d06336a7_IMG_20260501_070943_677.jpg';
+const PRINCIPAL_STAMP_URL = 'https://media.base44.com/images/public/696cc2e2095499293173480a/5814af416_IMG-20260503-WA0002.jpg';
 const PROMOTED_STAMP_URL = 'https://media.base44.com/images/public/696cc2e2095499293173480a/4db5eb657_download31.jpg';
 
 export default function ResultSlip({ student, results, settings, term, session, classTeacher, rankings }) {

@@ -4,47 +4,126 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   DollarSign, Receipt, Users, AlertCircle, 
-  TrendingUp, LogOut, Printer, Plus, BarChart3, ArrowLeft
+  TrendingUp, LogOut, Printer, Plus, BarChart3, Eye, EyeOff
 } from 'lucide-react';
 
+const ACCOUNTANT_EMAIL = 'josephdorathy83@gmail.com';
+
 export default function AccountantPortal() {
-  const [user, setUser] = useState(null);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [accountant, setAccountant] = useState(null);
   const [stats, setStats] = useState({});
   const [recentPayments, setRecentPayments] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadData(); }, []);
+  // Login state
+  const [staffId, setStaffId] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
 
-  const loadData = async () => {
-    try {
-      const userData = await base44.auth.me();
-      setUser(userData);
-      const [payments, students] = await Promise.all([
-        base44.entities.SchoolFeePayment.list('-created_date', 10),
-        base44.entities.Student.list()
-      ]);
-      setRecentPayments(payments);
-      const today = new Date().toISOString().split('T')[0];
-      const todayPayments = payments.filter(p => p.payment_date === today);
-      const todayTotal = todayPayments.reduce((s, p) => s + (p.amount_paid || 0), 0);
-      setStats({
-        totalStudents: students.length,
-        todayPayments: todayPayments.length,
-        todayTotal,
-        recentCount: payments.length
-      });
-    } catch {
-      base44.auth.redirectToLogin();
-    } finally {
+  useEffect(() => {
+    const session = sessionStorage.getItem('accountant_portal_logged_in');
+    if (session === 'true') {
+      const saved = JSON.parse(sessionStorage.getItem('accountant_data') || '{}');
+      setAccountant(saved);
+      setLoggedIn(true);
+      loadDashboard();
+    } else {
       setLoading(false);
     }
+  }, []);
+
+  const handleLogin = async () => {
+    if (!staffId || !password) { setLoginError('Please enter Staff ID and password'); return; }
+    setLoginLoading(true);
+    setLoginError('');
+    const staff = await base44.entities.NonAcademicStaff.filter({ staff_id: staffId.trim(), role: 'Accountant' });
+    if (!staff[0]) { setLoginError('Staff ID not found or not an Accountant.'); setLoginLoading(false); return; }
+    if (password !== 'User123' && password !== staff[0].phone) {
+      setLoginError('Incorrect password. Default password is User123 or your phone number.'); setLoginLoading(false); return;
+    }
+    sessionStorage.setItem('accountant_portal_logged_in', 'true');
+    sessionStorage.setItem('accountant_data', JSON.stringify(staff[0]));
+    setAccountant(staff[0]);
+    setLoggedIn(true);
+    setLoginLoading(false);
+    loadDashboard();
   };
+
+  const loadDashboard = async () => {
+    setLoading(true);
+    const [payments, students] = await Promise.all([
+      base44.entities.SchoolFeePayment.list('-created_date', 10),
+      base44.entities.Student.list()
+    ]);
+    setRecentPayments(payments);
+    const today = new Date().toISOString().split('T')[0];
+    const todayPayments = payments.filter(p => p.payment_date === today);
+    const todayTotal = todayPayments.reduce((s, p) => s + (p.amount_paid || 0), 0);
+    setStats({
+      totalStudents: students.length,
+      todayPayments: todayPayments.length,
+      todayTotal,
+      recentCount: payments.length
+    });
+    setLoading(false);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('accountant_portal_logged_in');
+    sessionStorage.removeItem('accountant_data');
+    setLoggedIn(false);
+    setAccountant(null);
+    setStaffId('');
+    setPassword('');
+  };
+
+  if (!loggedIn) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-lg border-0">
+          <div className="bg-emerald-600 rounded-t-xl p-6 text-white text-center">
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <DollarSign className="w-8 h-8" />
+            </div>
+            <h1 className="text-2xl font-bold">Accountant Portal</h1>
+            <p className="text-white/80 text-sm mt-1">Milton College of Arts & Science</p>
+          </div>
+          <CardContent className="p-6 space-y-4">
+            <div>
+              <Label>Staff ID</Label>
+              <Input placeholder="Enter your Staff ID (e.g. NAS001)" value={staffId}
+                onChange={e => setStaffId(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+            </div>
+            <div>
+              <Label>Password</Label>
+              <div className="relative">
+                <Input type={showPw ? 'text' : 'password'} placeholder="Default: User123 or phone number"
+                  value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} className="pr-10" />
+                <button type="button" className="absolute right-3 top-2.5 text-gray-400" onClick={() => setShowPw(!showPw)}>
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+            <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={handleLogin} disabled={loginLoading}>
+              {loginLoading ? 'Signing in...' : 'Sign In'}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin w-10 h-10 border-4 border-[#1e3a5f] border-t-transparent rounded-full" />
+      <div className="animate-spin w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full" />
     </div>
   );
 
@@ -52,27 +131,23 @@ export default function AccountantPortal() {
     { label: 'New Receipt', icon: Plus, to: '/FeeReceipt', color: 'bg-green-600' },
     { label: 'Fee Payments', icon: DollarSign, to: '/FeePayments', color: 'bg-blue-600' },
     { label: 'Fee Defaulters', icon: AlertCircle, to: '/FeeDefaulters', color: 'bg-red-600' },
-    { label: 'Print Reports', icon: Printer, to: '/FeeReports', color: 'bg-purple-600' },
-    { label: 'Analytics', icon: BarChart3, to: '/FeeAnalytics', color: 'bg-orange-600' },
+    { label: 'Result Tokens', icon: Receipt, to: '/ResultTokens', color: 'bg-purple-600' },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-[#1e3a5f] text-white px-6 py-4">
+      <div className="bg-emerald-600 text-white px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <DollarSign className="w-7 h-7" />
             <div>
               <h1 className="text-xl font-bold">Accountant Portal</h1>
-              <p className="text-sm text-white/70">Milton College of Arts & Science</p>
+              <p className="text-sm text-white/70">{accountant?.first_name} {accountant?.last_name}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge className="bg-white/20 text-white border-0 hidden md:flex">{user?.full_name}</Badge>
-            <Button variant="ghost" className="text-white hover:bg-white/20" onClick={() => base44.auth.logout()}>
-              <LogOut className="w-4 h-4 mr-1" /> Logout
-            </Button>
-          </div>
+          <Button variant="ghost" className="text-white hover:bg-white/20" onClick={handleLogout}>
+            <LogOut className="w-4 h-4 mr-1" /> Logout
+          </Button>
         </div>
       </div>
 
@@ -101,7 +176,7 @@ export default function AccountantPortal() {
         <Card className="border-0 shadow-md mb-8">
           <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {quickActions.map((a, i) => (
                 <Link key={i} to={a.to}>
                   <div className="flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group">

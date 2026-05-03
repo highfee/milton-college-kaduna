@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import {
   Eye, EyeOff, LogOut, Users, GraduationCap, BookOpen, FileText,
   CheckCircle, MessageSquare, BarChart2, Settings, ClipboardList,
-  Save, Search, ArrowUp, ArrowDown, Star, Shield, Printer, Trash2, Edit
+  Save, Search, ArrowUp, ArrowDown, Star, Shield, Printer, Trash2, Edit, List
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -694,6 +694,16 @@ export default function PrincipalPortal() {
             <Link to={createPageUrl('ManageNewsletter')}>
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                 <FileText className="w-4 h-4 mr-2" /> Newsletter
+              </button>
+            </Link>
+            <Link to={createPageUrl('MasterList')}>
+              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                <BarChart2 className="w-4 h-4 mr-2" /> Master List
+              </button>
+            </Link>
+            <Link to={createPageUrl('Reports')}>
+              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                <ClipboardList className="w-4 h-4 mr-2" /> Transcript
               </button>
             </Link>
           </TabsList>

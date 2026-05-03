@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { Link } from 'react-router-dom';
 import { 
   FileText, GraduationCap, LogOut, UserCircle, TrendingUp, BookOpen, 
   Eye, Bell, CreditCard, ClipboardCheck, CheckCircle2, XCircle, Clock, 
@@ -743,6 +744,11 @@ export default function ParentPortal() {
               <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                 <ShieldCheck className="w-4 h-4 text-amber-600 flex-shrink-0" />
                 <p className="text-xs text-amber-700">Results are view-only. Download and screenshot are disabled.</p>
+                <Link to="/CheckResult" className="ml-auto">
+                  <Button size="sm" className="bg-[#1e3a5f] hover:bg-[#2c4a6e] text-white h-7 text-xs">
+                    Check Result
+                  </Button>
+                </Link>
               </div>
 
               {currentResults.length > 0 && (

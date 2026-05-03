@@ -5,8 +5,8 @@ import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import { 
   GraduationCap, Users, BookOpen, Award, Phone, Mail, MapPin, 
-  ChevronRight, Star, Image, Send, MessageCircle, ArrowRight,
-  Building2, FlaskConical, Library, Calendar, ClipboardList
+  ChevronRight, Star, Send, MessageCircle, ArrowRight,
+  Building2, Calendar, ClipboardList, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -106,7 +106,7 @@ export default function Home() {
               <p className="text-xl text-blue-100 mb-8 max-w-xl leading-relaxed">
                 {settings?.motto || 'Nurturing Excellence, Building Future Leaders'}
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start flex-wrap">
                 <Link to={createPageUrl('AdmissionForm')}>
                   <Button size="lg" className="bg-yellow-400 text-[#1e3a5f] hover:bg-yellow-300 font-bold px-8 shadow-xl">
                     Apply for Admission
@@ -116,6 +116,12 @@ export default function Home() {
                 <Link to={createPageUrl('PortalLogin')}>
                   <Button size="lg" className="border-2 border-white bg-white/10 text-white hover:bg-white/25 px-8 backdrop-blur-sm font-semibold">
                     Portal Login
+                  </Button>
+                </Link>
+                <Link to={createPageUrl('CheckResult')}>
+                  <Button size="lg" className="bg-green-500 hover:bg-green-400 text-white font-bold px-8 shadow-xl">
+                    <ClipboardList className="mr-2 w-5 h-5" />
+                    Check Result
                   </Button>
                 </Link>
               </div>
@@ -167,6 +173,24 @@ export default function Home() {
           <svg viewBox="0 0 1440 120" className="w-full">
             <path fill="#ffffff" d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"></path>
           </svg>
+        </div>
+      </section>
+
+      {/* Check Result Banner */}
+      <section className="py-8 bg-green-600 text-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 className="text-xl font-bold">Check Your Academic Result</h3>
+              <p className="text-green-100 text-sm mt-1">Enter your admission number and result token to view your official result slip</p>
+            </div>
+            <Link to={createPageUrl('CheckResult')}>
+              <Button size="lg" className="bg-white text-green-700 hover:bg-green-50 font-bold px-8 whitespace-nowrap">
+                <Search className="mr-2 w-5 h-5" />
+                Check Result Now
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 

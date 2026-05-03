@@ -92,8 +92,7 @@ import FeePayments from './pages/FeePayments';
 import FeeDefaulters from './pages/FeeDefaulters';
 import MasterList from './pages/MasterList';
 import ResultTokens from './pages/ResultTokens';
-import BulkReportCards from './pages/BulkReportCards';
-
+import CheckResult from './pages/CheckResult';
 
 export const PAGES = {
     "AdminPortal": AdminPortal,
@@ -141,7 +140,7 @@ export const PAGES = {
     "FeeDefaulters": FeeDefaulters,
     "MasterList": MasterList,
     "ResultTokens": ResultTokens,
-    "BulkReportCards": BulkReportCards,
+    "CheckResult": CheckResult,
 }
 
 export const pagesConfig = {

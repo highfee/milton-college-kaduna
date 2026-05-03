@@ -106,7 +106,7 @@ export default function StudentPortal() {
   };
 
   const quickActions = [
-    { icon: FileText, label: 'View My Results', page: 'ViewResult', color: 'bg-blue-500' },
+    { icon: FileText, label: 'Check Result', page: 'CheckResult', color: 'bg-blue-500' },
     { icon: ClipboardList, label: 'View Assignments & Homework', page: 'ManageAssignments', color: 'bg-green-500' },
     { icon: BookOpen, label: 'Take CBT Exam', page: 'TakeCBT', color: 'bg-purple-500' },
     { icon: TrendingUp, label: 'My CBT Results', page: 'ViewCBTResults', color: 'bg-orange-500' },
