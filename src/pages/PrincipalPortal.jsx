@@ -20,8 +20,36 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { SCHOOL_CLASSES } from '@/components/GradingUtils';
 
 const DEFAULT_PASSWORD = 'User123';
-// Principal only approves Secondary classes
+// Principal approves Secondary classes only
 const ALL_CLASSES = [...(SCHOOL_CLASSES['Secondary'] || [])];
+
+// Full ordered class progression map (parallel streams each move within their stream)
+const CLASS_PROGRESSION = {
+  // Nursery
+  'Reception Class': 'Nursery 1',
+  'Nursery 1': 'Nursery 2',
+  'Nursery 2': 'Primary 1A',
+  // Primary
+  'Primary 1A': 'Primary 2A', 'Primary 1B': 'Primary 2B',
+  'Primary 2A': 'Primary 3A', 'Primary 2B': 'Primary 3B',
+  'Primary 3A': 'Primary 4A', 'Primary 3B': 'Primary 4B',
+  'Primary 4A': 'Primary 5A', 'Primary 4B': 'Primary 5B',
+  'Primary 5A': 'JSS 1A',    'Primary 5B': 'JSS 1B',
+  // JSS
+  'JSS 1A': 'JSS 2A', 'JSS 1B': 'JSS 2B',
+  'JSS 2A': 'JSS 3A', 'JSS 2B': 'JSS 3B',
+  'JSS 3A': 'SS1 Arts A', 'JSS 3B': 'SS1 Arts B',
+  // SS1
+  'SS1 Arts A': 'SS2 Arts A', 'SS1 Arts B': 'SS2 Arts B',
+  'SS1 Com A':  'SS2 Com A',  'SS1 Com B':  'SS2 Com B',
+  'SS1 Sci A':  'SS2 Sci A',  'SS1 Sci B':  'SS2 Sci B',
+  // SS2
+  'SS2 Arts A': 'SS3 Arts A', 'SS2 Arts B': 'SS3 Arts B',
+  'SS2 Com A':  'SS3 Com A',  'SS2 Com B':  'SS3 Com B',
+  'SS2 Sci A':  'SS3 Sci A',  'SS2 Sci B':  'SS3 Sci B',
+  // SS3 — graduated (no next class)
+};
+const CLASS_DEMOTION = Object.fromEntries(Object.entries(CLASS_PROGRESSION).map(([k, v]) => [v, k]));
 
 // ─── Login ─────────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }) {
@@ -186,20 +214,31 @@ function ReviewResultsTab({ principal, settings }) {
   };
 
   const handleApprove = async () => {
+    if (selectedTerm === 'Third Term' && !promotion) {
+      alert('Please select a promotion decision (Promote, Repeat, or Demote) before approving.');
+      return;
+    }
     setSaving(true);
+    const nextClass = promotion || selectedStudent.current_class;
+    const promotionStatus = promotion === getNextClass(selectedStudent.current_class) ? 'Promoted'
+      : promotion === getPrevClass(selectedStudent.current_class) ? 'Demoted' : 'Repeated';
+
     for (const r of results) {
       await base44.entities.Result.update(r.id, {
         principal_comment: comment,
         status: 'Approved',
-        approved_by: principal?.email,
-        approved_date: new Date().toISOString().split('T')[0]
+        approved_by: principal?.email || principal?.staff_id,
+        approved_date: new Date().toISOString().split('T')[0],
+        ...(selectedTerm === 'Third Term' ? { promotion_status: promotionStatus } : {})
       });
     }
     if (selectedTerm === 'Third Term' && promotion) {
-      await base44.entities.Student.update(selectedStudent.id, { current_class: promotion });
+      const newSection = ['Reception Class','Nursery 1','Nursery 2'].includes(nextClass) ? 'Nursery'
+        : nextClass.startsWith('Primary') ? 'Primary' : 'Secondary';
+      await base44.entities.Student.update(selectedStudent.id, { current_class: nextClass, section: newSection });
     }
     setSaving(false);
-    alert('Results approved!');
+    alert(`Results approved! Student ${promotionStatus === 'Promoted' ? `promoted to ${nextClass}` : promotionStatus === 'Demoted' ? `demoted to ${nextClass}` : 'set to repeat class'}.`);
     setDialogOpen(false);
     loadStudents();
   };
@@ -213,8 +252,8 @@ function ReviewResultsTab({ principal, settings }) {
     : 0;
   const filtered = students.filter(s => `${s.first_name} ${s.last_name}`.toLowerCase().includes(search.toLowerCase()));
 
-  const getNextClass = (cls) => { const i = ALL_CLASSES.indexOf(cls); return i >= 0 ? ALL_CLASSES[i + 1] || cls : cls; };
-  const getPrevClass = (cls) => { const i = ALL_CLASSES.indexOf(cls); return i > 0 ? ALL_CLASSES[i - 1] : cls; };
+  const getNextClass = (cls) => CLASS_PROGRESSION[cls] || cls;
+  const getPrevClass = (cls) => CLASS_DEMOTION[cls] || cls;
 
   return (
     <div className="space-y-6">
@@ -363,19 +402,38 @@ function ReviewResultsTab({ principal, settings }) {
 
               {selectedTerm === 'Third Term' && (
                 <div>
-                  <Label>Promotion Decision</Label>
+                  <Label className="text-base font-semibold">Promotion Decision <span className="text-red-500">*</span></Label>
+                  <p className="text-xs text-gray-500 mb-2">Current class: <strong>{selectedStudent.current_class}</strong></p>
                   <div className="grid grid-cols-3 gap-3 mt-2">
-                    <Button size="sm" variant={promotion === getNextClass(selectedStudent.current_class) ? 'default' : 'outline'}
-                      onClick={() => setPromotion(getNextClass(selectedStudent.current_class))}>
-                      <ArrowUp className="w-4 h-4 mr-1" />Promote
-                    </Button>
-                    <Button size="sm" variant={promotion === selectedStudent.current_class ? 'default' : 'outline'}
-                      onClick={() => setPromotion(selectedStudent.current_class)}>Repeat</Button>
-                    <Button size="sm" variant={promotion === getPrevClass(selectedStudent.current_class) ? 'default' : 'outline'}
-                      onClick={() => setPromotion(getPrevClass(selectedStudent.current_class))}>
-                      <ArrowDown className="w-4 h-4 mr-1" />Demote
-                    </Button>
+                    <button
+                      onClick={() => setPromotion(getNextClass(selectedStudent.current_class))}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${promotion === getNextClass(selectedStudent.current_class) ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-200 hover:border-green-300'}`}>
+                      <ArrowUp className="w-5 h-5" />
+                      <span className="font-semibold text-xs">PROMOTE</span>
+                      <span className="text-xs text-gray-500 text-center">→ {getNextClass(selectedStudent.current_class)}</span>
+                    </button>
+                    <button
+                      onClick={() => setPromotion(selectedStudent.current_class)}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${promotion === selectedStudent.current_class ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 hover:border-amber-300'}`}>
+                      <span className="text-lg">↺</span>
+                      <span className="font-semibold text-xs">REPEAT</span>
+                      <span className="text-xs text-gray-500">{selectedStudent.current_class}</span>
+                    </button>
+                    <button
+                      onClick={() => setPromotion(getPrevClass(selectedStudent.current_class))}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${promotion === getPrevClass(selectedStudent.current_class) ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 hover:border-red-300'}`}>
+                      <ArrowDown className="w-5 h-5" />
+                      <span className="font-semibold text-xs">DEMOTE</span>
+                      <span className="text-xs text-gray-500 text-center">→ {getPrevClass(selectedStudent.current_class)}</span>
+                    </button>
                   </div>
+                  {promotion && (
+                    <p className="mt-2 text-sm font-medium text-center">
+                      {promotion === getNextClass(selectedStudent.current_class) && <span className="text-green-600">✓ Will be promoted to {promotion}</span>}
+                      {promotion === selectedStudent.current_class && <span className="text-amber-600">↺ Will repeat {promotion}</span>}
+                      {promotion === getPrevClass(selectedStudent.current_class) && <span className="text-red-600">↓ Will be demoted to {promotion}</span>}
+                    </p>
+                  )}
                 </div>
               )}
 

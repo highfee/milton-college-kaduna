@@ -5,8 +5,21 @@ import { Link } from 'react-router-dom';
 import {
   BookOpen, ClipboardList, FileText, Users, LogOut, Eye, EyeOff,
   GraduationCap, CheckCircle, MessageSquare, Star, Save, Search,
-  ChevronLeft, TrendingUp
+  ChevronLeft, TrendingUp, ArrowUp, ArrowDown
 } from 'lucide-react';
+
+// Full ordered class progression map for Nursery + Primary (HT scope)
+const CLASS_PROGRESSION = {
+  'Reception Class': 'Nursery 1',
+  'Nursery 1': 'Nursery 2',
+  'Nursery 2': 'Primary 1A',
+  'Primary 1A': 'Primary 2A', 'Primary 1B': 'Primary 2B',
+  'Primary 2A': 'Primary 3A', 'Primary 2B': 'Primary 3B',
+  'Primary 3A': 'Primary 4A', 'Primary 3B': 'Primary 4B',
+  'Primary 4A': 'Primary 5A', 'Primary 4B': 'Primary 5B',
+  'Primary 5A': 'JSS 1A',    'Primary 5B': 'JSS 1B',
+};
+const CLASS_DEMOTION = Object.fromEntries(Object.entries(CLASS_PROGRESSION).map(([k, v]) => [v, k]));
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -452,6 +465,7 @@ function HeadTeacherReviewTab({ teacher, settings }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [results, setResults] = useState([]);
   const [htComment, setHtComment] = useState('');
+  const [promotion, setPromotion] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedTerm, setSelectedTerm] = useState(settings?.current_term || '');
   const [selectedSession, setSelectedSession] = useState(settings?.current_session || '');
@@ -471,23 +485,49 @@ function HeadTeacherReviewTab({ teacher, settings }) {
     setStudents(data);
   };
 
+  const getNextClass = (cls) => CLASS_PROGRESSION[cls] || cls;
+  const getPrevClass = (cls) => CLASS_DEMOTION[cls] || cls;
+
   const handleReview = async (student) => {
     setSelectedStudent(student);
     const res = await base44.entities.Result.filter({ student_id: student.id, term: selectedTerm, session: selectedSession });
     setResults(res);
     setHtComment(res[0]?.head_teacher_comment || '');
+    setPromotion('');
     setDialogOpen(true);
   };
 
   const handleSaveAndApprove = async (approve) => {
+    if (approve && selectedTerm === 'Third Term' && !promotion) {
+      alert('Please select a promotion decision (Promote, Repeat, or Demote) before approving.');
+      return;
+    }
     setSaving(true);
+    const nextClass = promotion || selectedStudent.current_class;
+    const promotionStatus = promotion === getNextClass(selectedStudent.current_class) ? 'Promoted'
+      : promotion === getPrevClass(selectedStudent.current_class) ? 'Demoted' : 'Repeated';
+
     for (const r of results) {
       const update = { head_teacher_comment: htComment };
-      if (approve) { update.status = 'Approved'; update.approved_by = teacher.email; update.approved_date = new Date().toISOString().split('T')[0]; }
+      if (approve) {
+        update.status = 'Approved';
+        update.approved_by = teacher.email || teacher.staff_id;
+        update.approved_date = new Date().toISOString().split('T')[0];
+        if (selectedTerm === 'Third Term') update.promotion_status = promotionStatus;
+      }
       await base44.entities.Result.update(r.id, update);
     }
+    if (approve && selectedTerm === 'Third Term' && promotion) {
+      const newSection = ['Reception Class','Nursery 1','Nursery 2'].includes(nextClass) ? 'Nursery'
+        : nextClass.startsWith('Primary') ? 'Primary' : 'Secondary';
+      await base44.entities.Student.update(selectedStudent.id, { current_class: nextClass, section: newSection });
+    }
     setSaving(false);
-    alert(approve ? 'Results approved!' : 'Comment saved!');
+    if (approve) {
+      alert(`Results approved! Student ${promotionStatus === 'Promoted' ? `promoted to ${nextClass}` : promotionStatus === 'Demoted' ? `demoted to ${nextClass}` : 'set to repeat class'}.`);
+    } else {
+      alert('Comment saved!');
+    }
     setDialogOpen(false);
     loadStudents();
   };
@@ -626,6 +666,44 @@ function HeadTeacherReviewTab({ teacher, settings }) {
                 <Label>Head Teacher's Comment</Label>
                 <Textarea rows={3} placeholder="Enter your comment as Head Teacher..." value={htComment} onChange={e => setHtComment(e.target.value)} className="mt-1" />
               </div>
+
+              {selectedTerm === 'Third Term' && (
+                <div>
+                  <Label className="text-base font-semibold">Promotion Decision <span className="text-red-500">*</span></Label>
+                  <p className="text-xs text-gray-500 mb-2">Current class: <strong>{selectedStudent.current_class}</strong></p>
+                  <div className="grid grid-cols-3 gap-3 mt-2">
+                    <button
+                      onClick={() => setPromotion(getNextClass(selectedStudent.current_class))}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${promotion === getNextClass(selectedStudent.current_class) ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-200 hover:border-green-300'}`}>
+                      <ArrowUp className="w-5 h-5" />
+                      <span className="font-semibold text-xs">PROMOTE</span>
+                      <span className="text-xs text-gray-500 text-center">→ {getNextClass(selectedStudent.current_class)}</span>
+                    </button>
+                    <button
+                      onClick={() => setPromotion(selectedStudent.current_class)}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${promotion === selectedStudent.current_class ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-gray-200 hover:border-amber-300'}`}>
+                      <span className="text-lg">↺</span>
+                      <span className="font-semibold text-xs">REPEAT</span>
+                      <span className="text-xs text-gray-500">{selectedStudent.current_class}</span>
+                    </button>
+                    <button
+                      onClick={() => setPromotion(getPrevClass(selectedStudent.current_class))}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${promotion === getPrevClass(selectedStudent.current_class) ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 hover:border-red-300'}`}>
+                      <ArrowDown className="w-5 h-5" />
+                      <span className="font-semibold text-xs">DEMOTE</span>
+                      <span className="text-xs text-gray-500 text-center">→ {getPrevClass(selectedStudent.current_class)}</span>
+                    </button>
+                  </div>
+                  {promotion && (
+                    <p className="mt-2 text-sm font-medium text-center">
+                      {promotion === getNextClass(selectedStudent.current_class) && <span className="text-green-600">✓ Will be promoted to {promotion}</span>}
+                      {promotion === selectedStudent.current_class && <span className="text-amber-600">↺ Will repeat {promotion}</span>}
+                      {promotion === getPrevClass(selectedStudent.current_class) && <span className="text-red-600">↓ Will be demoted to {promotion}</span>}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2 justify-end flex-wrap">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
                 <Button variant="outline" onClick={() => handleSaveAndApprove(false)} disabled={saving}>

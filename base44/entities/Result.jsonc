@@ -1,0 +1,199 @@
+{
+  "name": "Result",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string"
+    },
+    "student_name": {
+      "type": "string"
+    },
+    "admission_number": {
+      "type": "string"
+    },
+    "class": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "Nursery",
+        "Primary",
+        "Secondary"
+      ]
+    },
+    "term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "session": {
+      "type": "string"
+    },
+    "subject_id": {
+      "type": "string"
+    },
+    "subject_name": {
+      "type": "string"
+    },
+    "first_ca": {
+      "type": "number",
+      "description": "First CA score (max 10)"
+    },
+    "second_ca": {
+      "type": "number",
+      "description": "Second CA score (max 10)"
+    },
+    "third_ca": {
+      "type": "number",
+      "description": "Third CA score (max 10)"
+    },
+    "exam_score": {
+      "type": "number",
+      "description": "Examination score (max 70)"
+    },
+    "total": {
+      "type": "number",
+      "description": "Total out of 100"
+    },
+    "grade": {
+      "type": "string"
+    },
+    "remark": {
+      "type": "string"
+    },
+    "subject_position": {
+      "type": "number",
+      "description": "Student's position in the subject for the class"
+    },
+    "class_average_score": {
+      "type": "number",
+      "description": "Class average for this subject"
+    },
+    "teacher_id": {
+      "type": "string"
+    },
+    "teacher_comment": {
+      "type": "string"
+    },
+    "form_teacher_comment": {
+      "type": "string"
+    },
+    "principal_comment": {
+      "type": "string"
+    },
+    "head_teacher_comment": {
+      "type": "string"
+    },
+    "class_position": {
+      "type": "number"
+    },
+    "total_in_class": {
+      "type": "number"
+    },
+    "total_score_all_subjects": {
+      "type": "number"
+    },
+    "school_fees_arrears": {
+      "type": "number",
+      "default": 0
+    },
+    "school_fees_current": {
+      "type": "number",
+      "default": 0
+    },
+    "next_term_begins": {
+      "type": "string"
+    },
+    "affective_traits": {
+      "type": "object",
+      "description": "Affective/behavioural traits rating 1-5",
+      "properties": {
+        "punctuality": {
+          "type": "number"
+        },
+        "neatness": {
+          "type": "number"
+        },
+        "honesty": {
+          "type": "number"
+        },
+        "politeness": {
+          "type": "number"
+        },
+        "attentiveness": {
+          "type": "number"
+        },
+        "cooperation": {
+          "type": "number"
+        },
+        "perseverance": {
+          "type": "number"
+        },
+        "leadership": {
+          "type": "number"
+        }
+      }
+    },
+    "psychomotor_skills": {
+      "type": "object",
+      "description": "Psychomotor skills rating 1-5",
+      "properties": {
+        "handwriting": {
+          "type": "number"
+        },
+        "drawing": {
+          "type": "number"
+        },
+        "verbal_fluency": {
+          "type": "number"
+        },
+        "sport_games": {
+          "type": "number"
+        },
+        "music": {
+          "type": "number"
+        },
+        "computer_skills": {
+          "type": "number"
+        }
+      }
+    },
+    "promotion_status": {
+      "type": "string",
+      "enum": [
+        "Promoted",
+        "Repeated",
+        "Demoted"
+      ],
+      "description": "Promotion decision stamped on Third Term results by Principal or Head Teacher"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Submitted",
+        "Reviewed",
+        "Approved"
+      ],
+      "default": "Draft"
+    },
+    "approved_by": {
+      "type": "string"
+    },
+    "approved_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "student_id",
+    "class",
+    "term",
+    "session",
+    "subject_id"
+  ]
+}
