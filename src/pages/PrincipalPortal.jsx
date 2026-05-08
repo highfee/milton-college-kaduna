@@ -123,11 +123,7 @@ function OverviewTab({ principal, stats, setActiveTab }) {
                 <p className="text-xs text-white/70 mt-1">{desc}</p>
               </button>
             ))}
-            <Link to={createPageUrl('PrintResult')} className="bg-white/10 hover:bg-white/20 rounded-lg p-4 text-left transition-colors block">
-              <Printer className="w-5 h-5 mb-2" />
-              <p className="font-semibold text-sm">Print Results</p>
-              <p className="text-xs text-white/70 mt-1">Print individual or class result slips</p>
-            </Link>
+
             <Link to={createPageUrl('ManageNewsletter')} className="bg-white/10 hover:bg-white/20 rounded-lg p-4 text-left transition-colors block">
               <FileText className="w-5 h-5 mb-2" />
               <p className="font-semibold text-sm">Print Newsletter</p>
@@ -686,11 +682,7 @@ export default function PrincipalPortal() {
                 <Edit className="w-4 h-4 mr-2" /> Enter Results
               </button>
             </Link>
-            <Link to={createPageUrl('PrintResult')}>
-              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
-                <Printer className="w-4 h-4 mr-2" /> Print/Send Results
-              </button>
-            </Link>
+
             <Link to={createPageUrl('ManageNewsletter')}>
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                 <FileText className="w-4 h-4 mr-2" /> Newsletter
