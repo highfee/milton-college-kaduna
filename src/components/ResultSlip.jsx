@@ -51,7 +51,7 @@ const SS_CLASSES = ['SS1 Arts A', 'SS1 Arts B', 'SS1 Com A', 'SS1 Com B', 'SS1 S
 
 // Stamp images (transparent background versions via mix-blend-mode)
 const PRINCIPAL_STAMP_URL = 'https://media.base44.com/images/public/696cc2e2095499293173480a/5814af416_IMG-20260503-WA0002.jpg';
-const PROMOTED_STAMP_URL = 'https://media.base44.com/images/public/696cc2e2095499293173480a/4db5eb657_download31.jpg';
+const PROMOTED_STAMP_URL = 'https://media.base44.com/images/public/696cc2e2095499293173480a/0b5b8ac13_download31.jpg';
 
 export default function ResultSlip({ student, results, settings, term, session, classTeacher, rankings }) {
   if (!student || !results) return null;
@@ -62,9 +62,15 @@ export default function ResultSlip({ student, results, settings, term, session, 
   const isSS = SS_CLASSES.includes(student.current_class);
   const isThirdTerm = term === 'Third Term';
 
-  // Determine if result is approved and if student was promoted
+  // Determine if result is approved and promotion status
   const isApproved = results[0]?.status === 'Approved';
-  const isPromoted = isThirdTerm && isApproved && rankings?.promoted === true;
+  const promotionStatus = results[0]?.promotion_status; // 'Promoted' | 'Repeated' | 'Demoted' | undefined
+  const isPromoted = isThirdTerm && isApproved && promotionStatus === 'Promoted';
+  const isRepeated = isThirdTerm && isApproved && promotionStatus === 'Repeated';
+  const isDemoted = isThirdTerm && isApproved && promotionStatus === 'Demoted';
+
+  // For 3rd term: always show the class the result was recorded in (NOT the updated current_class after promotion)
+  const displayClass = results[0]?.class || student.current_class;
 
   // Calculate totals and averages
   const totalScore = results.reduce((s, r) => s + (r.total || 0), 0);
@@ -173,7 +179,7 @@ export default function ResultSlip({ student, results, settings, term, session, 
           }}>
             <div><b style={{ color: '#1e3a5f' }}>Name:</b> <span style={{ color: '#b45309', fontWeight: 'bold' }}>{student.first_name} {student.middle_name || ''} {student.last_name}</span></div>
             <div><b style={{ color: '#1e3a5f' }}>Adm. No:</b> {student.admission_number}</div>
-            <div><b style={{ color: '#1e3a5f' }}>Class:</b> <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>{student.current_class}</span></div>
+            <div><b style={{ color: '#1e3a5f' }}>Class:</b> <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>{displayClass}</span></div>
             <div><b style={{ color: '#1e3a5f' }}>Section:</b> {section}</div>
             <div><b style={{ color: '#1e3a5f' }}>Date of Birth:</b> {student.date_of_birth || '—'}</div>
             <div><b style={{ color: '#1e3a5f' }}>Gender:</b> {student.gender || '—'}</div>
@@ -379,6 +385,28 @@ export default function ResultSlip({ student, results, settings, term, session, 
           </div>
         </div>
 
+        {/* ===== PROMOTION STATEMENT (3rd Term only) ===== */}
+        {isThirdTerm && isApproved && promotionStatus && (
+          <div style={{
+            textAlign: 'center', margin: '4px 0',
+            padding: '5px 10px',
+            borderRadius: '4px',
+            border: `2px solid ${isPromoted ? '#16a34a' : isDemoted ? '#dc2626' : '#b45309'}`,
+            background: isPromoted ? '#f0fdf4' : isDemoted ? '#fef2f2' : '#fffbeb',
+            fontSize: '10px', fontWeight: 'bold',
+            color: isPromoted ? '#15803d' : isDemoted ? '#b91c1c' : '#92400e',
+            letterSpacing: '0.5px'
+          }}>
+            {isPromoted && (() => {
+              const parts = session?.split('/');
+              const nextSession = parts?.length === 2 ? `${parts[1]}/${parseInt(parts[1]) + 1}` : 'next';
+              return `✓ This student has been PROMOTED to ${student.current_class} for the ${nextSession} academic session.`;
+            })()}
+            {isRepeated && `↺ This student is to REPEAT ${displayClass} in the next academic session.`}
+            {isDemoted && `↓ This student has been DEMOTED to ${student.current_class} for the next academic session.`}
+          </div>
+        )}
+
         {/* ===== SIGNATURES ===== */}
         <div style={{
           display: 'grid',
@@ -454,16 +482,35 @@ export default function ResultSlip({ student, results, settings, term, session, 
         {isPromoted && (
           <div style={{
             position: 'absolute', bottom: '18mm', left: '10mm',
-            width: '80px', height: '80px', zIndex: 10, pointerEvents: 'none'
+            width: '90px', height: '90px', zIndex: 10, pointerEvents: 'none'
           }}>
             <img
               src={PROMOTED_STAMP_URL}
               alt="Promoted"
               style={{
                 width: '100%', height: '100%', objectFit: 'contain',
-                mixBlendMode: 'multiply', opacity: 0.9
+                mixBlendMode: 'multiply', opacity: 0.92
               }}
             />
+          </div>
+        )}
+        {/* Repeated / Demoted text stamp */}
+        {(isRepeated || isDemoted) && (
+          <div style={{
+            position: 'absolute', bottom: '18mm', left: '10mm',
+            width: '90px', height: '90px', zIndex: 10, pointerEvents: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: `3px solid ${isDemoted ? '#dc2626' : '#b45309'}`,
+            borderRadius: '50%', transform: 'rotate(-20deg)',
+            background: 'transparent'
+          }}>
+            <span style={{
+              fontSize: '11px', fontWeight: 'bold', textAlign: 'center', lineHeight: '1.2',
+              color: isDemoted ? '#dc2626' : '#b45309',
+              textTransform: 'uppercase', letterSpacing: '1px'
+            }}>
+              {isDemoted ? 'DEMOTED' : 'REPEAT CLASS'}
+            </span>
           </div>
         )}
       </div>
