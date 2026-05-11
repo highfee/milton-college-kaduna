@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '../utils';
 import { Link } from 'react-router-dom';
 import {
   BookOpen, ClipboardList, FileText, Users, LogOut, Eye, EyeOff,
   GraduationCap, CheckCircle, MessageSquare, Star, Save, Search,
-  ChevronLeft, TrendingUp, ArrowUp, ArrowDown
+  ChevronLeft, TrendingUp, ArrowUp, ArrowDown, UserCheck
 } from 'lucide-react';
 
 // Full ordered class progression map for Nursery + Primary (HT scope)
@@ -840,7 +839,12 @@ export default function HeadTeacherPortal() {
             <TabsTrigger value="head_teacher" className="data-[state=active]:bg-amber-700 data-[state=active]:text-white">
               <CheckCircle className="w-4 h-4 mr-2" /> HT Approval
             </TabsTrigger>
-            <Link to={createPageUrl('MasterList')}>
+            <Link to="/MarkAttendance">
+              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                <UserCheck className="w-4 h-4 mr-2" /> Mark Attendance
+              </button>
+            </Link>
+            <Link to="/MasterList">
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                 <ClipboardList className="w-4 h-4 mr-2" /> Master List
               </button>

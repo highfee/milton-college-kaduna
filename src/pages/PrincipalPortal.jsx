@@ -6,7 +6,6 @@ import {
   Save, Search, ArrowUp, ArrowDown, Star, Shield, Printer, Trash2, Edit, List
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -152,7 +151,7 @@ function OverviewTab({ principal, stats, setActiveTab }) {
               </button>
             ))}
 
-            <Link to={createPageUrl('ManageNewsletter')} className="bg-white/10 hover:bg-white/20 rounded-lg p-4 text-left transition-colors block">
+            <Link to="/ManageNewsletter" className="bg-white/10 hover:bg-white/20 rounded-lg p-4 text-left transition-colors block">
               <FileText className="w-5 h-5 mb-2" />
               <p className="font-semibold text-sm">Print Newsletter</p>
               <p className="text-xs text-white/70 mt-1">Create and print term newsletters</p>
@@ -735,25 +734,19 @@ export default function PrincipalPortal() {
             <TabsTrigger value="students" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">
               <GraduationCap className="w-4 h-4 mr-2" /> Students
             </TabsTrigger>
-            <Link to={createPageUrl('EnterResults')}>
+            <Link to="/EnterResults">
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                 <Edit className="w-4 h-4 mr-2" /> Enter Results
               </button>
             </Link>
-
-            <Link to={createPageUrl('ManageNewsletter')}>
+            <Link to="/ManageNewsletter">
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                 <FileText className="w-4 h-4 mr-2" /> Newsletter
               </button>
             </Link>
-            <Link to={createPageUrl('MasterList')}>
+            <Link to="/MasterList">
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
-                <BarChart2 className="w-4 h-4 mr-2" /> Master List
-              </button>
-            </Link>
-            <Link to={createPageUrl('Reports')}>
-              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
-                <ClipboardList className="w-4 h-4 mr-2" /> Transcript
+                <BarChart2 className="w-4 h-4 mr-2" /> Master List & Transcript
               </button>
             </Link>
           </TabsList>
