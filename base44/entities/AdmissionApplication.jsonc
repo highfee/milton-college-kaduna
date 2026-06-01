@@ -1,0 +1,126 @@
+{
+  "name": "AdmissionApplication",
+  "type": "object",
+  "properties": {
+    "application_number": {
+      "type": "string"
+    },
+    "first_name": {
+      "type": "string"
+    },
+    "last_name": {
+      "type": "string"
+    },
+    "middle_name": {
+      "type": "string"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female"
+      ]
+    },
+    "passport_photo": {
+      "type": "string",
+      "description": "JPEG max 5MB"
+    },
+    "section_applying": {
+      "type": "string",
+      "enum": [
+        "Nursery",
+        "Primary",
+        "Secondary"
+      ]
+    },
+    "class_applying": {
+      "type": "string"
+    },
+    "former_school_name": {
+      "type": "string"
+    },
+    "former_school_class": {
+      "type": "string"
+    },
+    "last_result_upload": {
+      "type": "string",
+      "description": "Optional - last term result"
+    },
+    "state_of_origin": {
+      "type": "string"
+    },
+    "local_government": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "parent_name": {
+      "type": "string"
+    },
+    "parent_phone": {
+      "type": "string"
+    },
+    "parent_email": {
+      "type": "string"
+    },
+    "parent_occupation": {
+      "type": "string"
+    },
+    "emergency_contact": {
+      "type": "string"
+    },
+    "health_conditions": {
+      "type": "string"
+    },
+    "application_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Pending",
+        "Under Review",
+        "Accepted",
+        "Rejected"
+      ],
+      "default": "Pending"
+    },
+    "admin_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "first_name",
+    "last_name",
+    "date_of_birth",
+    "gender",
+    "section_applying",
+    "class_applying",
+    "parent_name",
+    "parent_phone"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

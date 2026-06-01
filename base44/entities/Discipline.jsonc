@@ -1,0 +1,130 @@
+{
+  "name": "Discipline",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string"
+    },
+    "student_name": {
+      "type": "string"
+    },
+    "admission_number": {
+      "type": "string"
+    },
+    "class": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "Nursery",
+        "Primary",
+        "Secondary"
+      ]
+    },
+    "incident_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "session": {
+      "type": "string"
+    },
+    "incident_type": {
+      "type": "string",
+      "enum": [
+        "Minor",
+        "Major",
+        "Serious"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "action_taken": {
+      "type": "string"
+    },
+    "reported_by": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Pending",
+        "Resolved",
+        "Escalated"
+      ],
+      "default": "Pending"
+    }
+  },
+  "required": [
+    "student_id",
+    "incident_date",
+    "incident_type",
+    "description"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "teacher": true
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.student_id": "{{user.data.student_id}}"
+        },
+        {
+          "data.student_id": {
+            "$in": "{{user.data.children_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "teacher": true
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "teacher": true
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

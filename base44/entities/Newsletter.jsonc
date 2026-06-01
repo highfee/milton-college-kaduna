@@ -1,0 +1,72 @@
+{
+  "name": "Newsletter",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "session": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "attachment_url": {
+      "type": "string"
+    },
+    "published_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Published"
+      ],
+      "default": "Draft"
+    }
+  },
+  "required": [
+    "title",
+    "term",
+    "session"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.status": "Published"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

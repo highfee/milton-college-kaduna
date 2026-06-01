@@ -1,0 +1,71 @@
+{
+  "name": "SchoolSettings",
+  "type": "object",
+  "properties": {
+    "school_name": {
+      "type": "string"
+    },
+    "school_logo": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "current_session": {
+      "type": "string"
+    },
+    "current_term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "principal_id": {
+      "type": "string"
+    },
+    "principal_name": {
+      "type": "string"
+    },
+    "head_teacher_id": {
+      "type": "string"
+    },
+    "head_teacher_name": {
+      "type": "string"
+    },
+    "motto": {
+      "type": "string"
+    },
+    "about": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "school_name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

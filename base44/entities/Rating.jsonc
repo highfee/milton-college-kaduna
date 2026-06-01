@@ -1,0 +1,65 @@
+{
+  "name": "Rating",
+  "type": "object",
+  "properties": {
+    "user_name": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_type": {
+      "type": "string",
+      "enum": [
+        "Parent",
+        "Public",
+        "Student"
+      ]
+    },
+    "rating": {
+      "type": "number",
+      "description": "1-5 stars"
+    },
+    "review": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Pending",
+        "Approved",
+        "Rejected"
+      ],
+      "default": "Pending"
+    }
+  },
+  "required": [
+    "user_name",
+    "rating"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "data.status": "Approved"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

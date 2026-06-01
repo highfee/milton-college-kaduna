@@ -1,0 +1,72 @@
+{
+  "name": "StaffRole",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "Admin",
+        "Principal",
+        "Head Teacher",
+        "Teacher",
+        "Form Teacher"
+      ]
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "Nursery",
+        "Primary",
+        "Secondary",
+        "All"
+      ]
+    },
+    "teacher_id": {
+      "type": "string",
+      "description": "Reference to Teacher entity if applicable"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Inactive"
+      ],
+      "default": "Active"
+    }
+  },
+  "required": [
+    "user_email",
+    "role"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

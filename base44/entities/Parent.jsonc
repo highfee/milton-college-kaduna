@@ -1,82 +1,59 @@
 {
-  "name": "NonAcademicStaff",
+  "name": "Parent",
   "type": "object",
   "properties": {
-    "staff_id": {
-      "type": "string"
+    "parent_id": {
+      "type": "string",
+      "description": "Auto-generated unique Parent ID (e.g. PAR123456)"
     },
-    "first_name": {
-      "type": "string"
-    },
-    "last_name": {
-      "type": "string"
-    },
-    "email": {
+    "full_name": {
       "type": "string"
     },
     "phone": {
       "type": "string"
     },
-    "passport_photo": {
-      "type": "string"
-    },
-    "role": {
-      "type": "string",
-      "enum": [
-        "Admin",
-        "Accountant",
-        "Driver",
-        "Typist",
-        "Store Keeper",
-        "School Nurse",
-        "Security",
-        "Nanny",
-        "Cleaner",
-        "Cashier"
-      ]
-    },
-    "duties": {
-      "type": "string",
-      "description": "Assigned duties/responsibilities"
-    },
-    "department": {
-      "type": "string"
-    },
-    "date_employed": {
-      "type": "string",
-      "format": "date"
-    },
-    "qualification": {
+    "email": {
       "type": "string"
     },
     "address": {
       "type": "string"
     },
-    "emergency_contact": {
+    "occupation": {
       "type": "string"
     },
-    "salary": {
-      "type": "number"
+    "relationship": {
+      "type": "string",
+      "enum": [
+        "Father",
+        "Mother",
+        "Guardian",
+        "Other"
+      ],
+      "default": "Guardian"
+    },
+    "passport_photo": {
+      "type": "string"
+    },
+    "default_username": {
+      "type": "string",
+      "description": "Parent ID used as default username"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Linked user account ID"
     },
     "status": {
       "type": "string",
       "enum": [
         "Active",
-        "Inactive",
-        "On Leave",
-        "Terminated"
+        "Inactive"
       ],
       "default": "Active"
-    },
-    "user_id": {
-      "type": "string",
-      "description": "Linked user account"
     }
   },
   "required": [
-    "first_name",
-    "last_name",
-    "role"
+    "full_name",
+    "phone"
   ],
   "rls": {
     "create": {

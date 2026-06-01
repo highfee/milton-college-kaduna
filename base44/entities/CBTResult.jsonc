@@ -1,0 +1,110 @@
+{
+  "name": "CBTResult",
+  "type": "object",
+  "properties": {
+    "exam_id": {
+      "type": "string"
+    },
+    "exam_title": {
+      "type": "string"
+    },
+    "student_id": {
+      "type": "string"
+    },
+    "student_name": {
+      "type": "string"
+    },
+    "admission_number": {
+      "type": "string"
+    },
+    "class": {
+      "type": "string"
+    },
+    "answers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question_index": {
+            "type": "number"
+          },
+          "selected_answer": {
+            "type": "number"
+          },
+          "is_correct": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "score": {
+      "type": "number"
+    },
+    "total_marks": {
+      "type": "number"
+    },
+    "percentage": {
+      "type": "number"
+    },
+    "grade": {
+      "type": "string"
+    },
+    "time_taken_minutes": {
+      "type": "number"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "In Progress",
+        "Submitted",
+        "Graded"
+      ],
+      "default": "In Progress"
+    }
+  },
+  "required": [
+    "exam_id",
+    "student_id"
+  ],
+  "rls": {
+    "create": {
+      "data.student_id": "{{user.data.student_id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.student_id": "{{user.data.student_id}}"
+        },
+        {
+          "data.student_id": {
+            "$in": "{{user.data.children_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "teacher": true
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

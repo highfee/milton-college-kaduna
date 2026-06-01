@@ -1,0 +1,112 @@
+{
+  "name": "Timetable",
+  "type": "object",
+  "properties": {
+    "class": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "Nursery",
+        "Primary",
+        "Secondary"
+      ]
+    },
+    "term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "session": {
+      "type": "string"
+    },
+    "schedule": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string"
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "time": {
+                  "type": "string"
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "teacher": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "attachment_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Archived"
+      ],
+      "default": "Active"
+    }
+  },
+  "required": [
+    "class",
+    "section",
+    "term",
+    "session"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.status": "Active"
+        },
+        {
+          "data.status": "Active",
+          "data.class": "{{user.data.current_class}}"
+        },
+        {
+          "data.status": "Active",
+          "data.class": {
+            "$in": "{{user.data.children_classes}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,11 +1,7 @@
 {
-  "name": "ResultToken",
+  "name": "Award",
   "type": "object",
   "properties": {
-    "token": {
-      "type": "string",
-      "description": "Unique result token/PIN"
-    },
     "student_id": {
       "type": "string"
     },
@@ -26,6 +22,29 @@
         "Secondary"
       ]
     },
+    "award_type": {
+      "type": "string",
+      "enum": [
+        "Academic Excellence",
+        "Best Behaved",
+        "Most Improved",
+        "Sport Excellence",
+        "Leadership",
+        "Perfect Attendance",
+        "Scholarship",
+        "Other"
+      ]
+    },
+    "award_name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "date_awarded": {
+      "type": "string",
+      "format": "date"
+    },
     "term": {
       "type": "string",
       "enum": [
@@ -37,37 +56,18 @@
     "session": {
       "type": "string"
     },
-    "generated_by": {
+    "awarded_by": {
       "type": "string"
     },
-    "generated_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "Active",
-        "Used",
-        "Expired",
-        "Revoked"
-      ],
-      "default": "Active"
-    },
-    "approved_by": {
-      "type": "string",
-      "description": "Admin or Accountant who approved"
-    },
-    "approved_date": {
-      "type": "string",
-      "format": "date"
+    "certificate_url": {
+      "type": "string"
     }
   },
   "required": [
-    "token",
     "student_id",
-    "term",
-    "session"
+    "award_type",
+    "award_name",
+    "date_awarded"
   ],
   "rls": {
     "create": {
@@ -76,9 +76,21 @@
       }
     },
     "read": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "data.student_id": "{{user.data.student_id}}"
+        },
+        {
+          "data.student_id": {
+            "$in": "{{user.data.children_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "update": {
       "user_condition": {

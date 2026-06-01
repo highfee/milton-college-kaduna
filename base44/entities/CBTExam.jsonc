@@ -1,0 +1,163 @@
+{
+  "name": "CBTExam",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "exam_type": {
+      "type": "string",
+      "enum": [
+        "Termly Examination",
+        "Mock Examination",
+        "Common Entrance",
+        "Homework",
+        "Assignment"
+      ]
+    },
+    "subject_id": {
+      "type": "string"
+    },
+    "subject_name": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "Nursery",
+        "Primary",
+        "Secondary"
+      ]
+    },
+    "classes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "session": {
+      "type": "string"
+    },
+    "duration_minutes": {
+      "type": "number"
+    },
+    "total_marks": {
+      "type": "number"
+    },
+    "pass_mark": {
+      "type": "number"
+    },
+    "instructions": {
+      "type": "string"
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "correct_answer": {
+            "type": "number"
+          },
+          "marks": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Published",
+        "Closed"
+      ],
+      "default": "Draft"
+    }
+  },
+  "required": [
+    "title",
+    "exam_type",
+    "section",
+    "classes",
+    "duration_minutes"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.status": "Published",
+          "data.classes": "{{user.data.current_class}}",
+          "data.start_date": {
+            "$lte": "{{current_datetime}}"
+          },
+          "data.end_date": {
+            "$gte": "{{current_datetime}}"
+          }
+        },
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,21 +1,8 @@
 {
-  "name": "ResultToken",
+  "name": "Calendar",
   "type": "object",
   "properties": {
-    "token": {
-      "type": "string",
-      "description": "Unique result token/PIN"
-    },
-    "student_id": {
-      "type": "string"
-    },
-    "student_name": {
-      "type": "string"
-    },
-    "admission_number": {
-      "type": "string"
-    },
-    "class": {
+    "title": {
       "type": "string"
     },
     "section": {
@@ -23,7 +10,8 @@
       "enum": [
         "Nursery",
         "Primary",
-        "Secondary"
+        "Secondary",
+        "All"
       ]
     },
     "term": {
@@ -37,35 +25,35 @@
     "session": {
       "type": "string"
     },
-    "generated_by": {
-      "type": "string"
+    "activities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "activity": {
+            "type": "string"
+          }
+        }
+      }
     },
-    "generated_date": {
-      "type": "string",
-      "format": "date"
+    "attachment_url": {
+      "type": "string"
     },
     "status": {
       "type": "string",
       "enum": [
         "Active",
-        "Used",
-        "Expired",
-        "Revoked"
+        "Archived"
       ],
       "default": "Active"
-    },
-    "approved_by": {
-      "type": "string",
-      "description": "Admin or Accountant who approved"
-    },
-    "approved_date": {
-      "type": "string",
-      "format": "date"
     }
   },
   "required": [
-    "token",
-    "student_id",
+    "title",
+    "section",
     "term",
     "session"
   ],
@@ -76,9 +64,16 @@
       }
     },
     "read": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "data.status": "Active"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "update": {
       "user_condition": {

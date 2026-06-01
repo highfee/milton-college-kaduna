@@ -1,0 +1,121 @@
+{
+  "name": "AssignmentSubmission",
+  "type": "object",
+  "properties": {
+    "assignment_id": {
+      "type": "string"
+    },
+    "assignment_title": {
+      "type": "string"
+    },
+    "student_id": {
+      "type": "string"
+    },
+    "student_name": {
+      "type": "string"
+    },
+    "admission_number": {
+      "type": "string"
+    },
+    "class": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string",
+      "description": "Typed response"
+    },
+    "attachment_url": {
+      "type": "string",
+      "description": "PDF submission"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "score": {
+      "type": "number"
+    },
+    "total_marks": {
+      "type": "number"
+    },
+    "feedback": {
+      "type": "string"
+    },
+    "graded_by": {
+      "type": "string"
+    },
+    "graded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Submitted",
+        "Graded",
+        "Late"
+      ],
+      "default": "Submitted"
+    }
+  },
+  "required": [
+    "assignment_id",
+    "student_id"
+  ],
+  "rls": {
+    "create": {
+      "data.student_id": "{{user.data.student_id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.student_id": "{{user.data.student_id}}"
+        },
+        {
+          "data.student_id": {
+            "$in": "{{user.data.children_ids}}"
+          }
+        },
+        {
+          "user_condition": {
+            "teacher": true
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.student_id": "{{user.data.student_id}}"
+        },
+        {
+          "user_condition": {
+            "teacher": true
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.student_id": "{{user.data.student_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

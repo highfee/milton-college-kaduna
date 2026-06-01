@@ -1,0 +1,67 @@
+{
+  "name": "Subject",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "Nursery",
+        "Primary",
+        "Secondary"
+      ]
+    },
+    "classes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Classes this subject is assigned to"
+    },
+    "teacher_id": {
+      "type": "string",
+      "description": "Teacher assigned to this subject"
+    },
+    "teacher_name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Inactive"
+      ],
+      "default": "Active"
+    }
+  },
+  "required": [
+    "name",
+    "section"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

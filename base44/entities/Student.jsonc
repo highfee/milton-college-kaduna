@@ -1,0 +1,182 @@
+{
+  "name": "Student",
+  "type": "object",
+  "properties": {
+    "admission_number": {
+      "type": "string",
+      "description": "Unique admission number"
+    },
+    "first_name": {
+      "type": "string"
+    },
+    "last_name": {
+      "type": "string"
+    },
+    "middle_name": {
+      "type": "string"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female"
+      ]
+    },
+    "passport_photo": {
+      "type": "string",
+      "description": "URL to passport photo"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "Nursery",
+        "Primary",
+        "Secondary"
+      ]
+    },
+    "current_class": {
+      "type": "string"
+    },
+    "state_of_origin": {
+      "type": "string"
+    },
+    "local_government": {
+      "type": "string"
+    },
+    "blood_group": {
+      "type": "string",
+      "enum": [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "O+",
+        "O-"
+      ]
+    },
+    "genotype": {
+      "type": "string",
+      "enum": [
+        "AA",
+        "AS",
+        "SS",
+        "AC",
+        "SC"
+      ]
+    },
+    "tribe": {
+      "type": "string"
+    },
+    "sport_house": {
+      "type": "string",
+      "enum": [
+        "Red House",
+        "Blue House",
+        "Green House",
+        "Yellow House"
+      ]
+    },
+    "weight": {
+      "type": "number"
+    },
+    "height": {
+      "type": "number"
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "Reference to parent user"
+    },
+    "parent_name": {
+      "type": "string"
+    },
+    "parent_phone": {
+      "type": "string"
+    },
+    "parent_email": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "admission_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Graduated",
+        "Withdrawn",
+        "Suspended"
+      ],
+      "default": "Active"
+    },
+    "current_term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "current_session": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "first_name",
+    "last_name",
+    "date_of_birth",
+    "gender",
+    "section",
+    "current_class"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.admission_number": "{{user.data.admission_number}}"
+        },
+        {
+          "data.parent_email": "{{user.email}}"
+        },
+        {
+          "data.parent_id": "{{user.data.parent_id}}"
+        },
+        {
+          "data.current_class": "{{user.data.assigned_class}}"
+        },
+        {
+          "data.current_class": "{{user.data.form_teacher_class}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
