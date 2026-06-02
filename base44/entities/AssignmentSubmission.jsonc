@@ -20,17 +20,17 @@
     "class": {
       "type": "string"
     },
-    "content": {
+    "submission_text": {
       "type": "string",
       "description": "Typed response"
     },
-    "attachment_url": {
+    "file_url": {
       "type": "string",
-      "description": "PDF submission"
+      "description": "Uploaded file URL"
     },
-    "submitted_at": {
+    "submitted_date": {
       "type": "string",
-      "format": "date-time"
+      "format": "date"
     },
     "score": {
       "type": "number"
@@ -38,15 +38,15 @@
     "total_marks": {
       "type": "number"
     },
-    "feedback": {
+    "teacher_feedback": {
       "type": "string"
     },
     "graded_by": {
       "type": "string"
     },
-    "graded_at": {
+    "graded_date": {
       "type": "string",
-      "format": "date-time"
+      "format": "date"
     },
     "status": {
       "type": "string",
@@ -63,9 +63,7 @@
     "student_id"
   ],
   "rls": {
-    "create": {
-      "data.student_id": "{{user.data.student_id}}"
-    },
+    "create": {},
     "read": {
       "$or": [
         {
@@ -91,9 +89,6 @@
     "update": {
       "$or": [
         {
-          "data.student_id": "{{user.data.student_id}}"
-        },
-        {
           "user_condition": {
             "teacher": true
           }
@@ -106,16 +101,9 @@
       ]
     },
     "delete": {
-      "$or": [
-        {
-          "data.student_id": "{{user.data.student_id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
