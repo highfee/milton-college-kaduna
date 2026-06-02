@@ -93,6 +93,11 @@ import FeeDefaulters from './pages/FeeDefaulters';
 import MasterList from './pages/MasterList';
 import ResultTokens from './pages/ResultTokens';
 import CheckResult from './pages/CheckResult';
+import MarkAttendance from './pages/MarkAttendance';
+import StudentAssignments from './pages/StudentAssignments';
+import StudentAssignmentScores from './pages/StudentAssignmentScores';
+import StudentLMS from './pages/StudentLMS';
+import TeacherCMS from './pages/TeacherCMS';
 
 export const PAGES = {
     "AdminPortal": AdminPortal,
@@ -141,6 +146,11 @@ export const PAGES = {
     "MasterList": MasterList,
     "ResultTokens": ResultTokens,
     "CheckResult": CheckResult,
+    "MarkAttendance": MarkAttendance,
+    "StudentAssignments": StudentAssignments,
+    "StudentAssignmentScores": StudentAssignmentScores,
+    "StudentLMS": StudentLMS,
+    "TeacherCMS": TeacherCMS,
 }
 
 export const pagesConfig = {

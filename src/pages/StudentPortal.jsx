@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
-import { 
+import {
   FileText, ClipboardList, BookOpen, Calendar,
-  GraduationCap, LogOut, TrendingUp, Eye, EyeOff
+  GraduationCap, LogOut, TrendingUp, Eye, EyeOff,
+  Camera, Key, Award, UserCircle, CheckSquare, BarChart2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-const DEFAULT_PASSWORD = 'User123';
 
 export default function StudentPortal() {
   const [student, setStudent] = useState(null);
@@ -26,6 +24,15 @@ export default function StudentPortal() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
+  // Profile edit
+  const [showProfile, setShowProfile] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState('');
+
   useEffect(() => {
     const session = sessionStorage.getItem('student_portal_logged_in');
     const savedAdmNo = sessionStorage.getItem('student_portal_adm');
@@ -36,23 +43,15 @@ export default function StudentPortal() {
     }
   }, []);
 
+  const getStoredPassword = (s) => s.custom_password || 'User123';
+
   const handleLogin = async () => {
-    if (!admissionNo || !password) {
-      setLoginError('Please enter your Admission Number and password');
-      return;
-    }
-    if (password !== DEFAULT_PASSWORD) {
-      setLoginError('Incorrect password. Please try again.');
-      return;
-    }
-    setLoginLoading(true);
-    setLoginError('');
+    if (!admissionNo || !password) { setLoginError('Please enter your Admission Number and password'); return; }
+    setLoginLoading(true); setLoginError('');
     const students = await base44.entities.Student.filter({ admission_number: admissionNo.trim() });
-    if (!students[0]) {
-      setLoginError('Admission number not found. Please check and try again.');
-      setLoginLoading(false);
-      return;
-    }
+    if (!students[0]) { setLoginError('Admission number not found.'); setLoginLoading(false); return; }
+    const expected = getStoredPassword(students[0]);
+    if (password !== expected) { setLoginError('Incorrect password.'); setLoginLoading(false); return; }
     sessionStorage.setItem('student_portal_logged_in', 'true');
     sessionStorage.setItem('student_portal_adm', admissionNo.trim());
     setLoginLoading(false);
@@ -64,28 +63,26 @@ export default function StudentPortal() {
     const studentData = await base44.entities.Student.filter({ admission_number: admNo });
     if (studentData[0]) {
       setStudent(studentData[0]);
-
-      const [assignments, results, cbtExams, allSubjects] = await Promise.all([
+      const [assignments, results, cbtExams, allSubjects, cbtResults] = await Promise.all([
         base44.entities.Assignment.filter({ class: studentData[0].current_class, status: 'Active' }),
         base44.entities.Result.filter({ student_id: studentData[0].id, status: 'Approved' }),
         base44.entities.CBTExam.filter({ status: 'Published' }),
-        base44.entities.Subject.filter({ status: 'Active' })
+        base44.entities.Subject.filter({ status: 'Active' }),
+        base44.entities.CBTResult.filter({ student_id: studentData[0].id })
       ]);
-
       const classSubjects = allSubjects.filter(s => s.classes?.includes(studentData[0].current_class));
       setSubjects(classSubjects);
-
       const now = new Date().toISOString();
       const availableCBT = cbtExams.filter(exam =>
         exam.classes?.includes(studentData[0].current_class) &&
-        exam.start_date <= now && exam.end_date >= now
+        (!exam.start_date || exam.start_date <= now) && (!exam.end_date || exam.end_date >= now)
       );
-
       setStats({
         activeAssignments: assignments.length,
         completedSubjects: results.length,
         availableCBT: availableCBT.length,
-        totalSubjects: classSubjects.length
+        totalSubjects: classSubjects.length,
+        cbtScores: cbtResults.length
       });
       setLoggedIn(true);
     } else {
@@ -99,128 +96,172 @@ export default function StudentPortal() {
   const handleLogout = () => {
     sessionStorage.removeItem('student_portal_logged_in');
     sessionStorage.removeItem('student_portal_adm');
-    setLoggedIn(false);
-    setStudent(null);
-    setAdmissionNo('');
-    setPassword('');
+    setLoggedIn(false); setStudent(null); setAdmissionNo(''); setPassword('');
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleSaveProfile = async () => {
+    setProfileSaving(true); setProfileMsg('');
+    const updates = {};
+    if (newPassword) {
+      if (newPassword.length < 6) { setProfileMsg('Password must be at least 6 characters'); setProfileSaving(false); return; }
+      if (newPassword !== confirmPassword) { setProfileMsg('Passwords do not match'); setProfileSaving(false); return; }
+      updates.custom_password = newPassword;
+    }
+    if (photoFile) {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: photoFile });
+      updates.passport_photo = file_url;
+    }
+    if (Object.keys(updates).length === 0) { setProfileMsg('No changes to save'); setProfileSaving(false); return; }
+    await base44.entities.Student.update(student.id, updates);
+    setStudent({ ...student, ...updates });
+    setProfileMsg('Profile updated successfully!');
+    setNewPassword(''); setConfirmPassword(''); setPhotoFile(null);
+    setProfileSaving(false);
   };
 
   const quickActions = [
-    { icon: FileText, label: 'Check Result', page: 'CheckResult', color: 'bg-blue-500' },
-    { icon: ClipboardList, label: 'View Assignments & Homework', page: 'ManageAssignments', color: 'bg-green-500' },
-    { icon: BookOpen, label: 'Take CBT Exam', page: 'TakeCBT', color: 'bg-purple-500' },
-    { icon: TrendingUp, label: 'My CBT Results', page: 'ViewCBTResults', color: 'bg-orange-500' },
-    { icon: Calendar, label: 'School Calendar', page: 'ManageCalendar', color: 'bg-teal-500' }
+    { icon: FileText, label: 'Check My Results', to: '/CheckResult', color: 'bg-blue-500' },
+    { icon: CheckSquare, label: 'Take Assignments & Homework', to: '/StudentAssignments', color: 'bg-green-500' },
+    { icon: BookOpen, label: 'Take CBT Exam', to: '/TakeCBT', color: 'bg-purple-500' },
+    { icon: TrendingUp, label: 'My CBT Results', to: '/ViewCBTResults', color: 'bg-orange-500' },
+    { icon: Award, label: 'Assignment Scores', to: '/StudentAssignmentScores', color: 'bg-pink-500' },
+    { icon: BarChart2, label: 'LMS — Learning Portal', to: '/StudentLMS', color: 'bg-indigo-600' },
+    { icon: Calendar, label: 'School Calendar', to: '/ManageCalendar', color: 'bg-teal-500' },
   ];
 
-  const statCards = [
-    { label: 'My Subjects', value: stats.totalSubjects, icon: BookOpen, color: 'text-blue-600' },
-    { label: 'Results Available', value: stats.completedSubjects, icon: TrendingUp, color: 'text-green-600' },
-    { label: 'Assignments & Homework', value: stats.activeAssignments, icon: ClipboardList, color: 'text-orange-600' },
-    { label: 'CBT Exams Available', value: stats.availableCBT, icon: FileText, color: 'text-purple-600' }
-  ];
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin w-12 h-12 border-4 border-[#1e3a5f] border-t-transparent rounded-full"></div>
+    </div>
+  );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-[#1e3a5f] border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
-  if (!loggedIn) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-lg border-0">
-          <div className="bg-green-600 rounded-t-xl p-6 text-white text-center">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-              <GraduationCap className="w-8 h-8" />
-            </div>
-            <h1 className="text-2xl font-bold">Student Portal</h1>
-            <p className="text-white/80 text-sm mt-1">Sign in with your Admission Number</p>
+  if (!loggedIn) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-lg border-0">
+        <div className="bg-green-600 rounded-t-xl p-6 text-white text-center">
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <GraduationCap className="w-8 h-8" />
           </div>
-          <CardContent className="p-6 space-y-4">
-            <div>
-              <Label>Admission Number / Student ID</Label>
-              <Input
-                placeholder="Enter your Admission Number"
-                value={admissionNo}
-                onChange={(e) => setAdmissionNo(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              />
+          <h1 className="text-2xl font-bold">Student Portal</h1>
+          <p className="text-white/80 text-sm mt-1">Sign in with your Admission Number</p>
+        </div>
+        <CardContent className="p-6 space-y-4">
+          <div>
+            <Label>Admission Number</Label>
+            <Input placeholder="Enter your Admission Number" value={admissionNo}
+              onChange={e => setAdmissionNo(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+          </div>
+          <div>
+            <Label>Password <span className="text-xs text-gray-400">(default: User123)</span></Label>
+            <div className="relative">
+              <Input type={showPassword ? 'text' : 'password'} placeholder="Enter your password"
+                value={password} onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()} className="pr-10" />
+              <button type="button" className="absolute right-3 top-2.5 text-gray-400" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
-            <div>
-              <Label>Password</Label>
-              <div className="relative">
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                  className="pr-10"
-                />
-                <button type="button" className="absolute right-3 top-2.5 text-gray-400" onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-            {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
-            <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleLogin} disabled={loginLoading}>
-              {loginLoading ? 'Signing in...' : 'Sign In'}
-            </Button>
+          </div>
+          {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+          <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleLogin} disabled={loginLoading}>
+            {loginLoading ? 'Signing in...' : 'Sign In'}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
+  if (showProfile) return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-lg mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="outline" onClick={() => setShowProfile(false)}>← Back</Button>
+          <h2 className="text-xl font-bold">Edit My Profile</h2>
+        </div>
+        <Card className="border-0 shadow-md">
+          <CardContent className="p-6 space-y-5">
+            <div className="flex flex-col items-center gap-3">
+              {(photoPreview || student.passport_photo) ? (
+                <img src={photoPreview || student.passport_photo} alt="" className="w-24 h-24 rounded-full object-cover border-4 border-green-200" />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
+                  <UserCircle className="w-12 h-12 text-gray-400" />
+                </div>
+              )}
+              <Label className="cursor-pointer bg-green-50 border border-green-300 text-green-700 rounded-lg px-4 py-2 text-sm flex items-center gap-2">
+                <Camera className="w-4 h-4" /> Change Photo
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+              </Label>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700">
+              <p className="font-medium">Password Reset</p>
+              <p className="text-xs mt-1">Students reset password using their <strong>Admission Number</strong> as verification.</p>
+            </div>
+            <div>
+              <Label>New Password (leave blank to keep current)</Label>
+              <Input type="password" placeholder="New password (min. 6 chars)" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label>Confirm New Password</Label>
+              <Input type="password" placeholder="Confirm new password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="mt-1" />
+            </div>
+            {profileMsg && <p className={`text-sm font-medium ${profileMsg.includes('success') ? 'text-green-600' : 'text-red-500'}`}>{profileMsg}</p>}
+            <Button className="w-full bg-green-600 hover:bg-green-700" onClick={handleSaveProfile} disabled={profileSaving}>
+              {profileSaving ? 'Saving...' : 'Save Changes'}
+            </Button>
           </CardContent>
         </Card>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-[#1e3a5f] text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">Student Portal</h1>
-                <p className="text-sm text-white/80">{student?.first_name} {student?.last_name}</p>
-              </div>
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {student.passport_photo ? (
+              <img src={student.passport_photo} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-white/30" />
+            ) : (
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center"><GraduationCap className="w-6 h-6" /></div>
+            )}
+            <div>
+              <h1 className="text-xl font-bold">Student Portal</h1>
+              <p className="text-sm text-white/80">{student?.first_name} {student?.last_name}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <Badge className="bg-white/20 text-white border-0 hidden md:flex">
-                {student?.current_class}
-              </Badge>
-              <Button variant="ghost" className="text-white hover:bg-white/20" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
-            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-white/20 text-white border-0 hidden md:flex">{student?.current_class}</Badge>
+            <Button variant="ghost" size="sm" className="text-white hover:bg-white/20" onClick={() => setShowProfile(true)}>
+              <Key className="w-4 h-4 mr-1" /><span className="hidden sm:inline">Profile</span>
+            </Button>
+            <Button variant="ghost" size="sm" className="text-white hover:bg-white/20" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-1" />Logout
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Student Info Card */}
         <Card className="border-0 shadow-md mb-8 bg-gradient-to-r from-green-500 to-green-600 text-white">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              {student.passport_photo && (
-                <img 
-                  src={student.passport_photo} 
-                  alt={student.first_name}
-                  className="w-20 h-20 rounded-full object-cover border-4 border-white/30"
-                />
+              {student.passport_photo ? (
+                <img src={student.passport_photo} alt="" className="w-20 h-20 rounded-full object-cover border-4 border-white/30" />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
+                  <GraduationCap className="w-10 h-10" />
+                </div>
               )}
               <div>
-                <h2 className="text-2xl font-bold mb-1">
-                  {student.first_name} {student.middle_name} {student.last_name}
-                </h2>
+                <h2 className="text-2xl font-bold">{student.first_name} {student.middle_name} {student.last_name}</h2>
                 <p className="text-white/90">Admission No: {student.admission_number}</p>
                 <p className="text-white/90">{student.current_class} | {student.section} Section</p>
               </div>
@@ -228,37 +269,31 @@ export default function StudentPortal() {
           </CardContent>
         </Card>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {statCards.map((stat, idx) => {
+          {[
+            { label: 'My Subjects', value: stats.totalSubjects, icon: BookOpen, color: 'text-blue-600' },
+            { label: 'Results Available', value: stats.completedSubjects, icon: TrendingUp, color: 'text-green-600' },
+            { label: 'Assignments', value: stats.activeAssignments, icon: ClipboardList, color: 'text-orange-600' },
+            { label: 'CBT Exams Available', value: stats.availableCBT, icon: FileText, color: 'text-purple-600' },
+          ].map((stat, idx) => {
             const Icon = stat.icon;
             return (
               <Card key={idx} className="border-0 shadow-md">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                      <p className="text-3xl font-bold">{stat.value || 0}</p>
-                    </div>
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center bg-opacity-10`} style={{backgroundColor: 'rgba(0,0,0,0.05)'}}>
-                      <Icon className={`w-6 h-6 ${stat.color}`} />
-                    </div>
-                  </div>
+                <CardContent className="p-6 flex items-center justify-between">
+                  <div><p className="text-sm text-gray-600">{stat.label}</p><p className="text-3xl font-bold">{stat.value || 0}</p></div>
+                  <Icon className={`w-8 h-8 ${stat.color} opacity-60`} />
                 </CardContent>
               </Card>
             );
           })}
         </div>
 
-        {/* My Subjects */}
         {subjects.length > 0 && (
           <Card className="border-0 shadow-md mb-8">
-            <CardHeader>
-              <CardTitle>My Subjects ({subjects.length})</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>My Subjects ({subjects.length})</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {subjects.map((subject) => (
+                {subjects.map(subject => (
                   <div key={subject.id} className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
                     <BookOpen className="w-4 h-4 text-blue-600 flex-shrink-0" />
                     <div className="min-w-0">
@@ -272,17 +307,14 @@ export default function StudentPortal() {
           </Card>
         )}
 
-        {/* Quick Actions */}
         <Card className="border-0 shadow-md">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {quickActions.map((action, idx) => {
                 const Icon = action.icon;
                 return (
-                  <Link key={idx} to={createPageUrl(action.page)}>
+                  <Link key={idx} to={action.to}>
                     <div className="flex flex-col items-center gap-3 p-4 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group">
                       <div className={`w-12 h-12 ${action.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
                         <Icon className="w-6 h-6 text-white" />

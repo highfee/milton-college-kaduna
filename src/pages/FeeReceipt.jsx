@@ -5,22 +5,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Printer, ArrowLeft, Save } from 'lucide-react';
+import { Printer, ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const CLASSES = [
   'Reception Class', 'Nursery 1', 'Nursery 2',
-  'Primary 1', 'Primary 2', 'Primary 3', 'Primary 4', 'Primary 5',
-  'JSS 1', 'JSS 2', 'JSS 3',
-  'SS1 Art', 'SS1 Sc', 'SS2 Art', 'SS2 Sc', 'SS3 Art', 'SS3 Sc'
+  'Primary 1A', 'Primary 1B', 'Primary 2A', 'Primary 2B',
+  'Primary 3A', 'Primary 3B', 'Primary 4A', 'Primary 4B', 'Primary 5A', 'Primary 5B',
+  'JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B',
+  'SS1 Arts A', 'SS1 Arts B', 'SS1 Com A', 'SS1 Com B', 'SS1 Sci A', 'SS1 Sci B',
+  'SS2 Arts A', 'SS2 Arts B', 'SS2 Com A', 'SS2 Com B', 'SS2 Sci A', 'SS2 Sci B',
+  'SS3 Arts A', 'SS3 Arts B', 'SS3 Com A', 'SS3 Com B', 'SS3 Sci A', 'SS3 Sci B',
 ];
 
-const FEE_ITEMS = [
+const STANDARD_FEE_ITEMS = [
   'Previous Balance', 'Form', 'Badge', 'Registration Fee', 'Tuition Fee',
   'Exam Fee (Internal Only)', 'Development Fee', 'P.T.A', 'Lesson Fee',
-  'Graduation Fee', 'Sports', 'Sanitary', 'Books', 'Others'
+  'Graduation Fee', 'Sports', 'Sanitary', 'Books',
 ];
 
 function numberToWords(num) {
@@ -42,7 +45,8 @@ export default function FeeReceipt() {
   const [settings, setSettings] = useState(null);
   const [form, setForm] = useState({
     student_name: '', received_from: '', class: '', term: '', balance: '',
-    items: FEE_ITEMS.map(name => ({ name, amount: '', custom_name: '', selected: false }))
+    items: STANDARD_FEE_ITEMS.map(name => ({ name, amount: '', selected: false })),
+    others: [] // array of { name, amount }
   });
   const [receiptNumber, setReceiptNumber] = useState('');
   const [saving, setSaving] = useState(false);
@@ -73,15 +77,24 @@ export default function FeeReceipt() {
     setForm({ ...form, items });
   };
 
-  const setItemCustomName = (idx, val) => {
-    const items = [...form.items];
-    items[idx].custom_name = val;
-    setForm({ ...form, items });
+  const addOther = () => {
+    setForm({ ...form, others: [...form.others, { name: '', amount: '' }] });
   };
 
-  const totalPaid = form.items
-    .filter(i => i.selected && i.amount)
-    .reduce((s, i) => s + parseFloat(i.amount || 0), 0);
+  const removeOther = (idx) => {
+    const others = form.others.filter((_, i) => i !== idx);
+    setForm({ ...form, others });
+  };
+
+  const setOtherField = (idx, field, val) => {
+    const others = [...form.others];
+    others[idx][field] = val;
+    setForm({ ...form, others });
+  };
+
+  const selectedStandard = form.items.filter(i => i.selected && i.amount);
+  const validOthers = form.others.filter(o => o.name && o.amount);
+  const totalPaid = [...selectedStandard, ...validOthers].reduce((s, i) => s + parseFloat(i.amount || 0), 0);
 
   const handlePrint = async () => {
     if (!form.student_name || !form.class || !form.term) {
@@ -89,13 +102,16 @@ export default function FeeReceipt() {
       return;
     }
     setSaving(true);
-    const selectedItems = form.items.filter(i => i.selected && i.amount);
+    const allItems = [
+      ...selectedStandard.map(i => ({ item_name: i.name, amount: parseFloat(i.amount) })),
+      ...validOthers.map(i => ({ item_name: i.name, amount: parseFloat(i.amount) }))
+    ];
     const paymentData = {
       receipt_number: receiptNumber,
       student_name: form.student_name,
       class: form.class,
       term: form.term,
-      items: selectedItems.map(i => ({ item_name: i.name === 'Others' ? i.custom_name || 'Others' : i.name, amount: parseFloat(i.amount) })),
+      items: allItems,
       total_amount: totalPaid,
       amount_paid: totalPaid,
       balance: parseFloat(form.balance || 0),
@@ -105,23 +121,22 @@ export default function FeeReceipt() {
     };
     await base44.entities.SchoolFeePayment.create(paymentData);
 
-    // Generate and print PDF
     const el = receiptRef.current;
     const canvas = await html2canvas(el, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, 200] });
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, 220] });
     const pdfW = pdf.internal.pageSize.getWidth();
     const ratio = canvas.height / canvas.width;
     pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfW * ratio);
     pdf.save(`Receipt_${receiptNumber}.pdf`);
-    window.print();
 
-    toast({ title: 'Receipt saved and printed!' });
+    toast({ title: 'Receipt saved and PDF downloaded!' });
     setSaving(false);
     generateReceiptNumber();
     setForm({
       student_name: '', received_from: '', class: '', term: '', balance: '',
-      items: FEE_ITEMS.map(name => ({ name, amount: '', custom_name: '', selected: false }))
+      items: STANDARD_FEE_ITEMS.map(name => ({ name, amount: '', selected: false })),
+      others: []
     });
   };
 
@@ -131,7 +146,7 @@ export default function FeeReceipt() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="bg-[#1e3a5f] text-white px-6 py-4 no-print">
+      <div className="bg-[#1e3a5f] text-white px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/AccountantPortal"><ArrowLeft className="w-5 h-5 hover:opacity-70" /></Link>
@@ -144,8 +159,8 @@ export default function FeeReceipt() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6">
-        {/* Form Inputs */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6 no-print">
+        {/* Form */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-lg font-semibold text-[#1e3a5f] mb-4">Receipt Details</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
@@ -176,18 +191,37 @@ export default function FeeReceipt() {
             </div>
           </div>
 
-          <h3 className="font-semibold text-gray-700 mb-3">Select Fee Items</h3>
-          <div className="space-y-2">
+          <h3 className="font-semibold text-gray-700 mb-3">Standard Fee Items</h3>
+          <div className="space-y-2 mb-4">
             {form.items.map((item, idx) => (
               <div key={idx} className="flex items-center gap-3">
                 <input type="checkbox" id={`item-${idx}`} checked={item.selected} onChange={() => toggleItem(idx)} className="w-4 h-4 accent-[#1e3a5f]" />
-                <label htmlFor={`item-${idx}`} className="text-sm font-medium w-44 text-gray-700">{item.name}</label>
-                {item.selected && item.name === 'Others' && (
-                  <Input placeholder="Specify item" value={item.custom_name} onChange={e => setItemCustomName(idx, e.target.value)} className="w-32 h-8 text-sm" />
-                )}
+                <label htmlFor={`item-${idx}`} className="text-sm font-medium w-48 text-gray-700">{item.name}</label>
                 {item.selected && (
                   <Input type="number" placeholder="Amount (₦)" value={item.amount} onChange={e => setItemAmount(idx, e.target.value)} className="w-32 h-8 text-sm" />
                 )}
+              </div>
+            ))}
+          </div>
+
+          {/* Others — multiple items */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-700">Other Items</h3>
+              <Button type="button" variant="outline" size="sm" onClick={addOther} className="text-xs">
+                <Plus className="w-3 h-3 mr-1" /> Add Item
+              </Button>
+            </div>
+            {form.others.length === 0 && (
+              <p className="text-sm text-gray-400 mb-2">No other items added. Click "Add Item" to add custom fee items.</p>
+            )}
+            {form.others.map((other, idx) => (
+              <div key={idx} className="flex items-center gap-2 mb-2">
+                <Input placeholder="Item name (e.g. Uniform)" value={other.name} onChange={e => setOtherField(idx, 'name', e.target.value)} className="flex-1 h-8 text-sm" />
+                <Input type="number" placeholder="Amount (₦)" value={other.amount} onChange={e => setOtherField(idx, 'amount', e.target.value)} className="w-32 h-8 text-sm" />
+                <button type="button" onClick={() => removeOther(idx)} className="text-red-400 hover:text-red-600">
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             ))}
           </div>
@@ -205,23 +239,18 @@ export default function FeeReceipt() {
 
         {/* PRINTABLE RECEIPT */}
         <div ref={receiptRef} style={{ width: '80mm', backgroundColor: 'white', padding: '8px', fontFamily: 'Arial, sans-serif', fontSize: '10px', color: '#000', position: 'relative', margin: '0 auto' }}>
-          {/* Watermark */}
           {settings?.school_logo && (
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', opacity: 0.07, pointerEvents: 'none' }}>
               <img src={settings.school_logo} alt="" style={{ width: '120px', height: '120px', objectFit: 'contain' }} />
             </div>
           )}
-
-          {/* Header */}
           <div style={{ textAlign: 'center', borderBottom: '2px solid #1e3a5f', paddingBottom: '6px', marginBottom: '6px' }}>
             {settings?.school_logo && <img src={settings.school_logo} alt="logo" style={{ width: '40px', height: '40px', objectFit: 'contain', margin: '0 auto 4px', display: 'block' }} />}
-            <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#1e3a5f' }}>MILTON COLLEGE OF ARTS AND SCIENCE</div>
+            <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#1e3a5f' }}>{settings?.school_name || 'MILTON COLLEGE OF ARTS AND SCIENCE'}</div>
             <div style={{ fontSize: '8px', color: '#555' }}>{settings?.address || 'Kaduna, Nigeria'}</div>
             <div style={{ fontSize: '8px', color: '#555' }}>Tel: {settings?.phone || ''} | Email: {settings?.email || ''}</div>
             <div style={{ marginTop: '4px', fontWeight: 'bold', fontSize: '10px', color: '#1e3a5f', borderTop: '1px dashed #ccc', paddingTop: '4px' }}>OFFICIAL SCHOOL FEE RECEIPT</div>
           </div>
-
-          {/* Receipt Meta */}
           <div style={{ marginBottom: '6px', fontSize: '9px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span><b>Receipt No:</b> {receiptNumber}</span>
@@ -229,8 +258,6 @@ export default function FeeReceipt() {
             </div>
             <div><b>Time:</b> {timeStr}</div>
           </div>
-
-          {/* Student Info */}
           <div style={{ borderTop: '1px dashed #999', borderBottom: '1px dashed #999', padding: '4px 0', marginBottom: '6px', fontSize: '9px' }}>
             <div><b>Received From:</b> {form.received_from || form.student_name}</div>
             <div><b>Student Name:</b> {form.student_name}</div>
@@ -239,8 +266,6 @@ export default function FeeReceipt() {
               <span><b>Term:</b> {form.term}</span>
             </div>
           </div>
-
-          {/* Fee Items Table */}
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '6px' }}>
             <thead>
               <tr style={{ backgroundColor: '#1e3a5f', color: 'white' }}>
@@ -249,9 +274,15 @@ export default function FeeReceipt() {
               </tr>
             </thead>
             <tbody>
-              {form.items.filter(i => i.selected && i.amount).map((item, idx) => (
+              {selectedStandard.map((item, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '2px 4px' }}>{item.name === 'Others' ? (item.custom_name || 'Others') : item.name}</td>
+                  <td style={{ padding: '2px 4px' }}>{item.name}</td>
+                  <td style={{ padding: '2px 4px', textAlign: 'right' }}>{parseFloat(item.amount || 0).toLocaleString()}</td>
+                </tr>
+              ))}
+              {validOthers.map((item, idx) => (
+                <tr key={`other-${idx}`} style={{ borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: '2px 4px' }}>{item.name}</td>
                   <td style={{ padding: '2px 4px', textAlign: 'right' }}>{parseFloat(item.amount || 0).toLocaleString()}</td>
                 </tr>
               ))}
@@ -269,13 +300,9 @@ export default function FeeReceipt() {
               )}
             </tfoot>
           </table>
-
-          {/* Amount in Words */}
           <div style={{ fontSize: '8px', borderTop: '1px dashed #999', paddingTop: '4px', marginBottom: '6px' }}>
             <b>The Sum of:</b> {numberToWords(totalPaid)}
           </div>
-
-          {/* Signatures */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '8px' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ borderTop: '1px solid #000', paddingTop: '2px', width: '60px' }}>Cashier</div>
@@ -284,17 +311,13 @@ export default function FeeReceipt() {
               <div style={{ borderTop: '1px solid #000', paddingTop: '2px', width: '60px' }}>Accountant</div>
             </div>
           </div>
-
-          {/* Footer */}
           <div style={{ marginTop: '8px', borderTop: '2px solid #1e3a5f', paddingTop: '4px', textAlign: 'center', fontSize: '7px', color: '#1e3a5f' }}>
-            <div><b>Milton College of Arts and Science</b></div>
+            <div><b>{settings?.school_name || 'Milton College of Arts and Science'}</b></div>
             <div>{dateStr} | {timeStr}</div>
             <div style={{ marginTop: '2px', fontStyle: 'italic' }}>Thank you for your payment!</div>
           </div>
         </div>
       </div>
-
-      <style>{`@media print { .no-print { display: none !important; } }`}</style>
     </div>
   );
 }

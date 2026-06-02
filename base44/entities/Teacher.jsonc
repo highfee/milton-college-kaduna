@@ -47,7 +47,7 @@
       "items": {
         "type": "string"
       },
-      "description": "Subject IDs assigned to this teacher"
+      "description": "Subject IDs"
     },
     "form_teacher_class": {
       "type": "string",
@@ -70,8 +70,11 @@
       "default": "Active"
     },
     "user_id": {
+      "type": "string"
+    },
+    "custom_password": {
       "type": "string",
-      "description": "Reference to User entity"
+      "description": "Teacher's custom password"
     }
   },
   "required": [
