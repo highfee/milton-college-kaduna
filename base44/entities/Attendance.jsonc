@@ -64,7 +64,7 @@
       "$or": [
         {
           "user_condition": {
-            "teacher": true
+            "role": "teacher"
           }
         },
         {
@@ -77,7 +77,7 @@
     "read": {
       "$or": [
         {
-          "data.student_id": "{{user.data.student_id}}"
+          "data.student_id": "{{user.id}}"
         },
         {
           "data.student_id": {
@@ -92,7 +92,7 @@
         },
         {
           "user_condition": {
-            "teacher": true
+            "role": "teacher"
           }
         },
         {
@@ -106,7 +106,7 @@
       "$or": [
         {
           "user_condition": {
-            "teacher": true
+            "role": "teacher"
           }
         },
         {
