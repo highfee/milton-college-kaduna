@@ -138,7 +138,7 @@ export default function TeacherPortal() {
     { icon: FileText, label: 'Enter Results', to: '/EnterResults', color: 'bg-blue-500' },
     { icon: ClipboardList, label: 'Review Class Results', to: '/ReviewClassResults', color: 'bg-green-500' },
     { icon: CheckSquare, label: 'Manage Assignments', to: '/ManageAssignments', color: 'bg-purple-500' },
-    { icon: BookOpen, label: 'Manage CBT', to: '/ManageCBT', color: 'bg-orange-500' },
+    { icon: BookOpen, label: 'CBT & Question Bank', to: '/ManageCBT', color: 'bg-orange-500' },
     { icon: Calendar, label: 'View Timetable', to: '/ManageTimetable', color: 'bg-teal-500' },
     { icon: Users, label: 'My Students', to: '/ManageStudents', color: 'bg-indigo-500' },
     { icon: Layers, label: 'CMS — Classroom Mgmt', to: '/TeacherCMS', color: 'bg-pink-500' },

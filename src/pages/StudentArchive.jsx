@@ -14,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 
 const SS3_CLASSES = ['SS3 Arts A', 'SS3 Arts B', 'SS3 Com A', 'SS3 Com B', 'SS3 Sci A', 'SS3 Sci B'];
-const PRIMARY5_CLASSES = ['Primary 5A', 'Primary 5B'];
 
 const reasonColor = {
   Graduated: 'bg-green-100 text-green-800',
@@ -60,10 +59,8 @@ export default function StudentArchive() {
       base44.entities.Student.list()
     ]);
     setArchived(archivedData);
-    // Show SS3 + Primary 5 students eligible for archiving after 3rd term
-    setActiveStudents(studentsData.filter(s =>
-      SS3_CLASSES.includes(s.current_class) || PRIMARY5_CLASSES.includes(s.current_class)
-    ));
+    // Show only SS3 students eligible for archiving (graduation). Primary 5 students are promoted/demoted by head teacher into JSS1.
+    setActiveStudents(studentsData.filter(s => SS3_CLASSES.includes(s.current_class)));
     setLoading(false);
   };
 
@@ -244,7 +241,7 @@ export default function StudentArchive() {
           {/* MOVE TO ARCHIVE */}
           <TabsContent value="move">
             <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-              <strong>Note:</strong> Students in SS3 (Secondary) and Primary 5 (Nursery/Primary) are shown here for archiving at the end of 3rd term. Archiving will snapshot all their results and fee records permanently.
+              <strong>Note:</strong> Only SS3 graduates are shown here for archiving at the end of 3rd term. Primary 5 students are promoted to JSS1 (or demoted) by the Head Teacher and remain in the active students list. Archiving will snapshot all results and fee records permanently.
             </div>
             <Card className="border-0 shadow-sm">
               <CardContent className="p-0">
@@ -259,7 +256,7 @@ export default function StudentArchive() {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {activeStudents.length === 0 ? (
-                        <tr><td colSpan={6} className="text-center py-12 text-gray-400">No SS3 or Primary 5 students found</td></tr>
+                        <tr><td colSpan={6} className="text-center py-12 text-gray-400">No SS3 graduates found for archiving</td></tr>
                       ) : activeStudents.map(s => (
                         <tr key={s.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3">

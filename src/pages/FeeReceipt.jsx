@@ -121,8 +121,18 @@ export default function FeeReceipt() {
     };
     await base44.entities.SchoolFeePayment.create(paymentData);
 
+    // Temporarily make receipt visible for html2canvas
     const el = receiptRef.current;
-    const canvas = await html2canvas(el, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
+    const prevStyle = el.style.cssText;
+    el.style.position = 'fixed';
+    el.style.top = '0';
+    el.style.left = '0';
+    el.style.zIndex = '9999';
+    el.style.visibility = 'visible';
+    el.style.display = 'block';
+    await new Promise(r => setTimeout(r, 100));
+    const canvas = await html2canvas(el, { scale: 3, backgroundColor: '#ffffff', useCORS: true, allowTaint: true, logging: false });
+    el.style.cssText = prevStyle;
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, 220] });
     const pdfW = pdf.internal.pageSize.getWidth();
@@ -238,7 +248,7 @@ export default function FeeReceipt() {
         </div>
 
         {/* PRINTABLE RECEIPT */}
-        <div ref={receiptRef} style={{ width: '80mm', backgroundColor: 'white', padding: '8px', fontFamily: 'Arial, sans-serif', fontSize: '10px', color: '#000', position: 'relative', margin: '0 auto' }}>
+        <div ref={receiptRef} style={{ width: '80mm', backgroundColor: 'white', padding: '8px', fontFamily: 'Arial, sans-serif', fontSize: '10px', color: '#000', position: 'relative', margin: '0 auto', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
           {settings?.school_logo && (
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', opacity: 0.07, pointerEvents: 'none' }}>
               <img src={settings.school_logo} alt="" style={{ width: '120px', height: '120px', objectFit: 'contain' }} />

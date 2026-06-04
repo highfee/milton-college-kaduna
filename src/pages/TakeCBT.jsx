@@ -118,7 +118,8 @@ export default function TakeCBT() {
     const allExams = await base44.entities.CBTExam.filter({ status: 'Published' });
     const available = allExams.filter(e =>
       e.classes?.includes(studentData.current_class) &&
-      e.start_date <= now && e.end_date >= now
+      (!e.start_date || e.start_date <= now) &&
+      (!e.end_date || e.end_date >= now)
     );
     // Remove already taken
     const results = await base44.entities.CBTResult.filter({ student_id: studentData.id });
@@ -284,7 +285,7 @@ export default function TakeCBT() {
                     <Badge variant="outline" className="text-xs">{q.type === 'theory' ? 'Theory' : 'Objective'}</Badge>
                     <span className="text-sm text-gray-500">{q.marks} mark(s)</span>
                   </div>
-                  <h3 className="text-base font-semibold mb-4">Q{currentQ + 1}. {q.question}</h3>
+                  <div className="text-base font-semibold mb-4" dangerouslySetInnerHTML={{ __html: `Q${currentQ + 1}. ${q.question}` }} />
                   {q.image_url && <img src={q.image_url} alt="question" className="mb-4 max-w-full rounded-lg border" />}
 
                   {q.type === 'objective' ? (

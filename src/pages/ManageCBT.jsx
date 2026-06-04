@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Edit, Trash2, Copy, Clock, BookOpen, Archive, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Copy, Clock, BookOpen, Archive, Eye, Search, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
+import ReactQuill from 'react-quill';
 
 const CLASSES = {
   'Nursery': ['Reception Class', 'Nursery 1', 'Nursery 2'],
@@ -50,6 +51,10 @@ export default function ManageCBT() {
   const [currentQuestion, setCurrentQuestion] = useState(emptyQuestion());
   const [viewResultsExam, setViewResultsExam] = useState(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [bankSearch, setBankSearch] = useState('');
+  const [bankTypeFilter, setBankTypeFilter] = useState('all');
+  const [bankSubjectFilter, setBankSubjectFilter] = useState('all');
+  const [selectedBankQs, setSelectedBankQs] = useState([]);
   const { toast } = useToast();
 
   useEffect(() => { loadData(); }, []);
@@ -141,7 +146,8 @@ export default function ManageCBT() {
   };
 
   const handleAddQuestion = () => {
-    if (!currentQuestion.question) { toast({ title: 'Enter a question', variant: 'destructive' }); return; }
+    const questionText = currentQuestion.question?.replace(/<[^>]*>/g, '').trim();
+    if (!questionText) { toast({ title: 'Enter a question', variant: 'destructive' }); return; }
     if (currentQuestion.type === 'objective' && currentQuestion.options.some(opt => !opt)) {
       toast({ title: 'Fill all options for objective question', variant: 'destructive' }); return;
     }
@@ -281,30 +287,90 @@ export default function ManageCBT() {
                     <p>No questions in bank yet. Close an exam to move its questions here.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-                    {questionBank.map((q, i) => (
-                      <Card key={i} className="border bg-gray-50">
-                        <CardContent className="p-3">
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="text-xs text-gray-500">{q.exam_title} • {q.subject}</span>
-                            <Badge variant="outline" className="text-xs">{q.type === 'theory' ? 'Theory' : 'Objective'}</Badge>
-                          </div>
-                          <p className="text-sm font-medium">{q.question}</p>
-                          {q.image_url && <img src={q.image_url} alt="Q" className="mt-2 max-h-24 rounded" />}
-                          {q.type === 'objective' && (
-                            <div className="grid grid-cols-2 gap-1 mt-2">
-                              {q.options?.map((opt, oi) => (
-                                <p key={oi} className={`text-xs ${oi === q.correct_answer ? 'text-green-600 font-semibold' : 'text-gray-500'}`}>
-                                  {oi + 1}. {opt}
-                                </p>
-                              ))}
-                            </div>
-                          )}
-                          <p className="text-xs text-gray-400 mt-1">Marks: {q.marks}</p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                  <>
+                    {/* Filters + Actions */}
+                    <div className="flex flex-wrap gap-3 mb-4">
+                      <div className="relative flex-1 min-w-[180px]">
+                        <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                        <Input className="pl-9" placeholder="Search questions..." value={bankSearch} onChange={e => setBankSearch(e.target.value)} />
+                      </div>
+                      <Select value={bankTypeFilter} onValueChange={setBankTypeFilter}>
+                        <SelectTrigger className="w-36"><SelectValue placeholder="Type" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="objective">Objective</SelectItem>
+                          <SelectItem value="theory">Theory</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={bankSubjectFilter} onValueChange={setBankSubjectFilter}>
+                        <SelectTrigger className="w-40"><SelectValue placeholder="Subject" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Subjects</SelectItem>
+                          {[...new Set(questionBank.map(q => q.subject).filter(Boolean))].map(s => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedBankQs.length > 0 && (
+                        <Button size="sm" className="bg-[#1e3a5f] hover:bg-[#2c4a6e]" onClick={() => {
+                          const qs = questionBank.filter((_, i) => selectedBankQs.includes(i));
+                          setFormData(prev => ({ ...prev, questions: [...(prev.questions || []), ...qs.map(q => ({ type: q.type, question: q.question, image_url: q.image_url || '', options: q.options || ['','','',''], correct_answer: q.correct_answer || 0, marks: q.marks || 1 }))] }));
+                          setSelectedBankQs([]);
+                          setIsDialogOpen(true);
+                          toast({ title: `${qs.length} question(s) added to new exam!` });
+                        }}>
+                          <Plus className="w-4 h-4 mr-1" /> Use {selectedBankQs.length} Selected in New Exam
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      {questionBank.filter(q => {
+                        const matchSearch = !bankSearch || q.question?.toLowerCase().includes(bankSearch.toLowerCase());
+                        const matchType = bankTypeFilter === 'all' || q.type === bankTypeFilter;
+                        const matchSubj = bankSubjectFilter === 'all' || q.subject === bankSubjectFilter;
+                        return matchSearch && matchType && matchSubj;
+                      }).length} questions found · Click checkboxes to select for reuse
+                    </p>
+                    <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+                      {questionBank.map((q, i) => {
+                        const matchSearch = !bankSearch || q.question?.replace(/<[^>]*>/g,'').toLowerCase().includes(bankSearch.toLowerCase());
+                        const matchType = bankTypeFilter === 'all' || q.type === bankTypeFilter;
+                        const matchSubj = bankSubjectFilter === 'all' || q.subject === bankSubjectFilter;
+                        if (!matchSearch || !matchType || !matchSubj) return null;
+                        const isSelected = selectedBankQs.includes(i);
+                        return (
+                          <Card key={i} className={`border cursor-pointer transition-all ${isSelected ? 'border-[#1e3a5f] bg-blue-50' : 'bg-gray-50'}`}
+                            onClick={() => setSelectedBankQs(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i])}>
+                            <CardContent className="p-3">
+                              <div className="flex items-start gap-3">
+                                <input type="checkbox" checked={isSelected} readOnly className="mt-1 accent-[#1e3a5f]" />
+                                <div className="flex-1">
+                                  <div className="flex justify-between items-start mb-1 flex-wrap gap-1">
+                                    <span className="text-xs text-gray-500">{q.exam_title} • {q.subject}</span>
+                                    <div className="flex gap-1">
+                                      <Badge variant="outline" className="text-xs">{q.type === 'theory' ? 'Theory' : 'Objective'}</Badge>
+                                      <Badge variant="outline" className="text-xs">{q.marks} mk</Badge>
+                                    </div>
+                                  </div>
+                                  <div className="text-sm font-medium" dangerouslySetInnerHTML={{ __html: q.question }} />
+                                  {q.image_url && <img src={q.image_url} alt="Q" className="mt-2 max-h-24 rounded border" />}
+                                  {q.type === 'objective' && (
+                                    <div className="grid grid-cols-2 gap-1 mt-2">
+                                      {q.options?.map((opt, oi) => (
+                                        <p key={oi} className={`text-xs px-2 py-0.5 rounded ${oi === q.correct_answer ? 'text-green-700 bg-green-50 font-semibold' : 'text-gray-500'}`}>
+                                          {['A','B','C','D'][oi]}. {opt}
+                                        </p>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -427,7 +493,28 @@ export default function ManageCBT() {
                     </div>
                     <div>
                       <Label>Question *</Label>
-                      <Textarea value={currentQuestion.question} onChange={e => setCurrentQuestion({ ...currentQuestion, question: e.target.value })} rows={2} placeholder="Enter question text..." />
+                      <div className="mt-1 border rounded-md overflow-hidden" style={{ minHeight: '120px' }}>
+                        <ReactQuill
+                          value={currentQuestion.question}
+                          onChange={val => setCurrentQuestion({ ...currentQuestion, question: val })}
+                          theme="snow"
+                          modules={{
+                            toolbar: [
+                              [{ header: [1, 2, 3, false] }],
+                              ['bold', 'italic', 'underline', 'strike'],
+                              [{ color: [] }, { background: [] }],
+                              [{ list: 'ordered' }, { list: 'bullet' }],
+                              [{ align: [] }],
+                              ['blockquote', 'code-block'],
+                              [{ script: 'sub' }, { script: 'super' }],
+                              ['link'],
+                              ['clean']
+                            ]
+                          }}
+                          placeholder="Enter question text with full formatting..."
+                          style={{ minHeight: '100px' }}
+                        />
+                      </div>
                     </div>
                     <div>
                       <Label>Image (optional)</Label>
@@ -490,7 +577,7 @@ export default function ManageCBT() {
                             <Badge variant="outline" className="text-xs">{q.type === 'theory' ? 'Theory' : 'Objective'}</Badge>
                             <span className="text-xs text-gray-500">{q.marks} mark(s)</span>
                           </div>
-                          <p className="text-sm font-medium">Q{idx + 1}: {q.question}</p>
+                          <div className="text-sm font-medium" dangerouslySetInnerHTML={{ __html: `Q${idx + 1}: ${q.question}` }} />
                           {q.image_url && <img src={q.image_url} alt="" className="mt-1 max-h-14 rounded" />}
                           {q.type === 'objective' && (
                             <div className="grid grid-cols-2 gap-1 mt-1 text-xs">

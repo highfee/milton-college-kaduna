@@ -73,9 +73,12 @@ export default function StudentPortal() {
       const classSubjects = allSubjects.filter(s => s.classes?.includes(studentData[0].current_class));
       setSubjects(classSubjects);
       const now = new Date().toISOString();
+      const takenCBT = cbtResults.map(r => r.exam_id);
       const availableCBT = cbtExams.filter(exam =>
         exam.classes?.includes(studentData[0].current_class) &&
-        (!exam.start_date || exam.start_date <= now) && (!exam.end_date || exam.end_date >= now)
+        (!exam.start_date || exam.start_date <= now) &&
+        (!exam.end_date || exam.end_date >= now) &&
+        !takenCBT.includes(exam.id)
       );
       setStats({
         activeAssignments: assignments.length,

@@ -472,7 +472,8 @@ export default function ResultSlip({ student, results, settings, term, session, 
               alt="Approved"
               style={{
                 width: '100%', height: '100%', objectFit: 'contain',
-                mixBlendMode: 'multiply', opacity: 0.88
+                mixBlendMode: 'multiply', opacity: 0.82,
+                filter: 'contrast(1.1) saturate(1.2)'
               }}
             />
           </div>
@@ -489,7 +490,8 @@ export default function ResultSlip({ student, results, settings, term, session, 
               alt="Promoted"
               style={{
                 width: '100%', height: '100%', objectFit: 'contain',
-                mixBlendMode: 'multiply', opacity: 0.92
+                mixBlendMode: 'multiply', opacity: 0.82,
+                filter: 'contrast(1.1) saturate(1.2)'
               }}
             />
           </div>
