@@ -12,6 +12,7 @@ import StudentAssignments from './pages/StudentAssignments';
 import StudentAssignmentScores from './pages/StudentAssignmentScores';
 import StudentLMS from './pages/StudentLMS';
 import TeacherCMS from './pages/TeacherCMS';
+import StudentArchive from './pages/StudentArchive';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -68,6 +69,7 @@ const AuthenticatedApp = () => {
       <Route path="/StudentAssignmentScores" element={<LayoutWrapper currentPageName="StudentAssignmentScores"><StudentAssignmentScores /></LayoutWrapper>} />
       <Route path="/StudentLMS" element={<LayoutWrapper currentPageName="StudentLMS"><StudentLMS /></LayoutWrapper>} />
       <Route path="/TeacherCMS" element={<LayoutWrapper currentPageName="TeacherCMS"><TeacherCMS /></LayoutWrapper>} />
+      <Route path="/StudentArchive" element={<LayoutWrapper currentPageName="StudentArchive"><StudentArchive /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

@@ -159,7 +159,7 @@ export default function StudentPortal() {
               onChange={e => setAdmissionNo(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
           </div>
           <div>
-            <Label>Password <span className="text-xs text-gray-400">(default: User123)</span></Label>
+            <Label>Password</Label>
             <div className="relative">
               <Input type={showPassword ? 'text' : 'password'} placeholder="Enter your password"
                 value={password} onChange={e => setPassword(e.target.value)}

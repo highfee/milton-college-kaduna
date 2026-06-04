@@ -100,7 +100,7 @@ export default function ParentPortal() {
     // Default password = phone number. Custom password stored in parent.custom_password
     const expectedPassword = parent.custom_password || parent.phone;
     if (passwordInput.trim() !== expectedPassword) {
-      setLoginError('Incorrect password. Default password is your phone number.');
+      setLoginError('Incorrect password. Please contact the school administration for assistance.');
       setLoginLoading(false);
       return;
     }

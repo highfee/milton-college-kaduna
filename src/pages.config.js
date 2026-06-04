@@ -98,6 +98,7 @@ import StudentAssignments from './pages/StudentAssignments';
 import StudentAssignmentScores from './pages/StudentAssignmentScores';
 import StudentLMS from './pages/StudentLMS';
 import TeacherCMS from './pages/TeacherCMS';
+import StudentArchive from './pages/StudentArchive';
 
 export const PAGES = {
     "AdminPortal": AdminPortal,
@@ -151,6 +152,7 @@ export const PAGES = {
     "StudentAssignmentScores": StudentAssignmentScores,
     "StudentLMS": StudentLMS,
     "TeacherCMS": TeacherCMS,
+    "StudentArchive": StudentArchive,
 }
 
 export const pagesConfig = {

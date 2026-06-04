@@ -5,7 +5,7 @@ import { createPageUrl } from '../utils';
 import { 
   Users, GraduationCap, BookOpen, Calendar, FileText, Settings,
   TrendingUp, UserPlus, ClipboardList, Image, MessageSquare, BarChart3,
-  LogOut, Menu, X, Printer
+  LogOut, Menu, X, Printer, Archive
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,6 +65,7 @@ export default function AdminPortal() {
     { icon: Users, label: 'Non-Academic Staff', page: 'ManageNonAcademicStaff', color: 'bg-slate-600' },
     { icon: TrendingUp, label: 'Master List', page: 'MasterList', color: 'bg-emerald-600' },
     { icon: ClipboardList, label: 'Result Tokens', page: 'ResultTokens', color: 'bg-amber-600' },
+    { icon: Archive, label: 'Student Archive', page: 'StudentArchive', color: 'bg-slate-700' },
   ];
 
   const statCards = [

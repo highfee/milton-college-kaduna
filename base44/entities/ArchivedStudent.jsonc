@@ -1,0 +1,138 @@
+{
+  "name": "ArchivedStudent",
+  "type": "object",
+  "properties": {
+    "student_id": {
+      "type": "string",
+      "description": "Original Student entity ID"
+    },
+    "admission_number": {
+      "type": "string"
+    },
+    "first_name": {
+      "type": "string"
+    },
+    "last_name": {
+      "type": "string"
+    },
+    "middle_name": {
+      "type": "string"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "gender": {
+      "type": "string"
+    },
+    "passport_photo": {
+      "type": "string"
+    },
+    "section": {
+      "type": "string"
+    },
+    "year_admitted": {
+      "type": "string"
+    },
+    "year_archived": {
+      "type": "string"
+    },
+    "final_class": {
+      "type": "string",
+      "description": "Last class attended"
+    },
+    "archive_reason": {
+      "type": "string",
+      "enum": [
+        "Graduated",
+        "Withdrawn",
+        "Expelled",
+        "Suspended",
+        "Transferred",
+        "Other"
+      ],
+      "default": "Graduated"
+    },
+    "archive_notes": {
+      "type": "string"
+    },
+    "parent_name": {
+      "type": "string"
+    },
+    "parent_phone": {
+      "type": "string"
+    },
+    "parent_email": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "blood_group": {
+      "type": "string"
+    },
+    "genotype": {
+      "type": "string"
+    },
+    "state_of_origin": {
+      "type": "string"
+    },
+    "local_government": {
+      "type": "string"
+    },
+    "tribe": {
+      "type": "string"
+    },
+    "sport_house": {
+      "type": "string"
+    },
+    "weight": {
+      "type": "number"
+    },
+    "height": {
+      "type": "number"
+    },
+    "results_snapshot": {
+      "type": "array",
+      "description": "All termly results",
+      "items": {
+        "type": "object"
+      }
+    },
+    "fee_payments_snapshot": {
+      "type": "array",
+      "description": "All fee payment records",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "admission_number",
+    "first_name",
+    "last_name",
+    "archive_reason"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
