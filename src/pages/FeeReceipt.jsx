@@ -121,18 +121,24 @@ export default function FeeReceipt() {
     };
     await base44.entities.SchoolFeePayment.create(paymentData);
 
-    // Temporarily make receipt visible for html2canvas
+    // Clone receipt into a temporary off-screen container for reliable capture
     const el = receiptRef.current;
-    const prevStyle = el.style.cssText;
-    el.style.position = 'fixed';
-    el.style.top = '0';
-    el.style.left = '0';
-    el.style.zIndex = '9999';
-    el.style.visibility = 'visible';
-    el.style.display = 'block';
-    await new Promise(r => setTimeout(r, 100));
-    const canvas = await html2canvas(el, { scale: 3, backgroundColor: '#ffffff', useCORS: true, allowTaint: true, logging: false });
-    el.style.cssText = prevStyle;
+    const clone = el.cloneNode(true);
+    clone.style.position = 'fixed';
+    clone.style.top = '0';
+    clone.style.left = '0';
+    clone.style.zIndex = '99999';
+    clone.style.width = '302px'; // ~80mm at 96dpi
+    clone.style.background = '#ffffff';
+    clone.style.visibility = 'visible';
+    clone.style.display = 'block';
+    // Remove watermark image to avoid CORS issues
+    const watermarks = clone.querySelectorAll('img[alt=""]');
+    watermarks.forEach(img => img.remove());
+    document.body.appendChild(clone);
+    await new Promise(r => setTimeout(r, 200));
+    const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff', useCORS: true, allowTaint: false, logging: false });
+    document.body.removeChild(clone);
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, 220] });
     const pdfW = pdf.internal.pageSize.getWidth();

@@ -63,23 +63,28 @@ export default function StudentPortal() {
     const studentData = await base44.entities.Student.filter({ admission_number: admNo });
     if (studentData[0]) {
       setStudent(studentData[0]);
-      const [assignments, results, cbtExams, allSubjects, cbtResults] = await Promise.all([
-        base44.entities.Assignment.filter({ class: studentData[0].current_class, status: 'Active' }),
+      const [allAssignments, results, cbtExams, allSubjects, cbtResults] = await Promise.all([
+        base44.entities.Assignment.filter({ class: studentData[0].current_class }),
         base44.entities.Result.filter({ student_id: studentData[0].id, status: 'Approved' }),
         base44.entities.CBTExam.filter({ status: 'Published' }),
         base44.entities.Subject.filter({ status: 'Active' }),
         base44.entities.CBTResult.filter({ student_id: studentData[0].id })
       ]);
+      // Show Active assignments OR any assignment not explicitly Inactive
+      const assignments = allAssignments.filter(a => !a.status || a.status === 'Active');
       const classSubjects = allSubjects.filter(s => s.classes?.includes(studentData[0].current_class));
       setSubjects(classSubjects);
-      const now = new Date().toISOString();
+      const now = new Date();
       const takenCBT = cbtResults.map(r => r.exam_id);
-      const availableCBT = cbtExams.filter(exam =>
-        exam.classes?.includes(studentData[0].current_class) &&
-        (!exam.start_date || exam.start_date <= now) &&
-        (!exam.end_date || exam.end_date >= now) &&
-        !takenCBT.includes(exam.id)
-      );
+      const availableCBT = cbtExams.filter(exam => {
+        if (!exam.classes?.includes(studentData[0].current_class)) return false;
+        if (takenCBT.includes(exam.id)) return false;
+        // Check date window only if both dates are set
+        if (exam.start_date && exam.end_date) {
+          return new Date(exam.start_date) <= now && new Date(exam.end_date) >= now;
+        }
+        return true; // No date restriction — always available
+      });
       setStats({
         activeAssignments: assignments.length,
         completedSubjects: results.length,

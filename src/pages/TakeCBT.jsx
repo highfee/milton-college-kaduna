@@ -114,17 +114,20 @@ export default function TakeCBT() {
     if (!studentData) { setLoading(false); return; }
     setStudent(studentData);
 
-    const now = new Date().toISOString();
+    const now = new Date();
     const allExams = await base44.entities.CBTExam.filter({ status: 'Published' });
-    const available = allExams.filter(e =>
-      e.classes?.includes(studentData.current_class) &&
-      (!e.start_date || e.start_date <= now) &&
-      (!e.end_date || e.end_date >= now)
-    );
-    // Remove already taken
     const results = await base44.entities.CBTResult.filter({ student_id: studentData.id });
     const takenIds = results.map(r => r.exam_id);
-    setAvailableExams(available.filter(e => !takenIds.includes(e.id)));
+    const available = allExams.filter(e => {
+      if (!e.classes?.includes(studentData.current_class)) return false;
+      if (takenIds.includes(e.id)) return false;
+      // Only apply date window if both dates are explicitly set
+      if (e.start_date && e.end_date) {
+        return new Date(e.start_date) <= now && new Date(e.end_date) >= now;
+      }
+      return true;
+    });
+    setAvailableExams(available);
     setLoading(false);
   };
 

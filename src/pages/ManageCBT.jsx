@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const CLASSES = {
   'Nursery': ['Reception Class', 'Nursery 1', 'Nursery 2'],
@@ -493,26 +494,24 @@ export default function ManageCBT() {
                     </div>
                     <div>
                       <Label>Question *</Label>
-                      <div className="mt-1 border rounded-md overflow-hidden" style={{ minHeight: '120px' }}>
+                      <div className="mt-1 border rounded-md overflow-hidden bg-white">
                         <ReactQuill
                           value={currentQuestion.question}
                           onChange={val => setCurrentQuestion({ ...currentQuestion, question: val })}
                           theme="snow"
                           modules={{
                             toolbar: [
-                              [{ header: [1, 2, 3, false] }],
-                              ['bold', 'italic', 'underline', 'strike'],
-                              [{ color: [] }, { background: [] }],
-                              [{ list: 'ordered' }, { list: 'bullet' }],
-                              [{ align: [] }],
-                              ['blockquote', 'code-block'],
-                              [{ script: 'sub' }, { script: 'super' }],
-                              ['link'],
+                              [{ 'header': [1, 2, false] }],
+                              ['bold', 'italic', 'underline'],
+                              [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                              [{ 'script': 'sub' }, { 'script': 'super' }],
+                              [{ 'color': [] }],
                               ['clean']
                             ]
                           }}
-                          placeholder="Enter question text with full formatting..."
-                          style={{ minHeight: '100px' }}
+                          formats={['header', 'bold', 'italic', 'underline', 'list', 'bullet', 'script', 'color']}
+                          placeholder="Type your question here..."
+                          style={{ minHeight: '120px' }}
                         />
                       </div>
                     </div>

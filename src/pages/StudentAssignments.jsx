@@ -35,11 +35,12 @@ export default function StudentAssignments() {
     const studentData = await base44.entities.Student.filter({ admission_number: admNo });
     if (!studentData[0]) { navigate('/StudentPortal'); return; }
     setStudent(studentData[0]);
-    const [assgns, subs] = await Promise.all([
-      base44.entities.Assignment.filter({ class: studentData[0].current_class, status: 'Active' }),
+    const [allAssgns, subs] = await Promise.all([
+      base44.entities.Assignment.filter({ class: studentData[0].current_class }),
       base44.entities.AssignmentSubmission.filter({ student_id: studentData[0].id })
     ]);
-    setAssignments(assgns);
+    // Show Active assignments or those without an explicit status set
+    setAssignments(allAssgns.filter(a => !a.status || a.status === 'Active'));
     const subMap = {};
     subs.forEach(s => { subMap[s.assignment_id] = s; });
     setSubmissions(subMap);
