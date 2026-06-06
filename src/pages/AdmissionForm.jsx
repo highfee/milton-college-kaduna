@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
@@ -25,6 +25,7 @@ const STATES = [
 ];
 
 export default function AdmissionForm() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -32,6 +33,12 @@ export default function AdmissionForm() {
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+
+  // Pre-fill section/class from requirements page
+  const urlParams = new URLSearchParams(window.location.search);
+  const prefillSection = urlParams.get('section') || '';
+  const prefillClass = urlParams.get('class') || '';
+
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -39,8 +46,8 @@ export default function AdmissionForm() {
     date_of_birth: '',
     gender: '',
     passport_photo: '',
-    section_applying: '',
-    class_applying: '',
+    section_applying: prefillSection,
+    class_applying: prefillClass,
     former_school_name: '',
     former_school_class: '',
     last_result_upload: '',
@@ -124,13 +131,25 @@ export default function AdmissionForm() {
     setSubmitting(true);
 
     const appNum = 'APP' + Date.now().toString().slice(-8);
+    const appDate = new Date().toISOString().split('T')[0];
     
     await base44.entities.AdmissionApplication.create({
       ...formData,
       application_number: appNum,
-      application_date: new Date().toISOString().split('T')[0],
+      application_date: appDate,
       status: 'Pending'
     });
+
+    // Send confirmation email to parent/guardian
+    if (formData.parent_email) {
+      const applicantName = `${formData.first_name} ${formData.middle_name ? formData.middle_name + ' ' : ''}${formData.last_name}`.trim();
+      await base44.integrations.Core.SendEmail({
+        to: formData.parent_email,
+        subject: `Admission Application Received — ${applicantName} | Ref: ${appNum}`,
+        body: `Dear ${formData.parent_name},\n\nThank you for applying to Milton College of Arts and Science, Kaduna.\n\nYour application has been received and is currently under review.\n\nAPPLICATION DETAILS:\nApplicant Name: ${applicantName}\nApplication Number: ${appNum}\nDate Submitted: ${appDate}\nSection Applied For: ${formData.section_applying}\nClass Applied For: ${formData.class_applying}\nFormer School: ${formData.former_school_name || 'N/A'}\n\nPlease keep your Application Number (${appNum}) safe. You will need it to check your application status.\n\nTo check your application status at any time, visit our website and enter your application number.\n\nWe will notify you once your application has been reviewed by our admissions office.\n\nWarm regards,\nAdmissions Office\nMilton College of Arts and Science, Kaduna`,
+        from_name: 'Milton College Admissions'
+      }).catch(() => {}); // Don't block submission if email fails
+    }
 
     setApplicationNumber(appNum);
     setSubmitted(true);

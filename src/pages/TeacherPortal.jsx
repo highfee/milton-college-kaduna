@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 export default function TeacherPortal() {
   const [teacher, setTeacher] = useState(null);
   const [stats, setStats] = useState({});
+  const [pendingCbtGrading, setPendingCbtGrading] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
   const [staffId, setStaffId] = useState('');
@@ -58,6 +59,7 @@ export default function TeacherPortal() {
 
   const loadTeacherByStaffId = async (sid) => {
     setLoading(true);
+    const userData = await base44.auth.me().catch(() => null);
     const teacherData = await base44.entities.Teacher.filter({ staff_id: sid });
     if (teacherData[0]) {
       const t = teacherData[0];
@@ -75,12 +77,22 @@ export default function TeacherPortal() {
       } else {
         subjectsPromise = base44.entities.Subject.filter({ teacher_id: t.id });
       }
-      const [assignments, subjects, students] = await Promise.all([
+      const teacherEmail = userData?.email || t.email || '';
+      const [assignments, subjects, students, allExams, allResults] = await Promise.all([
         base44.entities.Assignment.filter({ teacher_id: t.id }),
         subjectsPromise,
-        cls ? base44.entities.Student.filter({ current_class: cls, status: 'Active' }) : Promise.resolve([])
+        cls ? base44.entities.Student.filter({ current_class: cls, status: 'Active' }) : Promise.resolve([]),
+        base44.entities.CBTExam.filter({ created_by: teacherEmail }),
+        base44.entities.CBTResult.list('-created_date', 200)
       ]);
       setStats({ mySubjects: subjects.length, myAssignments: assignments.length, myStudents: students.length });
+      // Find exams with ungraded theory results
+      const pending = allExams.filter(exam => {
+        const hasTheory = exam.questions?.some(q => q.type === 'theory');
+        if (!hasTheory) return false;
+        return allResults.some(r => r.exam_id === exam.id && r.theory_graded === false);
+      });
+      setPendingCbtGrading(pending);
       setLoggedIn(true);
     } else {
       setLoginError('Teacher record not found.');
@@ -260,6 +272,24 @@ export default function TeacherPortal() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Pending CBT theory grading notification */}
+        {pendingCbtGrading.length > 0 && (
+          <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+            <p className="font-bold text-amber-800">⚠️ Action Required: Theory Questions Pending Grading</p>
+            <p className="text-sm text-amber-700 mt-1">
+              The following CBT exam(s) have ungraded theory answers submitted by students:
+            </p>
+            <ul className="mt-2 space-y-1">
+              {pendingCbtGrading.map(e => (
+                <li key={e.id} className="text-sm text-amber-800 font-medium">• {e.title} ({e.subject_name})</li>
+              ))}
+            </ul>
+            <Link to="/ViewCBTResults" className="inline-block mt-2 text-sm text-amber-700 underline font-semibold">
+              Go to CBT Results to grade theory answers →
+            </Link>
+          </div>
+        )}
+
         <Card className="border-0 shadow-md mb-8 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <CardContent className="p-6 flex items-center gap-4">
             {teacher.passport_photo ? (

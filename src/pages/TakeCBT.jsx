@@ -167,6 +167,9 @@ export default function TakeCBT() {
     await base44.entities.CBTResult.create({
       exam_id: exam.id,
       exam_title: exam.title,
+      exam_type: exam.exam_type,
+      subject_name: exam.subject_name,
+      teacher_email: exam.created_by,
       student_id: student.id,
       student_name: `${student.first_name} ${student.last_name}`,
       admission_number: student.admission_number,
@@ -294,11 +297,13 @@ export default function TakeCBT() {
                   {q.type === 'objective' ? (
                     <RadioGroup value={answers[currentQ]?.toString()} onValueChange={v => setAnswers({ ...answers, [currentQ]: parseInt(v) })}>
                       <div className="space-y-3">
-                        {q.options?.map((opt, idx) => (
-                          <div key={idx} className={`flex items-center space-x-3 p-3 border-2 rounded-lg cursor-pointer transition-colors ${answers[currentQ] === idx ? 'border-[#1e3a5f] bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                            <RadioGroupItem value={idx.toString()} id={`opt-${idx}`} />
-                            <Label htmlFor={`opt-${idx}`} className="flex-1 cursor-pointer text-sm">
-                              <span className="font-semibold mr-2">{['A', 'B', 'C', 'D'][idx]}.</span>{opt}
+                        {(q.options || []).map((opt, idx) => (
+                          <div key={idx} onClick={() => setAnswers({ ...answers, [currentQ]: idx })}
+                            className={`flex items-center space-x-3 p-3 border-2 rounded-lg cursor-pointer transition-colors ${answers[currentQ] === idx ? 'border-[#1e3a5f] bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                            <RadioGroupItem value={idx.toString()} id={`opt-${currentQ}-${idx}`} />
+                            <Label htmlFor={`opt-${currentQ}-${idx}`} className="flex-1 cursor-pointer text-sm">
+                              <span className="font-semibold mr-2">{['A', 'B', 'C', 'D'][idx]}.</span>
+                              <span dangerouslySetInnerHTML={{ __html: opt }} />
                             </Label>
                           </div>
                         ))}

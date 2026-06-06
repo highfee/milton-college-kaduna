@@ -111,7 +111,7 @@ export default function ManageCBT() {
     } else {
       await base44.entities.CBTExam.create(dataToSave);
     }
-    toast({ title: editingExam ? 'Exam updated!' : 'Exam created!' });
+    toast({ title: editingExam ? 'Exam updated!' : 'Exam created!', duration: 25000 });
     setIsDialogOpen(false);
     resetForm();
     loadData();
@@ -136,7 +136,7 @@ export default function ManageCBT() {
 
   const handleClose = async (exam) => {
     await base44.entities.CBTExam.update(exam.id, { status: 'Closed' });
-    toast({ title: 'Exam closed. Questions moved to Question Bank.' });
+    toast({ title: 'Exam closed. Questions moved to Question Bank.', duration: 25000 });
     loadData();
   };
 
@@ -148,9 +148,9 @@ export default function ManageCBT() {
 
   const handleAddQuestion = () => {
     const questionText = currentQuestion.question?.replace(/<[^>]*>/g, '').trim();
-    if (!questionText) { toast({ title: 'Enter a question', variant: 'destructive' }); return; }
+    if (!questionText) { toast({ title: 'Enter a question', variant: 'destructive', duration: 25000 }); return; }
     if (currentQuestion.type === 'objective' && currentQuestion.options.some(opt => !opt)) {
-      toast({ title: 'Fill all options for objective question', variant: 'destructive' }); return;
+      toast({ title: 'Fill all options for objective question', variant: 'destructive', duration: 25000 }); return;
     }
     setFormData({ ...formData, questions: [...formData.questions, { ...currentQuestion }] });
     setCurrentQuestion(emptyQuestion());
@@ -318,7 +318,7 @@ export default function ManageCBT() {
                           setFormData(prev => ({ ...prev, questions: [...(prev.questions || []), ...qs.map(q => ({ type: q.type, question: q.question, image_url: q.image_url || '', options: q.options || ['','','',''], correct_answer: q.correct_answer || 0, marks: q.marks || 1 }))] }));
                           setSelectedBankQs([]);
                           setIsDialogOpen(true);
-                          toast({ title: `${qs.length} question(s) added to new exam!` });
+                          toast({ title: `${qs.length} question(s) added to new exam!`, duration: 25000 });
                         }}>
                           <Plus className="w-4 h-4 mr-1" /> Use {selectedBankQs.length} Selected in New Exam
                         </Button>

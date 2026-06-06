@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   DollarSign, Receipt, Users, AlertCircle, 
-  TrendingUp, LogOut, Printer, Plus, BarChart3, Eye, EyeOff
+  TrendingUp, LogOut, Plus, BarChart3, Eye, EyeOff,
+  GraduationCap, CheckCircle, XCircle, FileText, Printer
 } from 'lucide-react';
-
-const ACCOUNTANT_EMAIL = 'josephdorathy83@gmail.com';
 
 export default function AccountantPortal() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -26,6 +28,20 @@ export default function AccountantPortal() {
   const [showPw, setShowPw] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+
+  // Admissions
+  const [applications, setApplications] = useState([]);
+  const [appsLoading, setAppsLoading] = useState(false);
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [reviewNotes, setReviewNotes] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+
+  // Final admission dialog
+  const [admissionDialog, setAdmissionDialog] = useState(null);
+  const [testScore, setTestScore] = useState('');
+  const [finalClass, setFinalClass] = useState('');
+  const [admissionProcessing, setAdmissionProcessing] = useState(false);
+  const [printLetter, setPrintLetter] = useState(null);
 
   useEffect(() => {
     const session = sessionStorage.getItem('accountant_portal_logged_in');
@@ -74,6 +90,168 @@ export default function AccountantPortal() {
       recentCount: payments.length
     });
     setLoading(false);
+  };
+
+  const loadApplications = async () => {
+    setAppsLoading(true);
+    const apps = await base44.entities.AdmissionApplication.list('-created_date', 100);
+    setApplications(apps);
+    setAppsLoading(false);
+  };
+
+  const handleTabChange = (tab) => {
+    if (tab === 'admissions') loadApplications();
+  };
+
+  const handleOfferAdmission = async (app) => {
+    setReviewLoading(true);
+    await base44.entities.AdmissionApplication.update(app.id, {
+      status: 'Offered Admission',
+      admin_notes: reviewNotes || undefined
+    });
+    // Notify applicant by email
+    if (app.parent_email) {
+      const appName = `${app.first_name} ${app.last_name}`;
+      await base44.integrations.Core.SendEmail({
+        to: app.parent_email,
+        subject: `Admission Offer — ${appName} | Ref: ${app.application_number}`,
+        body: `Dear ${app.parent_name},\n\nCONGRATULATIONS!\n\nWe are pleased to inform you that ${appName} has been offered provisional admission to Milton College of Arts and Science, Kaduna.\n\nApplication Number: ${app.application_number}\nClass Applied For: ${app.class_applying}\n\nPlease visit our website and enter your application number (${app.application_number}) to accept or reject this offer.\n\nIMPORTANT: You must accept or reject this offer within 7 days.\n\nWarm regards,\nAdmissions Office\nMilton College of Arts and Science, Kaduna`,
+        from_name: 'Milton College Admissions'
+      }).catch(() => {});
+    }
+    setSelectedApp(null);
+    setReviewNotes('');
+    setReviewLoading(false);
+    loadApplications();
+  };
+
+  const handleRejectApplication = async (app) => {
+    if (!confirm('Reject this application?')) return;
+    setReviewLoading(true);
+    await base44.entities.AdmissionApplication.update(app.id, {
+      status: 'Rejected',
+      admin_notes: reviewNotes || undefined
+    });
+    if (app.parent_email) {
+      await base44.integrations.Core.SendEmail({
+        to: app.parent_email,
+        subject: `Admission Application Update — ${app.application_number}`,
+        body: `Dear ${app.parent_name},\n\nWe regret to inform you that the application for ${app.first_name} ${app.last_name} (Ref: ${app.application_number}) has not been successful at this time.\n\nIf you have any questions, please contact our admissions office.\n\nWarm regards,\nMilton College of Arts and Science, Kaduna`,
+        from_name: 'Milton College Admissions'
+      }).catch(() => {});
+    }
+    setSelectedApp(null);
+    setReviewNotes('');
+    setReviewLoading(false);
+    loadApplications();
+  };
+
+  const handleFinalAdmission = async () => {
+    if (!admissionDialog || !testScore || !finalClass) {
+      alert('Please fill in test score and final class.'); return;
+    }
+    setAdmissionProcessing(true);
+    const app = admissionDialog;
+    const appName = `${app.first_name} ${app.last_name}`;
+
+    // Generate admission number following existing pattern
+    const existingStudents = await base44.entities.Student.list('-created_date', 5);
+    let newAdmNum = app.admission_number_generated;
+    if (!newAdmNum) {
+      // Follow existing admission number pattern from database
+      const lastAdmNum = existingStudents[0]?.admission_number;
+      if (lastAdmNum && lastAdmNum.match(/\d+/)) {
+        const numPart = parseInt(lastAdmNum.match(/\d+/)[0]) + 1;
+        const prefix = lastAdmNum.replace(/\d+/, '');
+        newAdmNum = prefix + String(numPart).padStart(lastAdmNum.match(/\d+/)[0].length, '0');
+      } else {
+        newAdmNum = 'STU' + Date.now().toString().slice(-6);
+      }
+    }
+
+    const admDate = new Date().toISOString().split('T')[0];
+
+    // Create student record permanently in database
+    await base44.entities.Student.create({
+      admission_number: newAdmNum,
+      first_name: app.first_name,
+      last_name: app.last_name,
+      middle_name: app.middle_name || '',
+      date_of_birth: app.date_of_birth,
+      gender: app.gender,
+      passport_photo: app.passport_photo || '',
+      section: app.section_applying,
+      current_class: finalClass,
+      state_of_origin: app.state_of_origin || '',
+      local_government: app.local_government || '',
+      address: app.address || '',
+      parent_name: app.parent_name,
+      parent_phone: app.parent_phone,
+      parent_email: app.parent_email || '',
+      admission_date: admDate,
+      status: 'Active'
+    });
+
+    // Update application record
+    await base44.entities.AdmissionApplication.update(app.id, {
+      status: 'Admitted',
+      test_score: parseFloat(testScore),
+      final_class_admitted: finalClass,
+      admission_number_generated: newAdmNum,
+      admission_letter_sent: true,
+      student_record_created: true
+    });
+
+    // Send admission letter by email
+    const letterText = `
+ADMISSION LETTER
+Milton College of Arts and Science, Kaduna
+
+Date: ${admDate}
+
+Dear ${app.parent_name},
+
+We are delighted to inform you that ${appName} has been ADMITTED into Milton College of Arts and Science, Kaduna.
+
+ADMISSION DETAILS:
+Admission Number: ${newAdmNum}
+Full Name: ${appName}
+Class Admitted: ${finalClass}
+Section: ${app.section_applying}
+Admission Date: ${admDate}
+Test Score: ${testScore}%
+Application Number: ${app.application_number}
+
+INSTRUCTIONS:
+1. Please report to the school's administrative office with this letter.
+2. Come along with all required fees and compulsory items for your section.
+3. Bring 2 recent passport photographs.
+4. This admission is subject to the school's rules and regulations.
+
+We look forward to welcoming ${app.first_name} to our school community.
+
+Congratulations!
+
+Warm regards,
+The Principal
+Milton College of Arts and Science, Kaduna
+    `.trim();
+
+    if (app.parent_email) {
+      await base44.integrations.Core.SendEmail({
+        to: app.parent_email,
+        subject: `ADMISSION LETTER — ${appName} | Adm. No: ${newAdmNum}`,
+        body: letterText,
+        from_name: 'Milton College of Arts & Science'
+      }).catch(() => {});
+    }
+
+    setPrintLetter({ app, newAdmNum, finalClass, testScore, admDate, letterText });
+    setAdmissionDialog(null);
+    setTestScore('');
+    setFinalClass('');
+    setAdmissionProcessing(false);
+    loadApplications();
   };
 
   const handleLogout = () => {
@@ -135,6 +313,17 @@ export default function AccountantPortal() {
     { label: 'Result Tokens', icon: Receipt, to: '/ResultTokens', color: 'bg-purple-600' },
   ];
 
+  const statusColor = {
+    'Pending': 'bg-yellow-100 text-yellow-800',
+    'Under Review': 'bg-blue-100 text-blue-800',
+    'Offered Admission': 'bg-green-100 text-green-800',
+    'Accepted': 'bg-emerald-100 text-emerald-800',
+    'Rejected': 'bg-red-100 text-red-800',
+    'Admitted': 'bg-purple-100 text-purple-800',
+  };
+
+  const CLASSES_ALL = ['Reception Class', 'Nursery 1', 'Nursery 2', 'Primary 1A', 'Primary 1B', 'Primary 2A', 'Primary 2B', 'Primary 3A', 'Primary 3B', 'Primary 4A', 'Primary 4B', 'Primary 5A', 'Primary 5B', 'JSS 1A', 'JSS 1B', 'JSS 2A', 'JSS 2B', 'JSS 3A', 'JSS 3B', 'SS1 Arts A', 'SS1 Arts B', 'SS1 Com A', 'SS1 Com B', 'SS1 Sci A', 'SS1 Sci B', 'SS2 Arts A', 'SS2 Arts B', 'SS2 Com A', 'SS2 Com B', 'SS2 Sci A', 'SS2 Sci B', 'SS3 Arts A', 'SS3 Arts B', 'SS3 Com A', 'SS3 Com B', 'SS3 Sci A', 'SS3 Sci B'];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-emerald-600 text-white px-6 py-4">
@@ -153,83 +342,256 @@ export default function AccountantPortal() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: "Today's Payments", value: stats.todayPayments || 0, icon: Receipt, color: 'text-green-600' },
-            { label: "Today's Revenue", value: `₦${(stats.todayTotal || 0).toLocaleString()}`, icon: TrendingUp, color: 'text-blue-600' },
-            { label: 'Total Students', value: stats.totalStudents || 0, icon: Users, color: 'text-purple-600' },
-            { label: 'Recent Transactions', value: stats.recentCount || 0, icon: BarChart3, color: 'text-orange-600' },
-          ].map((s, i) => (
-            <Card key={i} className="border-0 shadow-md">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">{s.label}</p>
-                  <p className="text-2xl font-bold mt-1">{s.value}</p>
-                </div>
-                <s.icon className={`w-8 h-8 ${s.color} opacity-70`} />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Tabs defaultValue="dashboard" onValueChange={handleTabChange}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="admissions">Admissions</TabsTrigger>
+          </TabsList>
 
-        {/* Quick Actions */}
-        <Card className="border-0 shadow-md mb-8">
-          <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {quickActions.map((a, i) => (
-                <Link key={i} to={a.to}>
-                  <div className="flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group">
-                    <div className={`w-12 h-12 ${a.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                      <a.icon className="w-6 h-6 text-white" />
+          <TabsContent value="dashboard">
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {[
+                { label: "Today's Payments", value: stats.todayPayments || 0, icon: Receipt, color: 'text-green-600' },
+                { label: "Today's Revenue", value: `₦${(stats.todayTotal || 0).toLocaleString()}`, icon: TrendingUp, color: 'text-blue-600' },
+                { label: 'Total Students', value: stats.totalStudents || 0, icon: Users, color: 'text-purple-600' },
+                { label: 'Recent Transactions', value: stats.recentCount || 0, icon: BarChart3, color: 'text-orange-600' },
+              ].map((s, i) => (
+                <Card key={i} className="border-0 shadow-md">
+                  <CardContent className="p-6 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">{s.label}</p>
+                      <p className="text-2xl font-bold mt-1">{s.value}</p>
                     </div>
-                    <span className="text-sm font-medium text-gray-700 text-center">{a.label}</span>
-                  </div>
-                </Link>
+                    <s.icon className={`w-8 h-8 ${s.color} opacity-70`} />
+                  </CardContent>
+                </Card>
               ))}
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Recent Payments */}
-        <Card className="border-0 shadow-md">
-          <CardHeader><CardTitle>Recent Payments</CardTitle></CardHeader>
-          <CardContent className="p-0">
-            {recentPayments.length === 0 ? (
-              <p className="p-6 text-center text-gray-400">No payments yet</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      {['Receipt #', 'Student', 'Class', 'Term', 'Amount', 'Method', 'Date', 'Status'].map(h => (
-                        <th key={h} className="text-left text-xs font-semibold text-gray-500 uppercase px-4 py-3">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {recentPayments.map(p => (
-                      <tr key={p.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm font-mono">{p.receipt_number}</td>
-                        <td className="px-4 py-3 font-medium text-sm">{p.student_name}</td>
-                        <td className="px-4 py-3 text-sm">{p.class}</td>
-                        <td className="px-4 py-3 text-sm">{p.term}</td>
-                        <td className="px-4 py-3 text-sm font-semibold text-green-700">₦{(p.amount_paid || 0).toLocaleString()}</td>
-                        <td className="px-4 py-3 text-sm">{p.payment_method}</td>
-                        <td className="px-4 py-3 text-sm">{p.payment_date}</td>
-                        <td className="px-4 py-3">
-                          <Badge variant={p.status === 'Paid' ? 'default' : 'secondary'} className="text-xs">{p.status}</Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            {/* Quick Actions */}
+            <Card className="border-0 shadow-md mb-8">
+              <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {quickActions.map((a, i) => (
+                    <Link key={i} to={a.to}>
+                      <div className="flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group">
+                        <div className={`w-12 h-12 ${a.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                          <a.icon className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 text-center">{a.label}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Payments */}
+            <Card className="border-0 shadow-md">
+              <CardHeader><CardTitle>Recent Payments</CardTitle></CardHeader>
+              <CardContent className="p-0">
+                {recentPayments.length === 0 ? (
+                  <p className="p-6 text-center text-gray-400">No payments yet</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          {['Receipt #', 'Student', 'Class', 'Term', 'Amount', 'Method', 'Date', 'Status'].map(h => (
+                            <th key={h} className="text-left text-xs font-semibold text-gray-500 uppercase px-4 py-3">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {recentPayments.map(p => (
+                          <tr key={p.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm font-mono">{p.receipt_number}</td>
+                            <td className="px-4 py-3 font-medium text-sm">{p.student_name}</td>
+                            <td className="px-4 py-3 text-sm">{p.class}</td>
+                            <td className="px-4 py-3 text-sm">{p.term}</td>
+                            <td className="px-4 py-3 text-sm font-semibold text-green-700">₦{(p.amount_paid || 0).toLocaleString()}</td>
+                            <td className="px-4 py-3 text-sm">{p.payment_method}</td>
+                            <td className="px-4 py-3 text-sm">{p.payment_date}</td>
+                            <td className="px-4 py-3">
+                              <Badge variant={p.status === 'Paid' ? 'default' : 'secondary'} className="text-xs">{p.status}</Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ADMISSIONS TAB */}
+          <TabsContent value="admissions">
+            <Card className="border-0 shadow-md">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-emerald-600" />
+                    Admission Applications
+                  </CardTitle>
+                  <Button size="sm" variant="outline" onClick={loadApplications} disabled={appsLoading}>
+                    {appsLoading ? 'Loading...' : 'Refresh'}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {appsLoading ? (
+                  <div className="p-8 text-center"><div className="animate-spin w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full mx-auto" /></div>
+                ) : applications.length === 0 ? (
+                  <p className="p-8 text-center text-gray-400">No applications yet</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          {['App. No', 'Applicant', 'Section', 'Class', 'Date', 'Status', 'Actions'].map(h => (
+                            <th key={h} className="text-left text-xs font-semibold text-gray-500 uppercase px-4 py-3">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {applications.map(app => (
+                          <tr key={app.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-mono text-xs">{app.application_number}</td>
+                            <td className="px-4 py-3 font-medium">{app.first_name} {app.last_name}</td>
+                            <td className="px-4 py-3">{app.section_applying}</td>
+                            <td className="px-4 py-3">{app.class_applying}</td>
+                            <td className="px-4 py-3 text-gray-500">{app.application_date}</td>
+                            <td className="px-4 py-3">
+                              <Badge className={`text-xs ${statusColor[app.status] || 'bg-gray-100 text-gray-700'}`}>{app.status}</Badge>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-2 flex-wrap">
+                                <Button size="sm" variant="outline" onClick={() => { setSelectedApp(app); setReviewNotes(app.admin_notes || ''); }}>
+                                  <Eye className="w-3 h-3 mr-1" />Review
+                                </Button>
+                                {app.status === 'Accepted' && (
+                                  <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => { setAdmissionDialog(app); setFinalClass(app.class_applying); }}>
+                                    <FileText className="w-3 h-3 mr-1" />Final Admit
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* REVIEW APPLICATION DIALOG */}
+      <Dialog open={!!selectedApp} onOpenChange={() => { setSelectedApp(null); setReviewNotes(''); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Review Application — {selectedApp?.application_number}</DialogTitle>
+          </DialogHeader>
+          {selectedApp && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><p className="text-gray-500">Full Name</p><p className="font-semibold">{selectedApp.first_name} {selectedApp.middle_name} {selectedApp.last_name}</p></div>
+                <div><p className="text-gray-500">Date of Birth</p><p className="font-semibold">{selectedApp.date_of_birth}</p></div>
+                <div><p className="text-gray-500">Gender</p><p className="font-semibold">{selectedApp.gender}</p></div>
+                <div><p className="text-gray-500">Section / Class</p><p className="font-semibold">{selectedApp.section_applying} / {selectedApp.class_applying}</p></div>
+                <div><p className="text-gray-500">Former School</p><p className="font-semibold">{selectedApp.former_school_name}</p></div>
+                <div><p className="text-gray-500">State of Origin</p><p className="font-semibold">{selectedApp.state_of_origin}</p></div>
+                <div><p className="text-gray-500">Parent/Guardian</p><p className="font-semibold">{selectedApp.parent_name}</p></div>
+                <div><p className="text-gray-500">Parent Phone</p><p className="font-semibold">{selectedApp.parent_phone}</p></div>
+                <div><p className="text-gray-500">Parent Email</p><p className="font-semibold">{selectedApp.parent_email || 'N/A'}</p></div>
+                <div><p className="text-gray-500">Health Conditions</p><p className="font-semibold">{selectedApp.health_conditions || 'None'}</p></div>
+              </div>
+              {selectedApp.passport_photo && (
+                <div><p className="text-gray-500 text-sm mb-1">Passport Photo</p><img src={selectedApp.passport_photo} alt="passport" className="w-24 h-24 object-cover rounded-lg border" /></div>
+              )}
+              <div>
+                <Label>Admin Notes</Label>
+                <Textarea value={reviewNotes} onChange={e => setReviewNotes(e.target.value)} rows={3} placeholder="Optional notes..." className="mt-1" />
+              </div>
+              <div className="flex gap-3 flex-wrap">
+                {selectedApp.status === 'Pending' || selectedApp.status === 'Under Review' ? (
+                  <>
+                    <Button onClick={() => handleOfferAdmission(selectedApp)} disabled={reviewLoading} className="bg-green-600 hover:bg-green-700">
+                      <CheckCircle className="w-4 h-4 mr-2" />{reviewLoading ? 'Processing...' : 'Offer Admission'}
+                    </Button>
+                    <Button onClick={() => handleRejectApplication(selectedApp)} disabled={reviewLoading} variant="outline" className="border-red-300 text-red-600">
+                      <XCircle className="w-4 h-4 mr-2" />Reject
+                    </Button>
+                  </>
+                ) : (
+                  <Badge className={`text-sm px-3 py-1 ${statusColor[selectedApp.status] || ''}`}>{selectedApp.status}</Badge>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* FINAL ADMISSION DIALOG (after physical test) */}
+      <Dialog open={!!admissionDialog} onOpenChange={() => { setAdmissionDialog(null); setTestScore(''); setFinalClass(''); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Final Admission — {admissionDialog?.application_number}</DialogTitle>
+          </DialogHeader>
+          {admissionDialog && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">Enter the physical test results for <strong>{admissionDialog.first_name} {admissionDialog.last_name}</strong> to generate and send their admission letter.</p>
+              <div>
+                <Label>Test Score (%)</Label>
+                <Input type="number" value={testScore} onChange={e => setTestScore(e.target.value)} placeholder="e.g. 75" className="mt-1" />
+              </div>
+              <div>
+                <Label>Final Class to be Admitted Into</Label>
+                <select value={finalClass} onChange={e => setFinalClass(e.target.value)} className="w-full mt-1 border rounded-md px-3 py-2 text-sm">
+                  <option value="">Select class</option>
+                  {CLASSES_ALL.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <p className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
+                ✅ Upon confirmation, the system will: generate an admission letter, email it to the parent, generate an admission number, and permanently save the student record in the database.
+              </p>
+              <div className="flex gap-3">
+                <Button onClick={handleFinalAdmission} disabled={admissionProcessing} className="flex-1 bg-purple-600 hover:bg-purple-700">
+                  {admissionProcessing ? 'Processing...' : 'Confirm & Generate Admission Letter'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* PRINT ADMISSION LETTER */}
+      {printLetter && (
+        <Dialog open={!!printLetter} onOpenChange={() => setPrintLetter(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Admission Letter — Print Ready</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
+                <CheckCircle className="w-4 h-4 inline mr-2" />
+                Student record saved. Admission letter emailed to {printLetter.app.parent_email || 'parent'}.
+              </div>
+              <div id="admission-letter-print" className="border rounded-lg p-6 text-sm whitespace-pre-wrap font-mono bg-white">
+                {printLetter.letterText}
+              </div>
+              <Button onClick={() => window.print()} className="w-full bg-[#1e3a5f] hover:bg-[#2c4a6e]">
+                <Printer className="w-4 h-4 mr-2" />Print Admission Letter
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
