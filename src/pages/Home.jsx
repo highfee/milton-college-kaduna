@@ -113,6 +113,11 @@ export default function Home() {
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </Link>
+                <Link to="/AdmissionRequirements">
+                  <Button size="lg" className="border-2 border-yellow-300 bg-yellow-400/10 text-yellow-200 hover:bg-yellow-300/20 px-8 backdrop-blur-sm font-semibold">
+                    Admission Requirements
+                  </Button>
+                </Link>
                 <Link to={createPageUrl('PortalLogin')}>
                   <Button size="lg" className="border-2 border-white bg-white/10 text-white hover:bg-white/25 px-8 backdrop-blur-sm font-semibold">
                     Portal Login
@@ -122,6 +127,12 @@ export default function Home() {
                   <Button size="lg" className="bg-green-500 hover:bg-green-400 text-white font-bold px-8 shadow-xl">
                     <ClipboardList className="mr-2 w-5 h-5" />
                     Check Result
+                  </Button>
+                </Link>
+                <Link to="/CheckAdmissionStatus">
+                  <Button size="lg" className="bg-blue-500 hover:bg-blue-400 text-white font-bold px-8 shadow-xl">
+                    <Search className="mr-2 w-5 h-5" />
+                    Check Admission Status
                   </Button>
                 </Link>
               </div>
@@ -553,6 +564,8 @@ export default function Home() {
               <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-gray-400 text-sm">
                 <li><Link to={createPageUrl('AdmissionForm')} className="hover:text-white">Apply for Admission</Link></li>
+                <li><Link to="/AdmissionRequirements" className="hover:text-white">Admission Requirements</Link></li>
+                <li><Link to="/CheckAdmissionStatus" className="hover:text-white">Check Admission Status</Link></li>
                 <li><Link to={createPageUrl('Gallery')} className="hover:text-white">Gallery</Link></li>
                 <li><Link to={createPageUrl('PortalLogin')} className="hover:text-white">Portal Login</Link></li>
               </ul>

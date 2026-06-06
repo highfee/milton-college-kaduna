@@ -8,6 +8,16 @@
     "exam_title": {
       "type": "string"
     },
+    "exam_type": {
+      "type": "string"
+    },
+    "subject_name": {
+      "type": "string"
+    },
+    "teacher_email": {
+      "type": "string",
+      "description": "Email of teacher who created the exam"
+    },
     "student_id": {
       "type": "string"
     },
@@ -28,17 +38,30 @@
           "question_index": {
             "type": "number"
           },
+          "type": {
+            "type": "string"
+          },
           "selected_answer": {
             "type": "number"
           },
+          "theory_answer": {
+            "type": "string"
+          },
           "is_correct": {
             "type": "boolean"
+          },
+          "theory_score": {
+            "type": "number"
           }
         }
       }
     },
     "score": {
       "type": "number"
+    },
+    "theory_score": {
+      "type": "number",
+      "default": 0
     },
     "total_marks": {
       "type": "number"
@@ -56,14 +79,21 @@
       "type": "string",
       "format": "date-time"
     },
+    "theory_graded": {
+      "type": "boolean",
+      "default": false
+    },
+    "auto_submitted": {
+      "type": "boolean",
+      "default": false
+    },
     "status": {
       "type": "string",
       "enum": [
-        "In Progress",
-        "Submitted",
+        "Pending",
         "Graded"
       ],
-      "default": "In Progress"
+      "default": "Pending"
     }
   },
   "required": [
@@ -71,9 +101,7 @@
     "student_id"
   ],
   "rls": {
-    "create": {
-      "data.student_id": "{{user.id}}"
-    },
+    "create": {},
     "read": {
       "$or": [
         {
@@ -97,9 +125,18 @@
       ]
     },
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "teacher"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
       "user_condition": {
