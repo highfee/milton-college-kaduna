@@ -5,10 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Printer, ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { Printer, ArrowLeft, Plus, Trash2, Search, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 const CLASSES = [
   'Reception Class', 'Nursery 1', 'Nursery 2',
@@ -44,17 +42,27 @@ function numberToWords(num) {
 export default function FeeReceipt() {
   const [settings, setSettings] = useState(null);
   const [form, setForm] = useState({
-    student_name: '', received_from: '', class: '', term: '', balance: '',
+    student_name: '', received_from: '', class: '', term: '', session: '', balance: '',
     items: STANDARD_FEE_ITEMS.map(name => ({ name, amount: '', selected: false })),
-    others: [] // array of { name, amount }
+    others: [],
+    payment_method: 'Cash',
   });
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
   const [receiptNumber, setReceiptNumber] = useState('');
   const [saving, setSaving] = useState(false);
   const receiptRef = useRef(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    base44.entities.SchoolSettings.list().then(s => s[0] && setSettings(s[0]));
+    base44.entities.SchoolSettings.list().then(s => {
+      if (s[0]) {
+        setSettings(s[0]);
+        setForm(f => ({ ...f, session: s[0].current_session || '' }));
+      }
+    });
     generateReceiptNumber();
   }, []);
 
@@ -62,6 +70,38 @@ export default function FeeReceipt() {
     const existing = await base44.entities.SchoolFeePayment.list('-created_date', 1);
     const lastNum = existing[0]?.receipt_number ? parseInt(existing[0].receipt_number.replace(/\D/g, '')) || 0 : 0;
     setReceiptNumber('RCP' + String(lastNum + 1).padStart(5, '0'));
+  };
+
+  const handleStudentSearch = async () => {
+    if (!studentSearch.trim()) return;
+    setSearching(true);
+    try {
+      const results = await base44.entities.Student.list('-created_date', 500);
+      const q = studentSearch.toLowerCase();
+      const matched = results.filter(s =>
+        `${s.first_name} ${s.last_name} ${s.middle_name || ''}`.toLowerCase().includes(q) ||
+        (s.admission_number || '').toLowerCase().includes(q)
+      );
+      setSearchResults(matched.slice(0, 10));
+      if (matched.length === 0) {
+        toast({ title: 'No student found', description: 'Try searching by name or admission number', variant: 'destructive' });
+      }
+    } catch (e) {
+      toast({ title: 'Error searching students', variant: 'destructive' });
+    }
+    setSearching(false);
+  };
+
+  const selectStudent = (student) => {
+    setSelectedStudent(student);
+    setForm(f => ({
+      ...f,
+      student_name: `${student.first_name} ${student.middle_name || ''} ${student.last_name}`.trim(),
+      class: student.current_class || '',
+      session: f.session || settings?.current_session || '',
+    }));
+    setSearchResults([]);
+    setStudentSearch('');
   };
 
   const toggleItem = (idx) => {
@@ -102,58 +142,81 @@ export default function FeeReceipt() {
       return;
     }
     setSaving(true);
-    const allItems = [
-      ...selectedStandard.map(i => ({ item_name: i.name, amount: parseFloat(i.amount) })),
-      ...validOthers.map(i => ({ item_name: i.name, amount: parseFloat(i.amount) }))
-    ];
-    const paymentData = {
-      receipt_number: receiptNumber,
-      student_name: form.student_name,
-      class: form.class,
-      term: form.term,
-      items: allItems,
-      total_amount: totalPaid,
-      amount_paid: totalPaid,
-      balance: parseFloat(form.balance || 0),
-      payment_date: new Date().toISOString().split('T')[0],
-      status: 'Paid',
-      payment_method: 'Cash',
-    };
-    await base44.entities.SchoolFeePayment.create(paymentData);
+    try {
+      const allItems = [
+        ...selectedStandard.map(i => ({ item_name: i.name, amount: parseFloat(i.amount) })),
+        ...validOthers.map(i => ({ item_name: i.name, amount: parseFloat(i.amount) }))
+      ];
 
-    // Clone receipt into a temporary off-screen container for reliable capture
-    const el = receiptRef.current;
-    const clone = el.cloneNode(true);
-    clone.style.position = 'fixed';
-    clone.style.top = '0';
-    clone.style.left = '0';
-    clone.style.zIndex = '99999';
-    clone.style.width = '302px'; // ~80mm at 96dpi
-    clone.style.background = '#ffffff';
-    clone.style.visibility = 'visible';
-    clone.style.display = 'block';
-    // Remove watermark image to avoid CORS issues
-    const watermarks = clone.querySelectorAll('img[alt=""]');
-    watermarks.forEach(img => img.remove());
-    document.body.appendChild(clone);
-    await new Promise(r => setTimeout(r, 200));
-    const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff', useCORS: true, allowTaint: false, logging: false });
-    document.body.removeChild(clone);
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [80, 220] });
-    const pdfW = pdf.internal.pageSize.getWidth();
-    const ratio = canvas.height / canvas.width;
-    pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfW * ratio);
-    pdf.save(`Receipt_${receiptNumber}.pdf`);
+      // Get accountant info from session
+      const accountantData = JSON.parse(sessionStorage.getItem('accountant_data') || '{}');
+      const accountantName = accountantData.first_name
+        ? `${accountantData.first_name} ${accountantData.last_name}`
+        : 'Accountant';
 
-    toast({ title: 'Receipt saved and PDF downloaded!' });
+      const paymentData = {
+        receipt_number: receiptNumber,
+        student_id: selectedStudent?.id || '',
+        student_name: form.student_name,
+        admission_number: selectedStudent?.admission_number || '',
+        class: form.class,
+        section: selectedStudent?.section || '',
+        term: form.term,
+        session: form.session || settings?.current_session || '',
+        parent_name: selectedStudent?.parent_name || '',
+        parent_phone: selectedStudent?.parent_phone || '',
+        items: allItems,
+        total_amount: totalPaid,
+        amount_paid: totalPaid,
+        balance: parseFloat(form.balance || 0),
+        payment_date: new Date().toISOString().split('T')[0],
+        payment_method: form.payment_method,
+        recorded_by: accountantName,
+        status: 'Paid',
+      };
+      await base44.entities.SchoolFeePayment.create(paymentData);
+
+      toast({ title: 'Receipt saved successfully!', description: 'Opening print dialog...' });
+
+      // Use native print — most reliable, no html2canvas needed
+      const receiptHtml = receiptRef.current.innerHTML;
+      const printWin = window.open('', '_blank', 'width=400,height=600');
+      printWin.document.write(`
+        <html>
+        <head>
+          <title>Receipt ${receiptNumber}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; font-size: 10px; color: #000; width: 80mm; margin: 0 auto; padding: 4px; }
+            table { width: 100%; border-collapse: collapse; }
+            @media print { @page { margin: 0; } }
+          </style>
+        </head>
+        <body>${receiptHtml}</body>
+        </html>
+      `);
+      printWin.document.close();
+      printWin.focus();
+      setTimeout(() => {
+        printWin.print();
+        printWin.close();
+      }, 300);
+
+      // Reset form
+      generateReceiptNumber();
+      setForm({
+        student_name: '', received_from: '', class: '', term: '', session: settings?.current_session || '',
+        balance: '',
+        items: STANDARD_FEE_ITEMS.map(name => ({ name, amount: '', selected: false })),
+        others: [],
+        payment_method: 'Cash',
+      });
+      setSelectedStudent(null);
+    } catch (error) {
+      console.error('Receipt error:', error);
+      toast({ title: 'Error saving receipt', description: error.message || 'Please try again', variant: 'destructive' });
+    }
     setSaving(false);
-    generateReceiptNumber();
-    setForm({
-      student_name: '', received_from: '', class: '', term: '', balance: '',
-      items: STANDARD_FEE_ITEMS.map(name => ({ name, amount: '', selected: false })),
-      others: []
-    });
   };
 
   const now = new Date();
@@ -169,12 +232,59 @@ export default function FeeReceipt() {
             <h1 className="text-xl font-bold">Fee Receipt Generator</h1>
           </div>
           <Button onClick={handlePrint} disabled={saving} className="bg-white text-[#1e3a5f] hover:bg-white/90">
-            <Printer className="w-4 h-4 mr-2" /> Print Receipt
+            <Printer className="w-4 h-4 mr-2" /> {saving ? 'Saving...' : 'Save & Print Receipt'}
           </Button>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6">
+        {/* Student Search */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-4">
+          <h2 className="text-lg font-semibold text-[#1e3a5f] mb-4">Find Student</h2>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Search by name or admission number..."
+              value={studentSearch}
+              onChange={e => setStudentSearch(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleStudentSearch()}
+              className="flex-1"
+            />
+            <Button onClick={handleStudentSearch} disabled={searching} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
+              <Search className="w-4 h-4 mr-2" /> {searching ? '...' : 'Search'}
+            </Button>
+          </div>
+          {searchResults.length > 0 && (
+            <div className="mt-3 border rounded-lg divide-y max-h-60 overflow-y-auto">
+              {searchResults.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => selectStudent(s)}
+                  className="w-full text-left px-4 py-2 hover:bg-blue-50 flex items-center justify-between"
+                >
+                  <div>
+                    <p className="font-medium text-sm">{s.first_name} {s.middle_name} {s.last_name}</p>
+                    <p className="text-xs text-gray-500">{s.admission_number} · {s.current_class} · {s.section}</p>
+                  </div>
+                  <CheckCircle className="w-4 h-4 text-green-500 opacity-0 hover:opacity-100" />
+                </button>
+              ))}
+            </div>
+          )}
+          {selectedStudent && (
+            <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm text-green-800">{selectedStudent.first_name} {selectedStudent.last_name}</p>
+                <p className="text-xs text-green-600">Adm: {selectedStudent.admission_number} · {selectedStudent.current_class} · {selectedStudent.section}</p>
+                {selectedStudent.parent_name && <p className="text-xs text-green-600">Parent: {selectedStudent.parent_name} · {selectedStudent.parent_phone}</p>}
+              </div>
+              <Button size="sm" variant="outline" onClick={() => { setSelectedStudent(null); setForm({ ...form, student_name: '', class: '' }); }}>Change</Button>
+            </div>
+          )}
+          {!selectedStudent && (
+            <p className="mt-2 text-xs text-gray-400">Or fill in student details manually below.</p>
+          )}
+        </div>
+
         {/* Form */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-lg font-semibold text-[#1e3a5f] mb-4">Receipt Details</h2>
@@ -202,6 +312,22 @@ export default function FeeReceipt() {
                   <SelectItem value="First Term">1st Term</SelectItem>
                   <SelectItem value="Second Term">2nd Term</SelectItem>
                   <SelectItem value="Third Term">3rd Term</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Session *</Label>
+              <Input value={form.session} onChange={e => setForm({ ...form, session: e.target.value })} placeholder="e.g. 2025/2026" />
+            </div>
+            <div>
+              <Label>Payment Method</Label>
+              <Select value={form.payment_method} onValueChange={v => setForm({ ...form, payment_method: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Cash">Cash</SelectItem>
+                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="Online">Online</SelectItem>
+                  <SelectItem value="Cheque">Cheque</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -253,84 +379,84 @@ export default function FeeReceipt() {
           </div>
         </div>
 
-        {/* PRINTABLE RECEIPT */}
-        <div ref={receiptRef} style={{ width: '80mm', backgroundColor: 'white', padding: '8px', fontFamily: 'Arial, sans-serif', fontSize: '10px', color: '#000', position: 'relative', margin: '0 auto', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
-          {settings?.school_logo && (
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', opacity: 0.07, pointerEvents: 'none' }}>
-              <img src={settings.school_logo} alt="" style={{ width: '120px', height: '120px', objectFit: 'contain' }} />
+        {/* PRINTABLE RECEIPT (hidden on screen, used for print) */}
+        <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+          <div ref={receiptRef} style={{ width: '80mm', backgroundColor: 'white', padding: '8px', fontFamily: 'Arial, sans-serif', fontSize: '10px', color: '#000' }}>
+            <div style={{ textAlign: 'center', borderBottom: '2px solid #1e3a5f', paddingBottom: '6px', marginBottom: '6px' }}>
+              {settings?.school_logo && <img src={settings.school_logo} alt="logo" crossOrigin="anonymous" style={{ width: '40px', height: '40px', objectFit: 'contain', margin: '0 auto 4px', display: 'block' }} />}
+              <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#1e3a5f' }}>{settings?.school_name || 'MILTON COLLEGE OF ARTS AND SCIENCE'}</div>
+              <div style={{ fontSize: '8px', color: '#555' }}>{settings?.address || 'Kaduna, Nigeria'}</div>
+              <div style={{ fontSize: '8px', color: '#555' }}>Tel: {settings?.phone || ''} | Email: {settings?.email || ''}</div>
+              <div style={{ marginTop: '4px', fontWeight: 'bold', fontSize: '10px', color: '#1e3a5f', borderTop: '1px dashed #ccc', paddingTop: '4px' }}>OFFICIAL SCHOOL FEE RECEIPT</div>
             </div>
-          )}
-          <div style={{ textAlign: 'center', borderBottom: '2px solid #1e3a5f', paddingBottom: '6px', marginBottom: '6px' }}>
-            {settings?.school_logo && <img src={settings.school_logo} alt="logo" style={{ width: '40px', height: '40px', objectFit: 'contain', margin: '0 auto 4px', display: 'block' }} />}
-            <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#1e3a5f' }}>{settings?.school_name || 'MILTON COLLEGE OF ARTS AND SCIENCE'}</div>
-            <div style={{ fontSize: '8px', color: '#555' }}>{settings?.address || 'Kaduna, Nigeria'}</div>
-            <div style={{ fontSize: '8px', color: '#555' }}>Tel: {settings?.phone || ''} | Email: {settings?.email || ''}</div>
-            <div style={{ marginTop: '4px', fontWeight: 'bold', fontSize: '10px', color: '#1e3a5f', borderTop: '1px dashed #ccc', paddingTop: '4px' }}>OFFICIAL SCHOOL FEE RECEIPT</div>
-          </div>
-          <div style={{ marginBottom: '6px', fontSize: '9px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span><b>Receipt No:</b> {receiptNumber}</span>
-              <span><b>Date:</b> {dateStr}</span>
+            <div style={{ marginBottom: '6px', fontSize: '9px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span><b>Receipt No:</b> {receiptNumber}</span>
+                <span><b>Date:</b> {dateStr}</span>
+              </div>
+              <div><b>Time:</b> {timeStr}</div>
             </div>
-            <div><b>Time:</b> {timeStr}</div>
-          </div>
-          <div style={{ borderTop: '1px dashed #999', borderBottom: '1px dashed #999', padding: '4px 0', marginBottom: '6px', fontSize: '9px' }}>
-            <div><b>Received From:</b> {form.received_from || form.student_name}</div>
-            <div><b>Student Name:</b> {form.student_name}</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span><b>Class:</b> {form.class}</span>
-              <span><b>Term:</b> {form.term}</span>
+            <div style={{ borderTop: '1px dashed #999', borderBottom: '1px dashed #999', padding: '4px 0', marginBottom: '6px', fontSize: '9px' }}>
+              <div><b>Received From:</b> {form.received_from || form.student_name}</div>
+              <div><b>Student Name:</b> {form.student_name}</div>
+              {selectedStudent?.admission_number && <div><b>Admission No:</b> {selectedStudent.admission_number}</div>}
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span><b>Class:</b> {form.class}</span>
+                <span><b>Term:</b> {form.term}</span>
+              </div>
+              <div><b>Session:</b> {form.session || settings?.current_session || ''}</div>
+              <div><b>Method:</b> {form.payment_method}</div>
             </div>
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '6px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#1e3a5f', color: 'white' }}>
-                <th style={{ padding: '3px 4px', textAlign: 'left' }}>Item</th>
-                <th style={{ padding: '3px 4px', textAlign: 'right' }}>Amount (₦)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedStandard.map((item, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '2px 4px' }}>{item.name}</td>
-                  <td style={{ padding: '2px 4px', textAlign: 'right' }}>{parseFloat(item.amount || 0).toLocaleString()}</td>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '6px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#1e3a5f', color: 'white' }}>
+                  <th style={{ padding: '3px 4px', textAlign: 'left' }}>Item</th>
+                  <th style={{ padding: '3px 4px', textAlign: 'right' }}>Amount (₦)</th>
                 </tr>
-              ))}
-              {validOthers.map((item, idx) => (
-                <tr key={`other-${idx}`} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '2px 4px' }}>{item.name}</td>
-                  <td style={{ padding: '2px 4px', textAlign: 'right' }}>{parseFloat(item.amount || 0).toLocaleString()}</td>
+              </thead>
+              <tbody>
+                {selectedStandard.map((item, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '2px 4px' }}>{item.name}</td>
+                    <td style={{ padding: '2px 4px', textAlign: 'right' }}>{parseFloat(item.amount || 0).toLocaleString()}</td>
+                  </tr>
+                ))}
+                {validOthers.map((item, idx) => (
+                  <tr key={`other-${idx}`} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '2px 4px' }}>{item.name}</td>
+                    <td style={{ padding: '2px 4px', textAlign: 'right' }}>{parseFloat(item.amount || 0).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr style={{ backgroundColor: '#f0f4ff', fontWeight: 'bold' }}>
+                  <td style={{ padding: '3px 4px' }}>TOTAL AMOUNT PAID</td>
+                  <td style={{ padding: '3px 4px', textAlign: 'right' }}>₦{totalPaid.toLocaleString()}</td>
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr style={{ backgroundColor: '#f0f4ff', fontWeight: 'bold' }}>
-                <td style={{ padding: '3px 4px' }}>TOTAL AMOUNT PAID</td>
-                <td style={{ padding: '3px 4px', textAlign: 'right' }}>₦{totalPaid.toLocaleString()}</td>
-              </tr>
-              {form.balance && parseFloat(form.balance) > 0 && (
-                <tr>
-                  <td style={{ padding: '2px 4px', color: 'red' }}>Balance Outstanding</td>
-                  <td style={{ padding: '2px 4px', textAlign: 'right', color: 'red' }}>₦{parseFloat(form.balance).toLocaleString()}</td>
-                </tr>
-              )}
-            </tfoot>
-          </table>
-          <div style={{ fontSize: '8px', borderTop: '1px dashed #999', paddingTop: '4px', marginBottom: '6px' }}>
-            <b>The Sum of:</b> {numberToWords(totalPaid)}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '8px' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ borderTop: '1px solid #000', paddingTop: '2px', width: '60px' }}>Cashier</div>
+                {form.balance && parseFloat(form.balance) > 0 && (
+                  <tr>
+                    <td style={{ padding: '2px 4px', color: 'red' }}>Balance Outstanding</td>
+                    <td style={{ padding: '2px 4px', textAlign: 'right', color: 'red' }}>₦{parseFloat(form.balance).toLocaleString()}</td>
+                  </tr>
+                )}
+              </tfoot>
+            </table>
+            <div style={{ fontSize: '8px', borderTop: '1px dashed #999', paddingTop: '4px', marginBottom: '6px' }}>
+              <b>The Sum of:</b> {numberToWords(totalPaid)}
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ borderTop: '1px solid #000', paddingTop: '2px', width: '60px' }}>Accountant</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '8px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '2px', width: '60px' }}>Cashier</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ borderTop: '1px solid #000', paddingTop: '2px', width: '60px' }}>Accountant</div>
+              </div>
             </div>
-          </div>
-          <div style={{ marginTop: '8px', borderTop: '2px solid #1e3a5f', paddingTop: '4px', textAlign: 'center', fontSize: '7px', color: '#1e3a5f' }}>
-            <div><b>{settings?.school_name || 'Milton College of Arts and Science'}</b></div>
-            <div>{dateStr} | {timeStr}</div>
-            <div style={{ marginTop: '2px', fontStyle: 'italic' }}>Thank you for your payment!</div>
+            <div style={{ marginTop: '8px', borderTop: '2px solid #1e3a5f', paddingTop: '4px', textAlign: 'center', fontSize: '7px', color: '#1e3a5f' }}>
+              <div><b>{settings?.school_name || 'Milton College of Arts and Science'}</b></div>
+              <div>{dateStr} | {timeStr}</div>
+              <div style={{ marginTop: '2px', fontStyle: 'italic' }}>Thank you for your payment!</div>
+            </div>
           </div>
         </div>
       </div>
