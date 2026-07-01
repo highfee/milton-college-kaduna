@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import {
   FileText, ClipboardList, BookOpen, Calendar,
   GraduationCap, LogOut, TrendingUp, Eye, EyeOff,
-  Camera, Key, Award, UserCircle, CheckSquare, BarChart2
+  Camera, Key, Award, UserCircle, CheckSquare, BarChart2,
+  CreditCard, Wallet
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ export default function StudentPortal() {
   const [student, setStudent] = useState(null);
   const [stats, setStats] = useState({});
   const [subjects, setSubjects] = useState([]);
+  const [feePayments, setFeePayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
   const [admissionNo, setAdmissionNo] = useState('');
@@ -63,13 +65,15 @@ export default function StudentPortal() {
     const studentData = await base44.entities.Student.filter({ admission_number: admNo });
     if (studentData[0]) {
       setStudent(studentData[0]);
-      const [allAssignments, results, cbtExams, allSubjects, cbtResults] = await Promise.all([
+      const [allAssignments, results, cbtExams, allSubjects, cbtResults, payments] = await Promise.all([
         base44.entities.Assignment.filter({ class: studentData[0].current_class }),
         base44.entities.Result.filter({ student_id: studentData[0].id, status: 'Approved' }),
         base44.entities.CBTExam.filter({ status: 'Published' }),
         base44.entities.Subject.filter({ status: 'Active' }),
-        base44.entities.CBTResult.filter({ student_id: studentData[0].id })
+        base44.entities.CBTResult.filter({ student_id: studentData[0].id }),
+        base44.entities.SchoolFeePayment.filter({ admission_number: studentData[0].admission_number })
       ]);
+      setFeePayments(payments);
       // Show Active assignments OR any assignment not explicitly Inactive
       const assignments = allAssignments.filter(a => !a.status || a.status === 'Active');
       const classSubjects = allSubjects.filter(s => s.classes?.includes(studentData[0].current_class));
@@ -283,6 +287,8 @@ export default function StudentPortal() {
             { label: 'Results Available', value: stats.completedSubjects, icon: TrendingUp, color: 'text-green-600' },
             { label: 'Assignments', value: stats.activeAssignments, icon: ClipboardList, color: 'text-orange-600' },
             { label: 'CBT Exams Available', value: stats.availableCBT, icon: FileText, color: 'text-purple-600' },
+            { label: 'Fee Payments', value: feePayments.length, icon: CreditCard, color: 'text-emerald-600' },
+            { label: 'Total Paid', value: `₦${feePayments.reduce((s,p) => s + (p.amount_paid||0), 0).toLocaleString()}`, icon: Wallet, color: 'text-green-600' },
           ].map((stat, idx) => {
             const Icon = stat.icon;
             return (
@@ -310,6 +316,41 @@ export default function StudentPortal() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {feePayments.length > 0 && (
+          <Card className="border-0 shadow-md mb-8">
+            <CardHeader><CardTitle className="flex items-center gap-2"><CreditCard className="w-5 h-5 text-emerald-600" /> My Fee Payments ({feePayments.length})</CardTitle></CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      {['Receipt #', 'Term', 'Session', 'Amount Paid', 'Balance', 'Method', 'Date', 'Status'].map(h => (
+                        <th key={h} className="text-left text-xs font-semibold text-gray-500 uppercase px-4 py-3">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {feePayments.map(p => (
+                      <tr key={p.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-xs font-mono text-blue-700">{p.receipt_number}</td>
+                        <td className="px-4 py-3 text-sm">{p.term}</td>
+                        <td className="px-4 py-3 text-sm">{p.session || '-'}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-green-700">₦{(p.amount_paid || 0).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-sm text-red-600">{p.balance ? `₦${p.balance.toLocaleString()}` : '-'}</td>
+                        <td className="px-4 py-3 text-sm">{p.payment_method}</td>
+                        <td className="px-4 py-3 text-sm">{p.payment_date}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant={p.status === 'Paid' ? 'default' : 'secondary'} className="text-xs">{p.status}</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
