@@ -220,11 +220,6 @@
           "data.student_id": "{{user.id}}"
         },
         {
-          "data.student_id": {
-            "$in": "{{user.data.children_ids}}"
-          }
-        },
-        {
           "user_condition": {
             "role": "teacher"
           }
@@ -251,9 +246,18 @@
       ]
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "teacher"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     }
   }
 }

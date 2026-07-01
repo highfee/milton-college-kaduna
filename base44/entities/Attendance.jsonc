@@ -80,17 +80,6 @@
           "data.student_id": "{{user.id}}"
         },
         {
-          "data.student_id": {
-            "$in": "{{user.data.children_ids}}"
-          }
-        },
-        {
-          "data.class": "{{user.data.assigned_class}}"
-        },
-        {
-          "data.class": "{{user.data.form_teacher_class}}"
-        },
-        {
           "user_condition": {
             "role": "teacher"
           }

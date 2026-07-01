@@ -147,19 +147,15 @@
     "read": {
       "$or": [
         {
-          "data.admission_number": "{{user.data.admission_number}}"
+          "id": "{{user.id}}"
         },
         {
           "data.parent_email": "{{user.email}}"
         },
         {
-          "data.parent_id": "{{user.data.parent_id}}"
-        },
-        {
-          "data.current_class": "{{user.data.assigned_class}}"
-        },
-        {
-          "data.current_class": "{{user.data.form_teacher_class}}"
+          "user_condition": {
+            "role": "teacher"
+          }
         },
         {
           "user_condition": {

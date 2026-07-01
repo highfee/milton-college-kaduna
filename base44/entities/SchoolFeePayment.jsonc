@@ -109,19 +109,15 @@
     "total_amount"
   ],
   "rls": {
-    "create": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "read": {
       "$or": [
         {
           "data.student_id": "{{user.id}}"
-        },
-        {
-          "data.student_id": {
-            "$in": "{{user.data.children_ids}}"
-          }
-        },
-        {
-          "data.admission_number": "{{user.data.admission_number}}"
         },
         {
           "user_condition": {
