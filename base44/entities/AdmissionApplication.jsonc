@@ -87,11 +87,53 @@
         "Pending",
         "Under Review",
         "Accepted",
-        "Rejected"
+        "Rejected",
+        "Offered Admission",
+        "Admitted"
       ],
       "default": "Pending"
     },
     "admin_notes": {
+      "type": "string"
+    },
+    "email_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "email_verification_code": {
+      "type": "string"
+    },
+    "test_score": {
+      "type": "number"
+    },
+    "final_class_admitted": {
+      "type": "string"
+    },
+    "admission_number_generated": {
+      "type": "string"
+    },
+    "admission_letter_sent": {
+      "type": "boolean",
+      "default": false
+    },
+    "student_record_created": {
+      "type": "boolean",
+      "default": false
+    },
+    "tuition_fee": {
+      "type": "number"
+    },
+    "resumption_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "application_form_pdf_url": {
+      "type": "string"
+    },
+    "admission_letter_pdf_url": {
+      "type": "string"
+    },
+    "acceptance_letter_pdf_url": {
       "type": "string"
     }
   },
@@ -103,7 +145,8 @@
     "section_applying",
     "class_applying",
     "parent_name",
-    "parent_phone"
+    "parent_phone",
+    "parent_email"
   ],
   "rls": {
     "create": {},
