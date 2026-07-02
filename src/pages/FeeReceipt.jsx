@@ -231,9 +231,16 @@ export default function FeeReceipt() {
             <Link to="/AccountantPortal"><ArrowLeft className="w-5 h-5 hover:opacity-70" /></Link>
             <h1 className="text-xl font-bold">Fee Receipt Generator</h1>
           </div>
-          <Button onClick={handlePrint} disabled={saving} className="bg-white text-[#1e3a5f] hover:bg-white/90">
-            <Printer className="w-4 h-4 mr-2" /> {saving ? 'Saving...' : 'Save & Print Receipt'}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Link to="/ReceiptManagement">
+              <Button variant="outline" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                <Search className="w-4 h-4 mr-2" /> Manage Receipts
+              </Button>
+            </Link>
+            <Button onClick={handlePrint} disabled={saving} className="bg-white text-[#1e3a5f] hover:bg-white/90">
+              <Printer className="w-4 h-4 mr-2" /> {saving ? 'Saving...' : 'Save & Print Receipt'}
+            </Button>
+          </div>
         </div>
       </div>
 

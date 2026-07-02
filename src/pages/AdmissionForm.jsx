@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Upload, CheckCircle, GraduationCap, User, MapPin, Users, Camera } from 'lucide-react';
+import { ArrowLeft, Upload, CheckCircle, GraduationCap, User, MapPin, Users, Camera, Mail, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { generateApplicationFormPDF } from '@/lib/applicationFormPDF';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +34,12 @@ export default function AdmissionForm() {
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+
+  // Email verification
+  const [emailCode, setEmailCode] = useState('');
+  const [emailCodeInput, setEmailCodeInput] = useState('');
+  const [codeSending, setCodeSending] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
 
   // Pre-fill section/class from requirements page
   const urlParams = new URLSearchParams(window.location.search);
@@ -66,6 +73,40 @@ export default function AdmissionForm() {
     setFormData({ ...formData, [field]: value });
     if (field === 'section_applying') {
       setFormData({ ...formData, section_applying: value, class_applying: '' });
+    }
+    if (field === 'parent_email') {
+      setEmailVerified(false);
+      setEmailCode('');
+      setEmailCodeInput('');
+    }
+  };
+
+  const sendVerificationCode = async () => {
+    if (!formData.parent_email) { alert('Please enter your email address first.'); return; }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.parent_email)) { alert('Please enter a valid email address.'); return; }
+    setCodeSending(true);
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setEmailCode(code);
+    try {
+      await base44.integrations.Core.SendEmail({
+        to: formData.parent_email,
+        subject: 'Email Verification Code — Milton College Admission',
+        body: `Your email verification code is: ${code}\n\nEnter this code on the admission form to verify your email and proceed with your application.\n\nMilton College of Arts and Science, Kaduna`,
+        from_name: 'Milton College Admissions'
+      });
+      alert('Verification code sent to your email. Please check your inbox (and spam folder).');
+    } catch (e) {
+      alert('Failed to send verification code. Please check your email and try again.');
+    }
+    setCodeSending(false);
+  };
+
+  const verifyEmailCode = () => {
+    if (emailCodeInput === emailCode && emailCode) {
+      setEmailVerified(true);
+    } else {
+      alert('Invalid verification code. Please try again.');
     }
   };
 
@@ -133,22 +174,38 @@ export default function AdmissionForm() {
     const appNum = 'APP' + Date.now().toString().slice(-8);
     const appDate = new Date().toISOString().split('T')[0];
     
-    await base44.entities.AdmissionApplication.create({
+    const created = await base44.entities.AdmissionApplication.create({
       ...formData,
       application_number: appNum,
       application_date: appDate,
-      status: 'Pending'
+      status: 'Pending',
+      email_verified: true
     });
 
-    // Send confirmation email to parent/guardian
+    // Generate application form PDF and upload
+    let pdfUrl = null;
+    try {
+      const doc = generateApplicationFormPDF({ ...formData, application_number: appNum, application_date: appDate });
+      const pdfBlob = doc.output('blob');
+      const file = new File([pdfBlob], `application-form-${appNum}.pdf`, { type: 'application/pdf' });
+      const uploadRes = await base44.integrations.Core.UploadFile({ file });
+      pdfUrl = uploadRes.file_url;
+      await base44.entities.AdmissionApplication.update(created.id, {
+        application_form_pdf_url: pdfUrl
+      });
+    } catch (e) {
+      console.error('Application PDF error:', e);
+    }
+
+    // Send confirmation email to parent/guardian with PDF link
     if (formData.parent_email) {
       const applicantName = `${formData.first_name} ${formData.middle_name ? formData.middle_name + ' ' : ''}${formData.last_name}`.trim();
       await base44.integrations.Core.SendEmail({
         to: formData.parent_email,
         subject: `Admission Application Received — ${applicantName} | Ref: ${appNum}`,
-        body: `Dear ${formData.parent_name},\n\nThank you for applying to Milton College of Arts and Science, Kaduna.\n\nYour application has been received and is currently under review.\n\nAPPLICATION DETAILS:\nApplicant Name: ${applicantName}\nApplication Number: ${appNum}\nDate Submitted: ${appDate}\nSection Applied For: ${formData.section_applying}\nClass Applied For: ${formData.class_applying}\nFormer School: ${formData.former_school_name || 'N/A'}\n\nPlease keep your Application Number (${appNum}) safe. You will need it to check your application status.\n\nTo check your application status at any time, visit our website and enter your application number.\n\nWe will notify you once your application has been reviewed by our admissions office.\n\nWarm regards,\nAdmissions Office\nMilton College of Arts and Science, Kaduna`,
+        body: `Dear ${formData.parent_name},\n\nThank you for applying to Milton College of Arts and Science, Kaduna.\n\nYour application has been received and is currently under review.\n\nAPPLICATION DETAILS:\nApplicant Name: ${applicantName}\nApplication Number: ${appNum}\nDate Submitted: ${appDate}\nSection Applied For: ${formData.section_applying}\nClass Applied For: ${formData.class_applying}\nFormer School: ${formData.former_school_name || 'N/A'}\n\nYour completed application form (PDF) is available at:\n${pdfUrl || 'Contact the school for a copy.'}\n\nPlease keep your Application Number (${appNum}) safe. You will need it to check your application status.\n\nTo check your application status at any time, visit our website and enter your application number.\n\nWe will notify you once your application has been reviewed by our admissions office.\n\nWarm regards,\nAdmissions Office\nMilton College of Arts and Science, Kaduna`,
         from_name: 'Milton College Admissions'
-      }).catch(() => {}); // Don't block submission if email fails
+      }).catch(() => {});
     }
 
     setApplicationNumber(appNum);
@@ -289,6 +346,53 @@ export default function AdmissionForm() {
                     </div>
                   </div>
 
+                  {/* Email + Verification */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-blue-600" />
+                      <Label className="text-blue-900">Email Address * (must be verified to proceed)</Label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        type="email"
+                        value={formData.parent_email}
+                        onChange={(e) => handleChange('parent_email', e.target.value)}
+                        placeholder="Enter parent/guardian email"
+                        required
+                        disabled={emailVerified}
+                        className="flex-1"
+                      />
+                      {emailVerified ? (
+                        <div className="flex items-center gap-1 px-3 bg-green-100 text-green-700 rounded-md text-sm font-medium">
+                          <BadgeCheck className="w-4 h-4" /> Verified
+                        </div>
+                      ) : (
+                        <Button type="button" variant="outline" onClick={sendVerificationCode} disabled={codeSending || !formData.parent_email}>
+                          {codeSending ? 'Sending...' : 'Send Code'}
+                        </Button>
+                      )}
+                    </div>
+                    {!emailVerified && emailCode && (
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={emailCodeInput}
+                          onChange={(e) => setEmailCodeInput(e.target.value)}
+                          placeholder="Enter 6-digit code"
+                          className="flex-1"
+                          maxLength={6}
+                        />
+                        <Button type="button" onClick={verifyEmailCode} className="bg-green-600 hover:bg-green-700">
+                          <ShieldCheck className="w-4 h-4 mr-1" /> Verify
+                        </Button>
+                      </div>
+                    )}
+                    {emailVerified && (
+                      <p className="text-xs text-green-600 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" /> Email verified. You can now proceed to the next step.
+                      </p>
+                    )}
+                  </div>
+
                   <div>
                     <Label>Passport Photo *</Label>
                     <div className="mt-2">
@@ -336,8 +440,8 @@ export default function AdmissionForm() {
                   </div>
 
                   <div className="flex justify-end">
-                    <Button type="button" onClick={() => setStep(2)} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
-                      Next
+                    <Button type="button" onClick={() => setStep(2)} disabled={!emailVerified} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
+                      {emailVerified ? 'Next' : 'Verify email to continue'}
                     </Button>
                   </div>
                 </CardContent>
@@ -520,12 +624,11 @@ export default function AdmissionForm() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <Label>Email Address</Label>
-                      <Input
-                        type="email"
-                        value={formData.parent_email}
-                        onChange={(e) => handleChange('parent_email', e.target.value)}
-                      />
+                      <Label>Email Address (Verified)</Label>
+                      <div className="flex items-center gap-2">
+                        <Input type="email" value={formData.parent_email} disabled className="flex-1 bg-green-50" />
+                        <BadgeCheck className="w-5 h-5 text-green-600 flex-shrink-0" />
+                      </div>
                     </div>
                     <div>
                       <Label>Occupation</Label>

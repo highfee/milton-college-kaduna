@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Search, GraduationCap, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Search, GraduationCap, CheckCircle, XCircle, Clock, AlertCircle, FileText } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { generateAcceptanceLetterPDF } from '@/lib/acceptanceLetterPDF';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,7 +41,29 @@ export default function CheckAdmissionStatus() {
       admission_number_generated: admNum
     });
 
-    // Send acceptance letter via email
+    // Generate acceptance letter PDF and upload
+    let pdfUrl = null;
+    try {
+      const doc = generateAcceptanceLetterPDF({
+        candidateName: appName,
+        admissionNumber: admNum,
+        classAdmitted: result.class_applying,
+        section: result.section_applying,
+        parentName: result.parent_name,
+        date: new Date().toISOString().split('T')[0]
+      });
+      const pdfBlob = doc.output('blob');
+      const file = new File([pdfBlob], `acceptance-letter-${admNum}.pdf`, { type: 'application/pdf' });
+      const uploadRes = await base44.integrations.Core.UploadFile({ file });
+      pdfUrl = uploadRes.file_url;
+      await base44.entities.AdmissionApplication.update(result.id, {
+        acceptance_letter_pdf_url: pdfUrl
+      });
+    } catch (e) {
+      console.error('Acceptance PDF error:', e);
+    }
+
+    // Send acceptance letter via email with PDF link
     if (result.parent_email) {
       const letterBody = `
 Dear Parent/Guardian of ${appName},
@@ -48,8 +71,12 @@ Dear Parent/Guardian of ${appName},
 CONGRATULATIONS! We are pleased to inform you that ${appName} has been offered provisional admission to Milton College of Arts and Science, Kaduna.
 
 Application Number: ${result.application_number}
+Admission Number: ${admNum}
 Class Applied For: ${result.class_applying}
 Section: ${result.section_applying}
+
+Your Acceptance Letter (PDF) is available at:
+${pdfUrl || 'Please contact the school for your acceptance letter.'}
 
 IMPORTANT INSTRUCTIONS:
 1. ${appName} is required to come to the school for academic testing of the class applied for.
@@ -65,13 +92,13 @@ Admissions Office
 
       await base44.integrations.Core.SendEmail({
         to: result.parent_email,
-        subject: `Admission Offer — ${appName} | Application No: ${result.application_number}`,
+        subject: `Acceptance Letter — ${appName} | Application No: ${result.application_number}`,
         body: letterBody,
         from_name: 'Milton College Admissions'
       });
     }
 
-    setResult({ ...result, status: 'Accepted', acceptance_sent: true });
+    setResult({ ...result, status: 'Accepted', acceptance_sent: true, acceptance_letter_pdf_url: pdfUrl });
     setDone('accepted');
     setAccepting(false);
   };
@@ -199,9 +226,18 @@ Admissions Office
                 )}
 
                 {done === 'accepted' && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
-                    <CheckCircle className="w-4 h-4 inline mr-2" />
-                    You have accepted the admission offer. An acceptance letter has been sent to <strong>{result.parent_email}</strong>. Please report to school for academic testing.
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800 space-y-2">
+                    <div>
+                      <CheckCircle className="w-4 h-4 inline mr-2" />
+                      You have accepted the admission offer. An acceptance letter (PDF) has been sent to <strong>{result.parent_email}</strong>. Please report to school for academic testing.
+                    </div>
+                    {result.acceptance_letter_pdf_url && (
+                      <a href={result.acceptance_letter_pdf_url} target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                          <FileText className="w-3 h-3 mr-1" /> Download Acceptance Letter (PDF)
+                        </Button>
+                      </a>
+                    )}
                   </div>
                 )}
                 {done === 'rejected' && (

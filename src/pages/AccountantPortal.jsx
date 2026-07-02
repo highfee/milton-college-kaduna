@@ -12,8 +12,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { 
   DollarSign, Receipt, Users, AlertCircle, 
   TrendingUp, LogOut, Plus, BarChart3, Eye, EyeOff,
-  GraduationCap, CheckCircle, XCircle, FileText, Printer
+  GraduationCap, CheckCircle, XCircle, FileText, Printer,
+  Search, Download
 } from 'lucide-react';
+import { generateAdmissionLetterPDF } from '@/lib/admissionLetterPDF';
 
 export default function AccountantPortal() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -42,6 +44,8 @@ export default function AccountantPortal() {
   const [finalClass, setFinalClass] = useState('');
   const [admissionProcessing, setAdmissionProcessing] = useState(false);
   const [printLetter, setPrintLetter] = useState(null);
+  const [tuitionFee, setTuitionFee] = useState('');
+  const [resumptionDate, setResumptionDate] = useState('');
 
   useEffect(() => {
     const session = sessionStorage.getItem('accountant_portal_logged_in');
@@ -101,6 +105,7 @@ export default function AccountantPortal() {
 
   const handleTabChange = (tab) => {
     if (tab === 'admissions') loadApplications();
+    if (tab === 'receipts') loadDashboard();
   };
 
   const handleOfferAdmission = async (app) => {
@@ -149,6 +154,12 @@ export default function AccountantPortal() {
   const handleFinalAdmission = async () => {
     if (!admissionDialog || !testScore || !finalClass) {
       alert('Please fill in test score and final class.'); return;
+    }
+    if (!tuitionFee) {
+      alert('Please enter the tuition fee for the selected class.'); return;
+    }
+    if (!resumptionDate) {
+      alert('Please enter the resumption date.'); return;
     }
     setAdmissionProcessing(true);
     const app = admissionDialog;
@@ -199,19 +210,48 @@ export default function AccountantPortal() {
       final_class_admitted: finalClass,
       admission_number_generated: newAdmNum,
       admission_letter_sent: true,
-      student_record_created: true
+      student_record_created: true,
+      tuition_fee: parseFloat(tuitionFee),
+      resumption_date: resumptionDate
     });
 
-    // Send admission letter by email
-    const letterText = `
-ADMISSION LETTER
-Milton College of Arts and Science, Kaduna
+    // Generate admission letter PDF (matching the official template)
+    let pdfUrl = null;
+    try {
+      const settingsRec = await base44.entities.SchoolSettings.list();
+      const schoolLogo = settingsRec[0]?.school_logo || null;
 
-Date: ${admDate}
+      const doc = generateAdmissionLetterPDF({
+        candidateName: appName,
+        admissionNumber: newAdmNum,
+        address: app.address || '',
+        section: app.section_applying,
+        classAdmitted: finalClass,
+        tuitionFee: tuitionFee,
+        resumptionDate: resumptionDate,
+        date: admDate,
+        schoolLogo
+      });
 
-Dear ${app.parent_name},
+      // Upload PDF to get a permanent URL
+      const pdfBlob = doc.output('blob');
+      const file = new File([pdfBlob], `admission-letter-${newAdmNum}.pdf`, { type: 'application/pdf' });
+      const uploadRes = await base44.integrations.Core.UploadFile({ file });
+      pdfUrl = uploadRes.file_url;
 
-We are delighted to inform you that ${appName} has been ADMITTED into Milton College of Arts and Science, Kaduna.
+      // Save PDF URL to the application record
+      await base44.entities.AdmissionApplication.update(app.id, {
+        admission_letter_pdf_url: pdfUrl
+      });
+    } catch (e) {
+      console.error('PDF generation error:', e);
+    }
+
+    // Send admission letter by email with PDF link
+    if (app.parent_email) {
+      const emailBody = `Dear ${app.parent_name},
+
+CONGRATULATIONS! ${appName} has been officially admitted into Milton College of Arts and Science, Kaduna.
 
 ADMISSION DETAILS:
 Admission Number: ${newAdmNum}
@@ -219,37 +259,32 @@ Full Name: ${appName}
 Class Admitted: ${finalClass}
 Section: ${app.section_applying}
 Admission Date: ${admDate}
-Test Score: ${testScore}%
-Application Number: ${app.application_number}
+Tuition Fee: \u20A6${parseFloat(tuitionFee).toLocaleString()}
+Resumption Date: ${resumptionDate}
 
-INSTRUCTIONS:
-1. Please report to the school's administrative office with this letter.
-2. Come along with all required fees and compulsory items for your section.
-3. Bring 2 recent passport photographs.
-4. This admission is subject to the school's rules and regulations.
+Your official Admission Letter (PDF) is available at the link below:
+${pdfUrl || 'Please contact the school for your admission letter.'}
 
-We look forward to welcoming ${app.first_name} to our school community.
-
-Congratulations!
+Please download and print the admission letter. Bring it along when reporting for registration.
 
 Warm regards,
 The Principal
-Milton College of Arts and Science, Kaduna
-    `.trim();
+Milton College of Arts and Science, Kaduna`;
 
-    if (app.parent_email) {
       await base44.integrations.Core.SendEmail({
         to: app.parent_email,
         subject: `ADMISSION LETTER — ${appName} | Adm. No: ${newAdmNum}`,
-        body: letterText,
+        body: emailBody,
         from_name: 'Milton College of Arts & Science'
       }).catch(() => {});
     }
 
-    setPrintLetter({ app, newAdmNum, finalClass, testScore, admDate, letterText });
+    setPrintLetter({ app, newAdmNum, finalClass, testScore, admDate, pdfUrl });
     setAdmissionDialog(null);
     setTestScore('');
     setFinalClass('');
+    setTuitionFee('');
+    setResumptionDate('');
     setAdmissionProcessing(false);
     loadApplications();
   };
@@ -308,9 +343,9 @@ Milton College of Arts and Science, Kaduna
 
   const quickActions = [
     { label: 'New Receipt', icon: Plus, to: '/FeeReceipt', color: 'bg-green-600' },
+    { label: 'Manage Receipts', icon: Search, to: '/ReceiptManagement', color: 'bg-teal-600' },
     { label: 'Fee Payments', icon: DollarSign, to: '/FeePayments', color: 'bg-blue-600' },
     { label: 'Fee Defaulters', icon: AlertCircle, to: '/FeeDefaulters', color: 'bg-red-600' },
-    { label: 'Result Tokens', icon: Receipt, to: '/ResultTokens', color: 'bg-purple-600' },
   ];
 
   const statusColor = {
@@ -345,6 +380,7 @@ Milton College of Arts and Science, Kaduna
         <Tabs defaultValue="dashboard" onValueChange={handleTabChange}>
           <TabsList className="mb-6">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="receipts">Receipts</TabsTrigger>
             <TabsTrigger value="admissions">Admissions</TabsTrigger>
           </TabsList>
 
@@ -423,6 +459,62 @@ Milton College of Arts and Science, Kaduna
                     </table>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* RECEIPTS TAB */}
+          <TabsContent value="receipts">
+            <Card className="border-0 shadow-md">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Receipt className="w-5 h-5 text-emerald-600" />
+                    Receipt Management
+                  </CardTitle>
+                  <Link to="/ReceiptManagement">
+                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                      <Search className="w-3 h-3 mr-1" />Full Search & Reports
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {recentPayments.length === 0 ? (
+                  <p className="p-8 text-center text-gray-400">No receipts yet</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          {['Receipt #', 'Student', 'Class', 'Amount', 'Method', 'Date', 'Status'].map(h => (
+                            <th key={h} className="text-left text-xs font-semibold text-gray-500 uppercase px-4 py-3">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {recentPayments.map(p => (
+                          <tr key={p.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm font-mono">{p.receipt_number}</td>
+                            <td className="px-4 py-3 font-medium text-sm">{p.student_name}</td>
+                            <td className="px-4 py-3 text-sm">{p.class}</td>
+                            <td className="px-4 py-3 text-sm font-semibold text-green-700">{(p.amount_paid || 0).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })}</td>
+                            <td className="px-4 py-3 text-sm">{p.payment_method}</td>
+                            <td className="px-4 py-3 text-sm">{p.payment_date}</td>
+                            <td className="px-4 py-3">
+                              <Badge variant={p.status === 'Paid' ? 'default' : 'secondary'} className="text-xs">{p.status}</Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <div className="p-4 bg-gray-50 border-t flex gap-3 flex-wrap">
+                  <Link to="/ReceiptManagement"><Button size="sm" variant="outline"><Search className="w-3 h-3 mr-1" />Search & Reprint Receipts</Button></Link>
+                  <Link to="/ReceiptManagement"><Button size="sm" variant="outline"><Download className="w-3 h-3 mr-1" />Download Transaction Report (PDF)</Button></Link>
+                  <Link to="/FeeReceipt"><Button size="sm" variant="outline"><Plus className="w-3 h-3 mr-1" />New Receipt</Button></Link>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -557,8 +649,16 @@ Milton College of Arts and Science, Kaduna
                   {CLASSES_ALL.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
+              <div>
+                <Label>Tuition Fee for {finalClass || 'Selected Class'} *</Label>
+                <Input type="number" value={tuitionFee} onChange={e => setTuitionFee(e.target.value)} placeholder="e.g. 150000" className="mt-1" />
+              </div>
+              <div>
+                <Label>Resumption Date *</Label>
+                <Input type="date" value={resumptionDate} onChange={e => setResumptionDate(e.target.value)} className="mt-1" />
+              </div>
               <p className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
-                ✅ Upon confirmation, the system will: generate an admission letter, email it to the parent, generate an admission number, and permanently save the student record in the database.
+                Upon confirmation, the system will: generate an admission letter (PDF), email it to the parent, generate an admission number, and permanently save the student record in the database.
               </p>
               <div className="flex gap-3">
                 <Button onClick={handleFinalAdmission} disabled={admissionProcessing} className="flex-1 bg-purple-600 hover:bg-purple-700">
@@ -575,19 +675,34 @@ Milton College of Arts and Science, Kaduna
         <Dialog open={!!printLetter} onOpenChange={() => setPrintLetter(null)}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Admission Letter — Print Ready</DialogTitle>
+              <DialogTitle>Admission Letter — PDF Generated</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
                 <CheckCircle className="w-4 h-4 inline mr-2" />
-                Student record saved. Admission letter emailed to {printLetter.app.parent_email || 'parent'}.
+                Student record saved permanently. Admission letter (PDF) emailed to {printLetter.app.parent_email || 'parent'}.
               </div>
-              <div id="admission-letter-print" className="border rounded-lg p-6 text-sm whitespace-pre-wrap font-mono bg-white">
-                {printLetter.letterText}
+              {printLetter.pdfUrl && (
+                <div className="border rounded-lg overflow-hidden">
+                  <iframe src={printLetter.pdfUrl} className="w-full" style={{ height: '500px' }} title="Admission Letter PDF" />
+                </div>
+              )}
+              <div className="flex gap-3">
+                {printLetter.pdfUrl && (
+                  <a href={printLetter.pdfUrl} download={`admission-letter-${printLetter.newAdmNum}.pdf`} className="flex-1">
+                    <Button className="w-full bg-[#1e3a5f] hover:bg-[#2c4a6e]">
+                      <Download className="w-4 h-4 mr-2" />Download PDF
+                    </Button>
+                  </a>
+                )}
+                {printLetter.pdfUrl && (
+                  <a href={printLetter.pdfUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+                    <Button variant="outline" className="w-full">
+                      <Printer className="w-4 h-4 mr-2" />Print / Open
+                    </Button>
+                  </a>
+                )}
               </div>
-              <Button onClick={() => window.print()} className="w-full bg-[#1e3a5f] hover:bg-[#2c4a6e]">
-                <Printer className="w-4 h-4 mr-2" />Print Admission Letter
-              </Button>
             </div>
           </DialogContent>
         </Dialog>

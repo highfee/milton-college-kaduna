@@ -1,4 +1,4 @@
-import { jsPDF } from 'jspPDF';
+import { jsPDF } from 'jspdf';
 
 export function generateTransactionReportPDF(payments, { periodLabel, dateFrom, dateTo } = {}) {
   const doc = new jsPDF('p', 'mm', 'a4');
