@@ -71,6 +71,10 @@
     "user_id": {
       "type": "string",
       "description": "Linked user account"
+    },
+    "custom_password": {
+      "type": "string",
+      "description": "Staff custom password for portal login"
     }
   },
   "required": [
@@ -92,6 +96,11 @@
         {
           "user_condition": {
             "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
           }
         }
       ]
