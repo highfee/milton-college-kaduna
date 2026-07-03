@@ -49,6 +49,10 @@
         "Inactive"
       ],
       "default": "Active"
+    },
+    "custom_password": {
+      "type": "string",
+      "description": "Parent's custom password for portal login"
     }
   },
   "required": [
@@ -61,30 +65,8 @@
         "role": "admin"
       }
     },
-    "read": {
-      "$or": [
-        {
-          "data.email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "read": {},
+    "update": {},
     "delete": {
       "user_condition": {
         "role": "admin"
