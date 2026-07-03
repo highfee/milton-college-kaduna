@@ -128,6 +128,10 @@
     },
     "current_session": {
       "type": "string"
+    },
+    "custom_password": {
+      "type": "string",
+      "description": "Student's custom password for portal login"
     }
   },
   "required": [
@@ -144,31 +148,8 @@
         "role": "admin"
       }
     },
-    "read": {
-      "$or": [
-        {
-          "id": "{{user.id}}"
-        },
-        {
-          "data.parent_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "teacher"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
+    "read": {},
+    "update": {},
     "delete": {
       "user_condition": {
         "role": "admin"
