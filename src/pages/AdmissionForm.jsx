@@ -97,7 +97,8 @@ export default function AdmissionForm() {
       });
       alert('Verification code sent to your email. Please check your inbox (and spam folder).');
     } catch (e) {
-      alert('Failed to send verification code. Please check your email and try again.');
+      console.error('Email verification error:', e);
+      alert('Failed to send verification code: ' + (e?.message || 'Unknown error') + '. Please try again or contact the school.');
     }
     setCodeSending(false);
   };

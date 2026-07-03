@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
 
 export default function TeacherPortal() {
   const [teacher, setTeacher] = useState(null);
@@ -23,6 +24,7 @@ export default function TeacherPortal() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showForgotPw, setShowForgotPw] = useState(false);
 
   // Profile edit
   const [showProfile, setShowProfile] = useState(false);
@@ -195,8 +197,20 @@ export default function TeacherPortal() {
           <Button className="w-full bg-[#1e3a5f] hover:bg-[#1e3a5f]/90" onClick={handleLogin} disabled={loginLoading}>
             {loginLoading ? 'Signing in...' : 'Sign In'}
           </Button>
+          <button type="button" className="w-full text-sm text-[#1e3a5f] hover:text-[#2c4a6e] font-medium" onClick={() => setShowForgotPw(true)}>
+            Forgot Password?
+          </button>
         </CardContent>
       </Card>
+      <ForgotPasswordDialog
+        open={showForgotPw}
+        onOpenChange={setShowForgotPw}
+        entityType="Teacher"
+        identifierField="staff_id"
+        identifierLabel="Staff ID"
+        phoneField="phone"
+        themeColor="bg-[#1e3a5f]"
+      />
     </div>
   );
 

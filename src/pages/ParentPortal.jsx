@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import ResultSlip from '@/components/ResultSlip';
+import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
 
 const BANK_DETAILS = {
   accountNumber: '0232002677',
@@ -37,6 +38,7 @@ export default function ParentPortal() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showForgotPw, setShowForgotPw] = useState(false);
 
   // Change password
   const [showChangePw, setShowChangePw] = useState(false);
@@ -385,11 +387,23 @@ export default function ParentPortal() {
                   </span>
                 ) : 'Sign In'}
               </Button>
+              <button type="button" className="w-full text-sm text-purple-600 hover:text-purple-700 font-medium" onClick={() => setShowForgotPw(true)}>
+                Forgot Password?
+              </button>
               <p className="text-xs text-gray-400 text-center">
                 Contact the school admin if you need assistance
               </p>
             </CardContent>
           </Card>
+          <ForgotPasswordDialog
+            open={showForgotPw}
+            onOpenChange={setShowForgotPw}
+            entityType="Parent"
+            identifierField="parent_id"
+            identifierLabel="Parent ID"
+            phoneField="phone"
+            themeColor="bg-purple-600"
+          />
         </div>
       </div>
     );

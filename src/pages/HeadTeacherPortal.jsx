@@ -31,6 +31,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { getGrade, getRemark, SCHOOL_CLASSES } from '@/components/GradingUtils';
 import EnterTraitsDialog from '@/components/EnterTraitsDialog';
+import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
 
 const DEFAULT_PASSWORD = 'User123';
 
@@ -41,13 +42,15 @@ function LoginScreen({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgotPw, setShowForgotPw] = useState(false);
 
   const handleLogin = async () => {
     if (!staffId || !password) { setError('Please enter Staff ID and password'); return; }
-    if (password !== DEFAULT_PASSWORD) { setError('Incorrect password. Please try again.'); return; }
     setLoading(true); setError('');
     const teachers = await base44.entities.Teacher.filter({ staff_id: staffId.trim() });
     if (!teachers[0]) { setError('Staff ID not found.'); setLoading(false); return; }
+    const expected = teachers[0].custom_password || DEFAULT_PASSWORD;
+    if (password !== expected) { setError('Incorrect password. Please try again.'); setLoading(false); return; }
     if (teachers[0].teacher_type !== 'Head Teacher') {
       setError('This portal is for Head Teachers only.'); setLoading(false); return;
     }
@@ -86,8 +89,21 @@ function LoginScreen({ onLogin }) {
           <Button className="w-full bg-amber-700 hover:bg-amber-800" onClick={handleLogin} disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
+          <button type="button" className="w-full text-sm text-amber-700 hover:text-amber-800 font-medium" onClick={() => setShowForgotPw(true)}>
+            Forgot Password?
+          </button>
         </CardContent>
       </Card>
+      <ForgotPasswordDialog
+        open={showForgotPw}
+        onOpenChange={setShowForgotPw}
+        entityType="Teacher"
+        identifierField="staff_id"
+        identifierLabel="Staff ID"
+        phoneField="phone"
+        extraFilter={{ teacher_type: 'Head Teacher' }}
+        themeColor="bg-amber-700"
+      />
     </div>
   );
 }

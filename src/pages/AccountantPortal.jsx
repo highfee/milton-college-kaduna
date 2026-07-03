@@ -16,6 +16,7 @@ import {
   Search, Download
 } from 'lucide-react';
 import { generateAdmissionLetterPDF } from '@/lib/admissionLetterPDF';
+import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
 
 export default function AccountantPortal() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -30,6 +31,7 @@ export default function AccountantPortal() {
   const [showPw, setShowPw] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showForgotPw, setShowForgotPw] = useState(false);
 
   // Admissions
   const [applications, setApplications] = useState([]);
@@ -63,7 +65,10 @@ export default function AccountantPortal() {
     if (!staffId || !password) { setLoginError('Please enter username and password'); return; }
     setLoginLoading(true);
     setLoginError('');
-    const staff = await base44.entities.NonAcademicStaff.filter({ staff_id: staffId.trim(), role: 'Accountant' });
+    let staff = await base44.entities.NonAcademicStaff.filter({ staff_id: staffId.trim(), role: 'Accountant' });
+    if (!staff[0]) {
+      staff = await base44.entities.NonAcademicStaff.filter({ email: staffId.trim(), role: 'Accountant' });
+    }
     if (!staff[0]) { setLoginError('Invalid username or password.'); setLoginLoading(false); return; }
     const expectedPassword = staff[0].custom_password || 'admin220';
     if (password !== expectedPassword) {
@@ -77,8 +82,8 @@ export default function AccountantPortal() {
     loadDashboard();
   };
 
-  const loadDashboard = async () => {
-    setLoading(true);
+  const loadDashboard = async (silent = false) => {
+    if (!silent) setLoading(true);
     const [payments, students] = await Promise.all([
       base44.entities.SchoolFeePayment.list('-created_date', 10),
       base44.entities.Student.list()
@@ -105,7 +110,7 @@ export default function AccountantPortal() {
 
   const handleTabChange = (tab) => {
     if (tab === 'admissions') loadApplications();
-    if (tab === 'receipts') loadDashboard();
+    if (tab === 'receipts') loadDashboard(true);
   };
 
   const handleOfferAdmission = async (app) => {
@@ -329,8 +334,21 @@ Milton College of Arts and Science, Kaduna`;
             <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={handleLogin} disabled={loginLoading}>
               {loginLoading ? 'Signing in...' : 'Sign In'}
             </Button>
+            <button type="button" className="w-full text-sm text-emerald-600 hover:text-emerald-700 font-medium" onClick={() => setShowForgotPw(true)}>
+              Forgot Password?
+            </button>
           </CardContent>
         </Card>
+        <ForgotPasswordDialog
+          open={showForgotPw}
+          onOpenChange={setShowForgotPw}
+          entityType="NonAcademicStaff"
+          identifierField="staff_id"
+          identifierLabel="Staff ID"
+          phoneField="phone"
+          extraFilter={{ role: 'Accountant' }}
+          themeColor="bg-emerald-600"
+        />
       </div>
     );
   }

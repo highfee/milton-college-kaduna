@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import { 
   GraduationCap, Users, BookOpen, Award, Phone, Mail, MapPin, 
-  ChevronRight, Star, Send, MessageCircle, ArrowRight,
+  ChevronRight, Star, Send, MessageCircle, ArrowRight, ChevronDown, FileText,
   Building2, Calendar, ClipboardList, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 
 export default function Home() {
+  const navigate = useNavigate();
   const [settings, setSettings] = useState(null);
   const [galleries, setGalleries] = useState([]);
   const [ratings, setRatings] = useState([]);
@@ -107,17 +109,25 @@ export default function Home() {
                 {settings?.motto || 'Nurturing Excellence, Building Future Leaders'}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start flex-wrap">
-                <Link to={createPageUrl('AdmissionForm')}>
-                  <Button size="lg" className="bg-yellow-400 text-[#1e3a5f] hover:bg-yellow-300 font-bold px-8 shadow-xl">
-                    Apply for Admission
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                </Link>
-                <Link to="/AdmissionRequirements">
-                  <Button size="lg" className="border-2 border-yellow-300 bg-yellow-400/10 text-yellow-200 hover:bg-yellow-300/20 px-8 backdrop-blur-sm font-semibold">
-                    Admission Requirements
-                  </Button>
-                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="lg" className="bg-yellow-400 text-[#1e3a5f] hover:bg-yellow-300 font-bold px-8 shadow-xl">
+                      Apply for Admission
+                      <ChevronDown className="ml-2 w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 bg-white">
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => navigate(createPageUrl('AdmissionForm'))}>
+                      <FileText className="mr-2 w-4 h-4" /> Apply for Admission
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/AdmissionRequirements')}>
+                      <ClipboardList className="mr-2 w-4 h-4" /> Admission Requirements
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/CheckAdmissionStatus')}>
+                      <Search className="mr-2 w-4 h-4" /> Check Admission Status
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Link to={createPageUrl('PortalLogin')}>
                   <Button size="lg" className="border-2 border-white bg-white/10 text-white hover:bg-white/25 px-8 backdrop-blur-sm font-semibold">
                     Portal Login
@@ -129,12 +139,7 @@ export default function Home() {
                     Check Result
                   </Button>
                 </Link>
-                <Link to="/CheckAdmissionStatus">
-                  <Button size="lg" className="bg-blue-500 hover:bg-blue-400 text-white font-bold px-8 shadow-xl">
-                    <Search className="mr-2 w-5 h-5" />
-                    Check Admission Status
-                  </Button>
-                </Link>
+                {/* Check Admission Status moved into Apply for Admission dropdown */}
               </div>
             </motion.div>
 
