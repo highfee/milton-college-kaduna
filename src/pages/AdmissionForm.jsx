@@ -89,12 +89,10 @@ export default function AdmissionForm() {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setEmailCode(code);
     try {
-      await base44.integrations.Core.SendEmail({
-        to: formData.parent_email,
-        subject: 'Email Verification Code — Milton College Admission',
-        body: `Your email verification code is: ${code}\n\nEnter this code on the admission form to verify your email and proceed with your application.\n\nMilton College of Arts and Science, Kaduna`,
-        from_name: 'Milton College Admissions'
-      });
+      const res = await base44.functions.invoke('send-verification-email', { email: formData.parent_email, code });
+      if (res?.data?.success === false) {
+        throw new Error(res.data.error || 'Unknown error');
+      }
       alert('Verification code sent to your email. Please check your inbox (and spam folder).');
     } catch (e) {
       console.error('Email verification error:', e);
