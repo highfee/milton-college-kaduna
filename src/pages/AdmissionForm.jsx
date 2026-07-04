@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Upload, CheckCircle, GraduationCap, User, MapPin, Users, Camera, Mail, BadgeCheck, ShieldCheck } from 'lucide-react';
 import { generateApplicationFormPDF } from '@/lib/applicationFormPDF';
+import { sendVerificationEmail } from '@/lib/sendVerificationEmail';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,10 +90,7 @@ export default function AdmissionForm() {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setEmailCode(code);
     try {
-      const res = await base44.functions.invoke('send-verification-email', { email: formData.parent_email, code });
-      if (res?.data?.success === false) {
-        throw new Error(res.data.error || 'Unknown error');
-      }
+      await sendVerificationEmail(formData.parent_email, code);
       alert('Verification code sent to your email. Please check your inbox (and spam folder).');
     } catch (e) {
       console.error('Email verification error:', e);
