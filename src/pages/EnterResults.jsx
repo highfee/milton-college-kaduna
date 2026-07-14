@@ -232,22 +232,17 @@ export default function EnterResults() {
         status: 'Submitted'
       };
 
-      // Check if result already exists (upsert)
-      if (result.id) {
-        await base44.entities.Result.update(result.id, resultData);
+      // Always check DB for existing record to prevent duplicates
+      const existing = await base44.entities.Result.filter({
+        student_id: student.id,
+        subject_id: selectedSubject,
+        term: selectedTerm,
+        session: selectedSession
+      });
+      if (existing[0]) {
+        await base44.entities.Result.update(existing[0].id, resultData);
       } else {
-        // Double-check DB for existing record to prevent duplicates
-        const existing = await base44.entities.Result.filter({
-          student_id: student.id,
-          subject_id: selectedSubject,
-          term: selectedTerm,
-          session: selectedSession
-        });
-        if (existing[0]) {
-          await base44.entities.Result.update(existing[0].id, resultData);
-        } else {
-          await base44.entities.Result.create(resultData);
-        }
+        await base44.entities.Result.create(resultData);
       }
     }
 
