@@ -11,11 +11,11 @@
 // 4. Go to "Account" → "API Keys" → copy your Public Key
 // 5. Paste all three values below (replace the YOUR_... placeholders)
 
-// export const EMAILJS_CONFIG = {
-//   serviceId: 'service_e72z6q1',
-//   templateId: 'template_slhlv7l',
-//   publicKey: 'lIf1A2oKN5LRjDPfK',
-// };
+export const EMAILJS_CONFIG = {
+  serviceId: 'service_e72z6q1',
+  templateId: 'template_slhlv7l',
+  publicKey: 'lIf1A2oKN5LRjDPfK',
+};
 
 const express = require("express");
 const nodemailer = require("nodemailer");
