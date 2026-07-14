@@ -200,6 +200,7 @@ export default function EnterResults() {
       return;
     }
     setSaving(true);
+    try {
     const selectedSubjectData = subjects.find(s => s.id === selectedSubject);
 
     for (const student of students) {
@@ -250,10 +251,13 @@ export default function EnterResults() {
       }
     }
 
+      setEditMode(false);
+      alert('Results saved successfully!');
+      loadStudentsAndResults();
+    } catch (error) {
+      alert('Failed to save results: ' + (error.message || error));
+    }
     setSaving(false);
-    setEditMode(false);
-    alert('Results saved successfully!');
-    loadStudentsAndResults();
   };
 
   const filteredStudents = students.filter(s =>

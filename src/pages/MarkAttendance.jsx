@@ -109,6 +109,7 @@ export default function MarkAttendance() {
     const cls = teacher.assigned_class || teacher.form_teacher_class;
     if (!cls) return;
     setSaving(true);
+    try {
     for (const student of students) {
       const a = attendance[student.id];
       if (!a) continue;
@@ -132,9 +133,12 @@ export default function MarkAttendance() {
         setAttendance(prev => ({ ...prev, [student.id]: { ...prev[student.id], id: created.id } }));
       }
     }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      alert('Failed to save attendance: ' + (error.message || error));
+    }
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
   };
 
   const markAll = (status) => {
