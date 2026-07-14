@@ -14,5 +14,5 @@
 export const EMAILJS_CONFIG = {
   serviceId: 'YOUR_SERVICE_ID',
   templateId: 'YOUR_TEMPLATE_ID',
-  publicKey: 'YOUR_PUBLIC_KEY',
+  publicKey: 're_A1SfmZpL_DL5RL5UACYfhRZrp2vXj7mHz',
 };
