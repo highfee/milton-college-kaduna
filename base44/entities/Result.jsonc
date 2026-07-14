@@ -198,23 +198,7 @@
   ],
   "rls": {
     "create": true,
-    "read": {
-      "$or": [
-        {
-          "data.student_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "teacher"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "read": true,
     "update": true,
     "delete": {
       "$or": [
