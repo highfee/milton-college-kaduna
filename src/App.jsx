@@ -16,6 +16,7 @@ import StudentArchive from './pages/StudentArchive';
 import AdmissionRequirements from './pages/AdmissionRequirements';
 import CheckAdmissionStatus from './pages/CheckAdmissionStatus';
 import ReceiptManagement from './pages/ReceiptManagement';
+import CalendarSync from './pages/CalendarSync';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -76,6 +77,7 @@ const AuthenticatedApp = () => {
       <Route path="/AdmissionRequirements" element={<LayoutWrapper currentPageName="AdmissionRequirements"><AdmissionRequirements /></LayoutWrapper>} />
       <Route path="/CheckAdmissionStatus" element={<LayoutWrapper currentPageName="CheckAdmissionStatus"><CheckAdmissionStatus /></LayoutWrapper>} />
       <Route path="/ReceiptManagement" element={<LayoutWrapper currentPageName="ReceiptManagement"><ReceiptManagement /></LayoutWrapper>} />
+      <Route path="/CalendarSync" element={<LayoutWrapper currentPageName="CalendarSync"><CalendarSync /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
