@@ -46,13 +46,19 @@ export default function Home() {
   const handleContactSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    await base44.entities.Message.create({
-      ...contactForm,
-      message_type: 'Public-Admin'
-    });
-    setContactForm({ from_name: '', from_email: '', from_phone: '', subject: '', content: '' });
-    setSubmitting(false);
-    alert('Message sent successfully!');
+    try {
+      await base44.entities.Message.create({
+        ...contactForm,
+        message_type: 'Public-Admin'
+      });
+      setContactForm({ from_name: '', from_email: '', from_phone: '', subject: '', content: '' });
+      alert('Message sent successfully! The school administration will receive your message.');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again or contact the school directly.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleRatingSubmit = async (e) => {
