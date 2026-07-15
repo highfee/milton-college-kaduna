@@ -162,7 +162,8 @@ export default function TakeCBT() {
     let objScore = 0;
     let objTotal = 0;
     const answersArray = exam.questions.map((q, idx) => {
-      if (q.type === 'objective') {
+      const isObjective = q.options && q.options.filter(o => o && o.trim()).length > 0;
+      if (isObjective) {
         objTotal += (q.marks || 1);
         const sel = answers[idx];
         const correct = sel === q.correct_answer;
@@ -173,7 +174,7 @@ export default function TakeCBT() {
       }
     });
 
-    const hasTheory = exam.questions.some(q => q.type === 'theory');
+    const hasTheory = exam.questions.some(q => !(q.options && q.options.filter(o => o && o.trim()).length > 0));
     const totalObjectiveMarks = exam.questions.filter(q => q.type === 'objective').reduce((sum, q) => sum + (q.marks || 1), 0);
     const percentage = totalObjectiveMarks > 0 ? ((objScore / totalObjectiveMarks) * 100).toFixed(1) : '0';
     const grade = getGrade(parseFloat(percentage));
@@ -390,7 +391,7 @@ export default function TakeCBT() {
                       <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">
                         {currentQ + 1}
                       </div>
-                      <Badge variant="outline" className="text-xs">{q.type === 'theory' ? 'Theory' : 'Objective'}</Badge>
+                      <Badge variant="outline" className="text-xs">{(q.options && q.options.filter(o => o && o.trim()).length > 0) ? 'Objective' : 'Theory'}</Badge>
                       <span className="text-sm text-slate-500">{q.marks} mark(s)</span>
                     </div>
                     <button
@@ -404,10 +405,10 @@ export default function TakeCBT() {
                   <div className="text-base font-semibold mb-4 text-slate-800" dangerouslySetInnerHTML={{ __html: `Q${currentQ + 1}. ${q.question}` }} />
                   {q.image_url && <img src={q.image_url} alt="question" className="mb-4 max-w-full rounded-lg border" />}
 
-                  {q.type === 'objective' ? (
+                  {(q.options && q.options.filter(o => o && o.trim()).length > 0) ? (
                     <RadioGroup value={answers[currentQ]?.toString()} onValueChange={v => setAnswers({ ...answers, [currentQ]: parseInt(v) })}>
                       <div className="space-y-3">
-                        {(q.options || []).map((opt, idx) => (
+                        {(q.options || []).filter(o => o !== undefined).map((opt, idx) => (
                           <div key={idx} onClick={() => setAnswers({ ...answers, [currentQ]: idx })}
                             className={`flex items-center space-x-3 p-3 border-2 rounded-xl cursor-pointer transition-all ${
                               answers[currentQ] === idx ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
@@ -527,7 +528,7 @@ export default function TakeCBT() {
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
             {availableExams.map(exam => {
-              const hasTheory = exam.questions?.some(q => q.type === 'theory');
+              const hasTheory = exam.questions?.some(q => !(q.options && q.options.filter(o => o && o.trim()).length > 0));
               return (
                 <Card key={exam.id} className="border-0 shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 overflow-hidden">
                   <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 text-white">
