@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '../utils';
 import { School, Users, GraduationCap, UserCircle, Shield, Star, BookOpen, DollarSign } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 export default function PortalLogin() {
@@ -139,9 +139,6 @@ export default function PortalLogin() {
                   <CardTitle className="text-xl">{portal.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="text-center pb-6">
-                  <CardDescription className="text-sm mb-4">
-                    {portal.description}
-                  </CardDescription>
                   <Button className={`w-full ${portal.color} text-white ${portal.hoverColor}`}>
                     Access Portal
                   </Button>
