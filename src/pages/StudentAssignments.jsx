@@ -75,6 +75,15 @@ export default function StudentAssignments() {
     setSubmitting(false);
     setSubmitted(true);
     setAnswer(''); setFileUrl('');
+    // Notify teacher of submission
+    base44.functions.invoke('sendSubmissionNotification', {
+      type: 'assignment',
+      assignment_id: selected.id,
+      student_name: `${student.first_name} ${student.last_name}`,
+      admission_number: student.admission_number,
+      title: selected.title,
+      class_name: student.current_class
+    }).catch(() => {});
     setTimeout(() => { setSubmitted(false); setSelected(null); }, 2000);
   };
 
