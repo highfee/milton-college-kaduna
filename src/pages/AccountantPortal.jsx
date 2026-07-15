@@ -571,6 +571,10 @@ export default function AccountantPortal() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="messages">
+            <PublicMessages />
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -698,10 +702,6 @@ export default function AccountantPortal() {
           </DialogContent>
         </Dialog>
       )}
-
-          <TabsContent value="messages">
-            <PublicMessages />
-          </TabsContent>
     </div>
   );
 }
