@@ -66,6 +66,17 @@
           "question": {
             "type": "string"
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "objective",
+              "theory"
+            ],
+            "default": "objective"
+          },
+          "image_url": {
+            "type": "string"
+          },
           "options": {
             "type": "array",
             "items": {
