@@ -63,26 +63,8 @@
     "student_id"
   ],
   "rls": {
-    "create": {
-      "data.student_id": "{{user.id}}"
-    },
-    "read": {
-      "$or": [
-        {
-          "data.student_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "teacher"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "create": true,
+    "read": true,
     "update": {
       "$or": [
         {
