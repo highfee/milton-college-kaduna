@@ -5,6 +5,16 @@ const EMAILJS_SERVICE_ID = 'service_6sssd2s';
 const EMAILJS_TEMPLATE_ID = 'template_jrrxz2o';
 const EMAILJS_PUBLIC_KEY = 'lIf1A2oKN5LRjDPfK';
 
+function getEmailJSBody(params) {
+  return JSON.stringify({
+    service_id: EMAILJS_SERVICE_ID,
+    template_id: EMAILJS_TEMPLATE_ID,
+    user_id: EMAILJS_PUBLIC_KEY,
+    accessToken: Deno.env.get('EMAILJS_PRIVATE_KEY'),
+    template_params: params
+  });
+}
+
 Deno.serve(async (req) => {
   try {
     const body = await req.json();
@@ -54,15 +64,10 @@ Milton College of Arts and Science, Kaduna`;
     const emailResponse = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        service_id: EMAILJS_SERVICE_ID,
-        template_id: EMAILJS_TEMPLATE_ID,
-        user_id: EMAILJS_PUBLIC_KEY,
-        template_params: {
-          to_email: app.parent_email,
-          subject: `Admission Application Received — ${applicantName} | Ref: ${app.application_number}`,
-          message: message
-        }
+      body: getEmailJSBody({
+        to_email: app.parent_email,
+        subject: `Admission Application Received — ${applicantName} | Ref: ${app.application_number}`,
+        message: message
       })
     });
 
