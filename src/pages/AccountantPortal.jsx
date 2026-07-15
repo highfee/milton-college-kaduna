@@ -119,15 +119,13 @@ export default function AccountantPortal() {
       status: 'Offered Admission',
       admin_notes: reviewNotes || undefined
     });
-    // Notify applicant by email
+    // Notify applicant by email with accept/reject buttons (via EmailJS backend function)
     if (app.parent_email) {
-      const appName = `${app.first_name} ${app.last_name}`;
-      await base44.integrations.Core.SendEmail({
-        to: app.parent_email,
-        subject: `Admission Offer — ${appName} | Ref: ${app.application_number}`,
-        body: `Dear ${app.parent_name},\n\nCONGRATULATIONS!\n\nWe are pleased to inform you that ${appName} has been offered provisional admission to Milton College of Arts and Science, Kaduna.\n\nApplication Number: ${app.application_number}\nClass Applied For: ${app.class_applying}\n\nPlease visit our website and enter your application number (${app.application_number}) to accept or reject this offer.\n\nIMPORTANT: You must accept or reject this offer within 7 days.\n\nWarm regards,\nAdmissions Office\nMilton College of Arts and Science, Kaduna`,
-        from_name: 'Milton College Admissions'
-      }).catch(() => {});
+      try {
+        await base44.functions.invoke('sendAdmissionOfferEmail', { application_id: app.id });
+      } catch (e) {
+        console.error('Offer email error:', e);
+      }
     }
     setSelectedApp(null);
     setReviewNotes('');
@@ -143,12 +141,11 @@ export default function AccountantPortal() {
       admin_notes: reviewNotes || undefined
     });
     if (app.parent_email) {
-      await base44.integrations.Core.SendEmail({
-        to: app.parent_email,
-        subject: `Admission Application Update — ${app.application_number}`,
-        body: `Dear ${app.parent_name},\n\nWe regret to inform you that the application for ${app.first_name} ${app.last_name} (Ref: ${app.application_number}) has not been successful at this time.\n\nIf you have any questions, please contact our admissions office.\n\nWarm regards,\nMilton College of Arts and Science, Kaduna`,
-        from_name: 'Milton College Admissions'
-      }).catch(() => {});
+      try {
+        await base44.functions.invoke('sendApplicationRejection', { application_id: app.id });
+      } catch (e) {
+        console.error('Rejection email error:', e);
+      }
     }
     setSelectedApp(null);
     setReviewNotes('');
@@ -170,19 +167,16 @@ export default function AccountantPortal() {
     const app = admissionDialog;
     const appName = `${app.first_name} ${app.last_name}`;
 
-    // Generate admission number following existing pattern
-    const existingStudents = await base44.entities.Student.list('-created_date', 5);
+    // Generate admission number following the MCA + 6-digit pattern in the database
+    const existingStudents = await base44.entities.Student.list('-created_date', 500);
     let newAdmNum = app.admission_number_generated;
     if (!newAdmNum) {
-      // Follow existing admission number pattern from database
-      const lastAdmNum = existingStudents[0]?.admission_number;
-      if (lastAdmNum && lastAdmNum.match(/\d+/)) {
-        const numPart = parseInt(lastAdmNum.match(/\d+/)[0]) + 1;
-        const prefix = lastAdmNum.replace(/\d+/, '');
-        newAdmNum = prefix + String(numPart).padStart(lastAdmNum.match(/\d+/)[0].length, '0');
-      } else {
-        newAdmNum = 'STU' + Date.now().toString().slice(-6);
-      }
+      const mcaNums = existingStudents
+        .map(s => s.admission_number)
+        .filter(n => n && /^MCA(\d{6})$/.test(n))
+        .map(n => parseInt(n.match(/^MCA(\d{6})$/)[1]));
+      const maxNum = mcaNums.length > 0 ? Math.max(...mcaNums) : 0;
+      newAdmNum = 'MCA' + String(maxNum + 1).padStart(6, '0');
     }
 
     const admDate = new Date().toISOString().split('T')[0];
@@ -252,36 +246,13 @@ export default function AccountantPortal() {
       console.error('PDF generation error:', e);
     }
 
-    // Send admission letter by email with PDF link
+    // Send admission letter by email with PDF link (via EmailJS backend function)
     if (app.parent_email) {
-      const emailBody = `Dear ${app.parent_name},
-
-CONGRATULATIONS! ${appName} has been officially admitted into Milton College of Arts and Science, Kaduna.
-
-ADMISSION DETAILS:
-Admission Number: ${newAdmNum}
-Full Name: ${appName}
-Class Admitted: ${finalClass}
-Section: ${app.section_applying}
-Admission Date: ${admDate}
-Tuition Fee: \u20A6${parseFloat(tuitionFee).toLocaleString()}
-Resumption Date: ${resumptionDate}
-
-Your official Admission Letter (PDF) is available at the link below:
-${pdfUrl || 'Please contact the school for your admission letter.'}
-
-Please download and print the admission letter. Bring it along when reporting for registration.
-
-Warm regards,
-The Principal
-Milton College of Arts and Science, Kaduna`;
-
-      await base44.integrations.Core.SendEmail({
-        to: app.parent_email,
-        subject: `ADMISSION LETTER — ${appName} | Adm. No: ${newAdmNum}`,
-        body: emailBody,
-        from_name: 'Milton College of Arts & Science'
-      }).catch(() => {});
+      try {
+        await base44.functions.invoke('sendAdmissionLetter', { application_id: app.id });
+      } catch (e) {
+        console.error('Admission letter email error:', e);
+      }
     }
 
     setPrintLetter({ app, newAdmNum, finalClass, testScore, admDate, pdfUrl });

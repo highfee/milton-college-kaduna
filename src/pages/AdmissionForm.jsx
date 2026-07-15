@@ -194,15 +194,13 @@ export default function AdmissionForm() {
       console.error('Application PDF error:', e);
     }
 
-    // Send confirmation email to parent/guardian with PDF link
+    // Send confirmation email to parent/guardian with PDF link (via EmailJS backend function)
     if (formData.parent_email) {
-      const applicantName = `${formData.first_name} ${formData.middle_name ? formData.middle_name + ' ' : ''}${formData.last_name}`.trim();
-      await base44.integrations.Core.SendEmail({
-        to: formData.parent_email,
-        subject: `Admission Application Received — ${applicantName} | Ref: ${appNum}`,
-        body: `Dear ${formData.parent_name},\n\nThank you for applying to Milton College of Arts and Science, Kaduna.\n\nYour application has been received and is currently under review.\n\nAPPLICATION DETAILS:\nApplicant Name: ${applicantName}\nApplication Number: ${appNum}\nDate Submitted: ${appDate}\nSection Applied For: ${formData.section_applying}\nClass Applied For: ${formData.class_applying}\nFormer School: ${formData.former_school_name || 'N/A'}\n\nYour completed application form (PDF) is available at:\n${pdfUrl || 'Contact the school for a copy.'}\n\nPlease keep your Application Number (${appNum}) safe. You will need it to check your application status.\n\nTo check your application status at any time, visit our website and enter your application number.\n\nWe will notify you once your application has been reviewed by our admissions office.\n\nWarm regards,\nAdmissions Office\nMilton College of Arts and Science, Kaduna`,
-        from_name: 'Milton College Admissions'
-      }).catch(() => {});
+      try {
+        await base44.functions.invoke('sendApplicationFormCopy', { application_id: created.id });
+      } catch (e) {
+        console.error('Confirmation email error:', e);
+      }
     }
 
     setApplicationNumber(appNum);
