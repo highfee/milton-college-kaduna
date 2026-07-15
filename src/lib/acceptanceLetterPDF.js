@@ -84,13 +84,40 @@ export function generateAcceptanceLetterPDF(data) {
     y += 1;
   });
 
-  y += 8;
+  y += 6;
 
   // Closing
   y = addWrappedText(doc, 'I look forward to a fruitful and rewarding academic journey for my child/ward at Milton College of Arts and Science, Kaduna.', M, y, CW, 5);
-  y += 10;
+  y += 8;
 
+  // Instructions box
+  doc.setFillColor(254, 243, 199);
+  doc.setDrawColor(245, 158, 11);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(M, y, CW, 38, 2, 2, 'FD');
+  doc.setFont('times', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(146, 64, 14);
+  doc.text('IMPORTANT — PRINT & BRING TO SCHOOL', M + 3, y + 6);
+  doc.setFont('times', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(120, 53, 15);
+  y += 10;
+  const instrLines = [
+    '1.  Print this acceptance letter and sign the Parent/Guardian section below.',
+    '2.  Bring the signed printed copy to the school Admissions Office.',
+    '3.  Present it on or before the resumption date along with all required documents.',
+    '4.  Only signed printed letters will be accepted for registration.'
+  ];
+  instrLines.forEach(line => {
+    y = addWrappedText(doc, line, M + 3, y, CW - 6, 4.5);
+    y += 1.5;
+  });
+
+  y += 8;
   // Signatures
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
   doc.line(M, y, M + 65, y);
   doc.setFont('times', 'normal');
   doc.setFontSize(9);
