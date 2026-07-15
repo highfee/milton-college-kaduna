@@ -1,0 +1,50 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "send_application_form_copy",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "wait_for_pdf": {
+          "wait": "PT15S",
+          "then": "send_email",
+          "x-base44": {
+            "title": "Wait for PDF upload",
+            "description": "Allow application_form_pdf_url to be saved"
+          }
+        }
+      },
+      {
+        "send_email": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendApplicationFormCopy",
+            "args": {
+              "application_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Send application form email",
+            "description": "Email with application number and PDF link"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Sends a copy of the application form with application number to the parent's email after submission",
+  "name": "Send Application Form Copy",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "AdmissionApplication"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "Send Admission Offer Email",
+  "description": "Sends a congratulatory email with accept/reject links when an application status changes to Offered Admission",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "AdmissionApplication",
+      "events": [
+        "update"
+      ]
+    },
+    "condition": "${ .trigger.data.status == \"Offered Admission\" and .trigger.old_data.status != \"Offered Admission\" }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "send_admission_offer_email",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "send_offer": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendAdmissionOfferEmail",
+            "args": {
+              "application_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Send admission offer email",
+            "description": "Congratulatory email with accept/reject links"
+          }
+        }
+      }
+    ]
+  }
+}
