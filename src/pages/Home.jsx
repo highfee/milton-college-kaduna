@@ -99,7 +99,7 @@ export default function Home() {
             >
               <div className="flex items-center justify-center lg:justify-start gap-4 mb-6">
                 {settings?.school_logo ? (
-                  <img src={settings.school_logo} alt="School Logo" className="w-20 h-20 object-contain bg-white rounded-full p-2 shadow-lg" />
+                  <img src={settings.school_logo} alt="School Logo" className="w-20 h-20 object-cover bg-white rounded-full shadow-lg" />
                 ) : (
                   <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30">
                     <GraduationCap className="w-10 h-10" />
