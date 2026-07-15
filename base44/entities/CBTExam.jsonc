@@ -113,28 +113,7 @@
     "create": {
       "created_by": "{{user.email}}"
     },
-    "read": {
-      "$or": [
-        {
-          "data.status": "Published",
-          "data.classes": "{{user.data.current_class}}",
-          "data.start_date": {
-            "$lte": "{{current_datetime}}"
-          },
-          "data.end_date": {
-            "$gte": "{{current_datetime}}"
-          }
-        },
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "read": true,
     "update": {
       "$or": [
         {
