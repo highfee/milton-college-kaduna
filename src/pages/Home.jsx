@@ -593,7 +593,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
-            © {new Date().getFullYear()} Milton College of Arts and Science. All rights reserved.
+            © {new Date().getFullYear()} Milton College of Arts and Science, Kaduna. All rights reserved.
           </div>
         </div>
       </footer>
