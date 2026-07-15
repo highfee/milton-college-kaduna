@@ -345,7 +345,7 @@ export default function ParentPortal() {
                 <div className="relative mt-1">
                   <UserCircle className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                   <Input
-                    placeholder="e.g. PAR123456"
+                    placeholder="Enter your Parent ID"
                     value={parentIdInput}
                     onChange={(e) => setParentIdInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}

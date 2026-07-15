@@ -179,7 +179,7 @@ export default function TeacherPortal() {
         <CardContent className="p-6 space-y-4">
           <div>
             <Label>Staff ID</Label>
-            <Input placeholder="Enter your Staff ID (e.g. TCH001)" value={staffId}
+            <Input placeholder="Enter your Staff ID" value={staffId}
               onChange={e => setStaffId(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
           </div>
           <div>

@@ -73,7 +73,7 @@ function LoginScreen({ onLogin }) {
         <CardContent className="p-6 space-y-4">
           <div>
             <Label>Staff ID</Label>
-            <Input placeholder="e.g. HT001" value={staffId} onChange={e => setStaffId(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+            <Input placeholder="Enter your Staff ID" value={staffId} onChange={e => setStaffId(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
           </div>
           <div>
             <Label>Password</Label>
