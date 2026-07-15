@@ -62,6 +62,9 @@
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "data.message_type": "Public-Admin"
         }
       ]
     },
@@ -74,6 +77,9 @@
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "data.message_type": "Public-Admin"
         }
       ]
     },
