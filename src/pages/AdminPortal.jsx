@@ -8,6 +8,7 @@ import {
   LogOut, Menu, X, Printer, Archive
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import PublicMessages from '@/components/PublicMessages';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -156,6 +157,11 @@ export default function AdminPortal() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Public Messages */}
+        <div className="mt-8">
+          <PublicMessages />
+        </div>
       </div>
     </div>
   );

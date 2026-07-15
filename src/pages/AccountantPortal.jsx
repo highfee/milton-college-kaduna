@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { generateAdmissionLetterPDF } from '@/lib/admissionLetterPDF';
 import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
+import PublicMessages from '@/components/PublicMessages';
 
 export default function AccountantPortal() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -371,6 +372,7 @@ export default function AccountantPortal() {
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="receipts">Receipts</TabsTrigger>
             <TabsTrigger value="admissions">Admissions</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -696,6 +698,10 @@ export default function AccountantPortal() {
           </DialogContent>
         </Dialog>
       )}
+
+          <TabsContent value="messages">
+            <PublicMessages />
+          </TabsContent>
     </div>
   );
 }
