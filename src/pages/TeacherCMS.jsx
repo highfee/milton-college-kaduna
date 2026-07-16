@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Layers, Users, BookOpen, ClipboardList, Calendar, FileText,
   MessageSquare, CheckSquare, UserCheck, BarChart2, Bell, Clock, ChevronRight,
-  Award, TrendingUp, Inbox
+  Award, TrendingUp, Inbox, ClipboardCheck
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -123,6 +123,7 @@ export default function TeacherCMS() {
     ...(canMarkAttendance ? [{ icon: UserCheck, label: 'Mark Attendance', to: '/MarkAttendance', color: 'from-emerald-500 to-green-600', desc: 'Record daily attendance' }] : []),
     { icon: ClipboardList, label: 'Manage Assignments', to: '/ManageAssignments', color: 'from-blue-500 to-indigo-600', desc: 'Create assignments & homework' },
     { icon: FileText, label: 'Question Bank', to: '/ManageCBT', color: 'from-purple-500 to-violet-600', desc: 'Create CBT, assignments & homework' },
+    { icon: ClipboardCheck, label: 'Grading Dashboard', to: '/GradingDashboard', color: 'from-amber-500 to-orange-600', desc: 'Grade theory & submissions' },
     { icon: BarChart2, label: 'Enter Results', to: '/EnterResults', color: 'from-green-500 to-teal-600', desc: 'Record scores and grades' },
     { icon: CheckSquare, label: 'Review Results', to: '/ReviewClassResults', color: 'from-orange-500 to-amber-600', desc: 'Review & add comments' },
     { icon: Calendar, label: 'Timetable', to: '/ManageTimetable', color: 'from-teal-500 to-cyan-600', desc: 'View class timetable' },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Edit, Trash2, Copy, Clock, BookOpen, Archive, Eye, Search, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Copy, Clock, BookOpen, Archive, Eye, Search, Download, Table as TableIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -189,6 +189,22 @@ export default function ManageCBT() {
   const handleClassToggle = (className) => {
     const curr = formData.classes || [];
     setFormData({ ...formData, classes: curr.includes(className) ? curr.filter(c => c !== className) : [...curr, className] });
+  };
+
+  const handleInsertTable = () => {
+    const rows = parseInt(prompt('Number of rows:', '3'));
+    const cols = parseInt(prompt('Number of columns:', '3'));
+    if (!rows || !cols) return;
+    let html = '<table style="border-collapse:collapse;width:100%;"><tbody>';
+    for (let i = 0; i < rows; i++) {
+      html += '<tr>';
+      for (let j = 0; j < cols; j++) {
+        html += '<td style="border:1px solid #ccc;padding:4px;">Cell</td>';
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table><p></p>';
+    setCurrentQuestion(prev => ({ ...prev, question: (prev.question || '') + html }));
   };
 
   const handleImageUpload = async (e) => {
@@ -549,6 +565,9 @@ export default function ManageCBT() {
                           style={{ minHeight: '120px' }}
                         />
                       </div>
+                      <Button type="button" size="sm" variant="outline" className="mt-1" onClick={handleInsertTable}>
+                        <TableIcon className="w-4 h-4 mr-1" /> Insert Table
+                      </Button>
                     </div>
                     <div>
                       <Label>Image (optional)</Label>

@@ -17,6 +17,7 @@ import AdmissionRequirements from './pages/AdmissionRequirements';
 import CheckAdmissionStatus from './pages/CheckAdmissionStatus';
 import ReceiptManagement from './pages/ReceiptManagement';
 import CalendarSync from './pages/CalendarSync';
+import GradingDashboard from './pages/GradingDashboard';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -78,6 +79,7 @@ const AuthenticatedApp = () => {
       <Route path="/CheckAdmissionStatus" element={<LayoutWrapper currentPageName="CheckAdmissionStatus"><CheckAdmissionStatus /></LayoutWrapper>} />
       <Route path="/ReceiptManagement" element={<LayoutWrapper currentPageName="ReceiptManagement"><ReceiptManagement /></LayoutWrapper>} />
       <Route path="/CalendarSync" element={<LayoutWrapper currentPageName="CalendarSync"><CalendarSync /></LayoutWrapper>} />
+      <Route path="/GradingDashboard" element={<LayoutWrapper currentPageName="GradingDashboard"><GradingDashboard /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
