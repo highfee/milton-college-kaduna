@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { 
-  Plus, Search, Edit, Trash2, User, Upload, GraduationCap, Download
+  Plus, Search, Edit, Trash2, User, Upload, GraduationCap, Download, BookOpen
 } from 'lucide-react';
+import StudentSubjectsDialog from '@/components/StudentSubjectsDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,6 +31,7 @@ export default function ManageStudents() {
   const [editingStudent, setEditingStudent] = useState(null);
   const [settings, setSettings] = useState(null);
   const [isTeacherView, setIsTeacherView] = useState(false);
+  const [subjectsStudent, setSubjectsStudent] = useState(null);
   const [formData, setFormData] = useState({
     admission_number: '',
     first_name: '',
@@ -549,6 +551,9 @@ export default function ManageStudents() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => setSubjectsStudent(student)} title="Manage Subjects">
+                              <BookOpen className="w-4 h-4" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(student)}>
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -570,6 +575,7 @@ export default function ManageStudents() {
             )}
           </CardContent>
         </Card>
+        <StudentSubjectsDialog student={subjectsStudent} onClose={() => setSubjectsStudent(null)} />
       </div>
     </div>
   );
