@@ -449,9 +449,15 @@ export default function ManageCBT() {
                   <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-2 p-4 bg-gray-50 rounded-lg max-h-48 overflow-y-auto">
                     {(() => {
                       const selSubj = subjects.find(s => s.id === formData.subject_id);
-                      let avail = selSubj?.classes?.length ? selSubj.classes : (formData.section ? CLASSES[formData.section] || [] : Object.values(CLASSES).flat());
-                      if (teacher && !selSubj?.classes?.length) {
-                        avail = teacher.assigned_class ? [teacher.assigned_class] : teacher.form_teacher_class ? [teacher.form_teacher_class] : avail;
+                      let avail;
+                      if (teacher) {
+                        avail = selSubj?.classes?.length
+                          ? selSubj.classes
+                          : [teacher.assigned_class, teacher.form_teacher_class].filter(Boolean);
+                      } else {
+                        avail = selSubj?.classes?.length
+                          ? selSubj.classes
+                          : (formData.section ? CLASSES[formData.section] || [] : Object.values(CLASSES).flat());
                       }
                       return avail.map(cls => (
                         <div key={cls} className="flex items-center space-x-2">

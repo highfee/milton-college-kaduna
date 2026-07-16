@@ -237,7 +237,7 @@ export default function ManageAssignments() {
                           const selectedSubjectObj = subjects.find(s => s.id === formData.subject_id);
                           // If teacher: restrict to subject's assigned classes; else all section classes
                           const availClasses = teacher
-                            ? (selectedSubjectObj?.classes?.length ? selectedSubjectObj.classes : (teacher.assigned_class ? [teacher.assigned_class] : (teacher.form_teacher_class ? [teacher.form_teacher_class] : [])))
+                            ? (selectedSubjectObj?.classes?.length ? selectedSubjectObj.classes : [teacher.assigned_class, teacher.form_teacher_class].filter(Boolean))
                             : (formData.section ? CLASSES[formData.section] || [] : []);
                           return availClasses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>);
                         })()}
