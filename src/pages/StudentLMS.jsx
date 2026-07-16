@@ -332,10 +332,18 @@ export default function StudentLMS() {
                           </div>
                         )}
                         {result ? (
-                          <div className="bg-green-50 rounded-lg p-3 text-center">
-                            <p className="text-2xl font-bold text-green-700">{result.percentage}%</p>
-                            <p className="text-xs text-green-600">Score: {result.score}/{result.total_marks} · Grade: {result.grade}</p>
-                          </div>
+                          (!exam.end_date || new Date(exam.end_date) <= new Date()) ? (
+                            <div className="bg-green-50 rounded-lg p-3 text-center">
+                              <p className="text-2xl font-bold text-green-700">{result.percentage}%</p>
+                              <p className="text-xs text-green-600">Score: {result.score}/{result.total_marks} · Grade: {result.grade}</p>
+                            </div>
+                          ) : (
+                            <div className="bg-amber-50 rounded-lg p-3 text-center">
+                              <Clock className="w-5 h-5 mx-auto text-amber-600 mb-1" />
+                              <p className="text-sm font-medium text-amber-700">Submitted — Results Pending</p>
+                              <p className="text-xs text-amber-600">Available after exam ends</p>
+                            </div>
+                          )
                         ) : (
                           <Link to="/TakeCBT">
                             <Button className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">

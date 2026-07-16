@@ -156,7 +156,7 @@ export default function TeacherPortal() {
     { icon: Calendar, label: 'View Timetable', to: '/ManageTimetable', color: 'bg-teal-500' },
     { icon: Users, label: 'My Students', to: '/ManageStudents', color: 'bg-indigo-500' },
     { icon: Layers, label: 'CMS — Classroom Mgmt', to: '/TeacherCMS', color: 'bg-pink-500' },
-    ...(hasClass ? [{ icon: UserCheck, label: 'Mark Attendance', to: '/MarkAttendance', color: 'bg-emerald-600' }] : []),
+    ...(isClassOrFormTeacher ? [{ icon: UserCheck, label: 'Mark Attendance', to: '/MarkAttendance', color: 'bg-emerald-600' }] : []),
     ...(isClassOrFormTeacher ? [{ icon: Star, label: 'Enter Traits & Fees', to: '/ReviewClassResults', color: 'bg-amber-500' }] : []),
   ];
 

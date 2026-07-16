@@ -5,7 +5,7 @@ import {
   FileText, ClipboardList, BookOpen, Calendar,
   GraduationCap, LogOut, TrendingUp, Eye, EyeOff,
   Camera, Key, Award, UserCircle, CheckSquare, BarChart2,
-  CreditCard, Wallet
+  CreditCard, Wallet, CheckCircle2, XCircle, Clock as ClockIcon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ export default function StudentPortal() {
   const [stats, setStats] = useState({});
   const [subjects, setSubjects] = useState([]);
   const [feePayments, setFeePayments] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
   const [admissionNo, setAdmissionNo] = useState('');
@@ -67,15 +69,19 @@ export default function StudentPortal() {
     const studentData = await base44.entities.Student.filter({ admission_number: admNo });
     if (studentData[0]) {
       setStudent(studentData[0]);
-      const [allAssignments, results, cbtExams, allSubjects, cbtResults, payments] = await Promise.all([
+      const [allAssignments, results, cbtExams, allSubjects, cbtResults, payments, attData, settingsData] = await Promise.all([
         base44.entities.Assignment.filter({ class: studentData[0].current_class }),
         base44.entities.Result.filter({ student_id: studentData[0].id, status: 'Approved' }),
         base44.entities.CBTExam.filter({ status: 'Published' }),
         base44.entities.Subject.filter({ status: 'Active' }),
         base44.entities.CBTResult.filter({ student_id: studentData[0].id }),
-        base44.entities.SchoolFeePayment.filter({ admission_number: studentData[0].admission_number })
+        base44.entities.SchoolFeePayment.filter({ admission_number: studentData[0].admission_number }),
+        base44.entities.Attendance.filter({ student_id: studentData[0].id }),
+        base44.entities.SchoolSettings.list()
       ]);
       setFeePayments(payments);
+      setAttendance(attData);
+      setSettings(settingsData[0] || null);
       // Show Active assignments OR any assignment not explicitly Inactive
       const assignments = allAssignments.filter(a => !a.status || a.status === 'Active');
       const classSubjects = allSubjects.filter(s => s.classes?.includes(studentData[0].current_class));
@@ -139,6 +145,12 @@ export default function StudentPortal() {
     setNewPassword(''); setConfirmPassword(''); setPhotoFile(null);
     setProfileSaving(false);
   };
+
+  const currentTerm = settings?.current_term;
+  const currentSession = settings?.current_session;
+  const termAttendance = attendance.filter(a => a.term === currentTerm && a.session === currentSession);
+  const presentCount = termAttendance.filter(a => a.status === 'Present' || a.status === 'Late').length;
+  const absentCount = termAttendance.filter(a => a.status === 'Absent').length;
 
   const quickActions = [
     { icon: FileText, label: 'Check My Results', to: '/CheckResult', color: 'bg-blue-500' },
@@ -365,6 +377,39 @@ export default function StudentPortal() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {termAttendance.length > 0 && (
+          <Card className="border-0 shadow-md mb-8">
+            <CardHeader><CardTitle className="flex items-center gap-2"><CheckSquare className="w-5 h-5 text-emerald-600" /> Attendance Summary — {currentTerm}</CardTitle></CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="bg-green-50 rounded-xl p-4 text-center">
+                  <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-green-600">{presentCount}</p>
+                  <p className="text-xs text-green-700">Days Present</p>
+                </div>
+                <div className="bg-red-50 rounded-xl p-4 text-center">
+                  <XCircle className="w-6 h-6 text-red-500 mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-red-500">{absentCount}</p>
+                  <p className="text-xs text-red-600">Days Absent</p>
+                </div>
+                <div className="bg-blue-50 rounded-xl p-4 text-center">
+                  <ClockIcon className="w-6 h-6 text-blue-600 mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-blue-600">{termAttendance.length}</p>
+                  <p className="text-xs text-blue-700">Total Days</p>
+                </div>
+              </div>
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {[...termAttendance].sort((a, b) => b.date?.localeCompare(a.date)).slice(0, 10).map((a, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50">
+                    <span className="text-sm text-gray-700">{a.date}</span>
+                    <Badge className={`text-xs border-0 ${a.status === 'Present' ? 'bg-green-100 text-green-700' : a.status === 'Late' ? 'bg-yellow-100 text-yellow-700' : a.status === 'Excused' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>{a.status}</Badge>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

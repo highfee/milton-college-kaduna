@@ -269,6 +269,37 @@ export default function TakeCBT() {
 
   // ===== INSTANT RESULTS SCREEN =====
   if (submitted && finalScore) {
+    const examEnded = !selectedExam?.end_date || new Date(selectedExam.end_date) <= new Date();
+    if (!examEnded) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex items-center justify-center p-4">
+          <Card className="max-w-lg w-full border-0 shadow-xl overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 text-center text-white">
+              <CheckCircle className="w-16 h-16 mx-auto mb-2" />
+              <h2 className="text-2xl font-bold">Exam Submitted!</h2>
+              <p className="text-white/80">{selectedExam?.title}</p>
+            </div>
+            <CardContent className="p-6">
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800">Results Pending</p>
+                  <p className="text-xs text-amber-600 mt-1">Your answers have been submitted successfully. Your score will be available after the exam window closes{selectedExam?.end_date ? ` on ${new Date(selectedExam.end_date).toLocaleString()}` : ''}.</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Link to="/StudentLMS" className="flex-1">
+                  <Button variant="outline" className="w-full"><ArrowLeft className="w-4 h-4 mr-2" />Back to LMS</Button>
+                </Link>
+                <Button onClick={() => { setSubmitted(false); setSelectedExam(null); loadData(); }} className="flex-1 bg-indigo-600 hover:bg-indigo-700">
+                  View Other Exams
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
     const gradeColors = getGradeColor(finalScore.grade);
     const passed = parseFloat(finalScore.percentage) >= (selectedExam?.pass_mark || 40);
     return (

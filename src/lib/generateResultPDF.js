@@ -11,6 +11,9 @@ import { getGrade } from '@/components/GradingUtils';
  * converts to PDF, uploads to storage, and saves a ReportCard entity record.
  */
 export async function generateResultPDF({ student, results, settings, term, session, classTeacher, rankings }) {
+  // 0. Fetch attendance for this term/session
+  const attData = await base44.entities.Attendance.filter({ student_id: student.id, term, session });
+
   // 1. Create a hidden container and render the ResultSlip into it
   const container = document.createElement('div');
   container.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;background:white;z-index:-1;';
@@ -19,7 +22,7 @@ export async function generateResultPDF({ student, results, settings, term, sess
   await new Promise((resolve) => {
     const root = createRoot(container);
     root.render(
-      React.createElement(ResultSlip, { student, results, settings, term, session, classTeacher, rankings })
+      React.createElement(ResultSlip, { student, results, settings, term, session, classTeacher, rankings, attendance: attData })
     );
     setTimeout(resolve, 800);
   });
@@ -87,6 +90,8 @@ export async function generateResultPDF({ student, results, settings, term, sess
     credits_count: creditsCount,
     fails_count: failsCount,
     a_grade_count: aGradeCount,
+    attendance_present: attData.filter(a => a.status === 'Present' || a.status === 'Late').length,
+    attendance_total: attData.length,
     class_teacher_comment: results[0]?.class_teacher_comment || results[0]?.teacher_comment || '',
     head_teacher_comment: results[0]?.head_teacher_comment || '',
     principal_comment: results[0]?.principal_comment || '',

@@ -97,6 +97,7 @@ export default function TeacherCMS() {
   );
 
   const myClass = teacher?.assigned_class || teacher?.form_teacher_class;
+  const canMarkAttendance = teacher?.teacher_type === 'Class Teacher' || teacher?.teacher_type === 'Form Teacher' || teacher?.teacher_type === 'Head Teacher';
   const todayAttendance = attendance.filter(a => a.date === new Date().toISOString().split('T')[0]);
   const presentToday = todayAttendance.filter(a => a.status === 'Present' || a.status === 'Late').length;
 
@@ -119,7 +120,7 @@ export default function TeacherCMS() {
   ].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 10);
 
   const cmsMenuItems = [
-    { icon: UserCheck, label: 'Mark Attendance', to: '/MarkAttendance', color: 'from-emerald-500 to-green-600', desc: 'Record daily attendance' },
+    ...(canMarkAttendance ? [{ icon: UserCheck, label: 'Mark Attendance', to: '/MarkAttendance', color: 'from-emerald-500 to-green-600', desc: 'Record daily attendance' }] : []),
     { icon: ClipboardList, label: 'Manage Assignments', to: '/ManageAssignments', color: 'from-blue-500 to-indigo-600', desc: 'Create assignments & homework' },
     { icon: FileText, label: 'Manage CBT Exams', to: '/ManageCBT', color: 'from-purple-500 to-violet-600', desc: 'Create online exams & quizzes' },
     { icon: BarChart2, label: 'Enter Results', to: '/EnterResults', color: 'from-green-500 to-teal-600', desc: 'Record scores and grades' },
@@ -163,7 +164,7 @@ export default function TeacherCMS() {
             { label: 'My Students', value: students.length, color: 'text-blue-600', bg: 'bg-blue-50', icon: Users },
             { label: 'Assignments', value: assignments.length, color: 'text-purple-600', bg: 'bg-purple-50', icon: ClipboardList },
             { label: 'CBT Exams', value: cbtExams.length, color: 'text-indigo-600', bg: 'bg-indigo-50', icon: FileText },
-            { label: 'Present Today', value: presentToday, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: UserCheck },
+            ...(canMarkAttendance ? [{ label: 'Present Today', value: presentToday, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: UserCheck }] : []),
           ].map((s, i) => {
             const Icon = s.icon;
             return (
@@ -201,7 +202,7 @@ export default function TeacherCMS() {
               Submissions {totalUngraded > 0 && <span className="ml-1 bg-red-500 text-white text-xs px-1.5 rounded-full">{totalUngraded}</span>}
             </TabsTrigger>
             <TabsTrigger value="students">Students ({students.length})</TabsTrigger>
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            {canMarkAttendance && <TabsTrigger value="attendance">Attendance</TabsTrigger>}
             <TabsTrigger value="assignments">My Assignments</TabsTrigger>
           </TabsList>
 

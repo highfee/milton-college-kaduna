@@ -455,6 +455,7 @@ export default function ParentPortal() {
               session={showResultSlip.session}
               classTeacher={slipClassTeacher}
               rankings={slipRankings}
+              attendance={attendance.filter(a => a.term === showResultSlip.term && a.session === showResultSlip.session)}
             />
           </div>
         )}
