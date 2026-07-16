@@ -270,7 +270,8 @@ export default function TakeCBT() {
   // ===== INSTANT RESULTS SCREEN =====
   if (submitted && finalScore) {
     const examEnded = !selectedExam?.end_date || new Date(selectedExam.end_date) <= new Date();
-    if (!examEnded) {
+    const hasTheory = selectedExam?.questions?.some(q => !(q.options && q.options.filter(o => o && o.trim()).length > 0));
+    if (!examEnded || hasTheory) {
       return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex items-center justify-center p-4">
           <Card className="max-w-lg w-full border-0 shadow-xl overflow-hidden">
@@ -284,7 +285,12 @@ export default function TakeCBT() {
                 <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-amber-800">Results Pending</p>
-                  <p className="text-xs text-amber-600 mt-1">Your answers have been submitted successfully. Your score will be available after the exam window closes{selectedExam?.end_date ? ` on ${new Date(selectedExam.end_date).toLocaleString()}` : ''}.</p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    {hasTheory
+                      ? 'This exam contains theory questions that require manual grading by your teacher. Your results will be available once grading is complete.'
+                      : `Your answers have been submitted successfully. Your score will be available after the exam window closes${selectedExam?.end_date ? ` on ${new Date(selectedExam.end_date).toLocaleString()}` : ''}.`
+                    }
+                  </p>
                 </div>
               </div>
               <div className="flex gap-3">

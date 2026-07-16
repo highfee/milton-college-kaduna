@@ -138,7 +138,7 @@ export default function StudentAssignmentScores() {
               <div className="space-y-3">
                 {cbtResults.map(r => {
                   const pct = r.total_marks ? ((r.score / r.total_marks) * 100).toFixed(0) : 0;
-                  const scoreReleased = isScoreReleased(exams.find(e => e.id === r.exam_id)?.end_date);
+                  const scoreReleased = isScoreReleased(exams.find(e => e.id === r.exam_id)?.end_date) && r.theory_graded !== false;
                   return (
                     <Card key={r.id} className="border-0 shadow-sm">
                       <CardContent className="p-4 flex items-center justify-between">

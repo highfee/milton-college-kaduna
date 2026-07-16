@@ -15,6 +15,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import TheoryGradingDialog from '@/components/TheoryGradingDialog';
+
+const QUILL_MODULES = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+    [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'script': 'sub' }, { 'script': 'super' }],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    [{ 'indent': '-1' }, { 'indent': '+1' }],
+    [{ 'direction': 'rtl' }, { 'align': [] }],
+    ['blockquote', 'code-block'],
+    ['link', 'image', 'formula'],
+    ['clean']
+  ]
+};
+
+const QUILL_FORMATS = ['header', 'font', 'size', 'bold', 'italic', 'underline', 'strike', 'color', 'background', 'script', 'list', 'bullet', 'indent', 'direction', 'align', 'blockquote', 'code-block', 'link', 'image', 'formula'];
 
 const CLASSES = {
   'Nursery': ['Reception Class', 'Nursery 1', 'Nursery 2'],
@@ -56,6 +75,7 @@ export default function ManageCBT() {
   const [bankTypeFilter, setBankTypeFilter] = useState('all');
   const [bankSubjectFilter, setBankSubjectFilter] = useState('all');
   const [selectedBankQs, setSelectedBankQs] = useState([]);
+  const [gradingExam, setGradingExam] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => { loadData(); }, []);
@@ -134,6 +154,12 @@ export default function ManageCBT() {
     loadData();
   };
 
+  const handleUnpublish = async (exam) => {
+    await base44.entities.CBTExam.update(exam.id, { status: 'Draft' });
+    toast({ title: 'Exam unpublished. You can edit and re-publish.', duration: 25000 });
+    loadData();
+  };
+
   const handleClose = async (exam) => {
     await base44.entities.CBTExam.update(exam.id, { status: 'Closed' });
     toast({ title: 'Exam closed. Questions moved to Question Bank.', duration: 25000 });
@@ -191,11 +217,11 @@ export default function ManageCBT() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Manage CBT Exams</h1>
-            <p className="text-gray-500">Create and manage computer-based tests, homework & assignments</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Question Bank</h1>
+            <p className="text-gray-500">Create, edit & publish CBT exams, assignments & homework questions</p>
           </div>
           <Button onClick={() => setIsDialogOpen(true)} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
-            <Plus className="w-4 h-4 mr-2" />Create Exam / Assessment
+            <Plus className="w-4 h-4 mr-2" />Create Questions
           </Button>
         </div>
 
@@ -264,7 +290,9 @@ export default function ManageCBT() {
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
                               {exam.status === 'Draft' && <Button size="sm" variant="outline" onClick={() => handlePublish(exam)}>Publish</Button>}
+                              {exam.status === 'Published' && <Button size="sm" variant="outline" className="text-blue-600" onClick={() => handleUnpublish(exam)}>Unpublish</Button>}
                               {exam.status === 'Published' && <Button size="sm" variant="outline" className="text-orange-600" onClick={() => handleClose(exam)}>Close</Button>}
+                              {needsMark && <Button size="sm" variant="outline" className="text-amber-600 border-amber-300" onClick={() => setGradingExam(exam)}>Grade Theory</Button>}
                               <Button variant="ghost" size="icon" onClick={() => handleDuplicate(exam)}><Copy className="w-4 h-4" /></Button>
                               <Button variant="ghost" size="icon" onClick={() => handleEdit(exam)}><Edit className="w-4 h-4" /></Button>
                               <Button variant="ghost" size="icon" onClick={() => handleDelete(exam.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
@@ -474,7 +502,17 @@ export default function ManageCBT() {
 
                 <div>
                   <Label>Instructions</Label>
-                  <Textarea value={formData.instructions} onChange={e => setFormData({ ...formData, instructions: e.target.value })} rows={2} placeholder="Exam instructions..." />
+                  <div className="mt-1 border rounded-md overflow-hidden bg-white">
+                    <ReactQuill
+                      value={formData.instructions}
+                      onChange={val => setFormData({ ...formData, instructions: val })}
+                      theme="snow"
+                      modules={QUILL_MODULES}
+                      formats={QUILL_FORMATS}
+                      placeholder="Exam instructions..."
+                      style={{ minHeight: '80px' }}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -499,17 +537,8 @@ export default function ManageCBT() {
                           value={currentQuestion.question}
                           onChange={val => setCurrentQuestion({ ...currentQuestion, question: val })}
                           theme="snow"
-                          modules={{
-                            toolbar: [
-                              [{ 'header': [1, 2, false] }],
-                              ['bold', 'italic', 'underline'],
-                              [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                              [{ 'script': 'sub' }, { 'script': 'super' }],
-                              [{ 'color': [] }],
-                              ['clean']
-                            ]
-                          }}
-                          formats={['header', 'bold', 'italic', 'underline', 'list', 'bullet', 'script', 'color']}
+                          modules={QUILL_MODULES}
+                          formats={QUILL_FORMATS}
                           placeholder="Type your question here..."
                           style={{ minHeight: '120px' }}
                         />
@@ -660,6 +689,14 @@ export default function ManageCBT() {
             })()}
           </DialogContent>
         </Dialog>
+
+        {/* THEORY GRADING DIALOG */}
+        <TheoryGradingDialog
+          exam={gradingExam}
+          results={gradingExam ? getExamResults(gradingExam.id) : []}
+          onClose={() => setGradingExam(null)}
+          onGraded={() => { setGradingExam(null); loadData(); }}
+        />
       </div>
     </div>
   );

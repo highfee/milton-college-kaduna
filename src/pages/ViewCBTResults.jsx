@@ -38,10 +38,12 @@ export default function ViewCBTResults() {
     setLoading(false);
   };
 
-  const isScoreReleased = (examId) => {
-    const exam = exams.find(e => e.id === examId);
+  const isScoreReleased = (result) => {
+    const exam = exams.find(e => e.id === result.exam_id);
     if (!exam?.end_date) return true;
-    return new Date(exam.end_date) <= new Date();
+    if (new Date(exam.end_date) > new Date()) return false;
+    if (result.theory_graded === false) return false;
+    return true;
   };
 
   const getGradeBadgeColor = (grade) => {
@@ -55,7 +57,7 @@ export default function ViewCBTResults() {
   };
 
   const calculateStats = () => {
-    const visibleResults = results.filter(r => isScoreReleased(r.exam_id));
+    const visibleResults = results.filter(r => isScoreReleased(r));
     if (visibleResults.length === 0) return { avgScore: 0, highestScore: 0, totalExams: 0, passRate: 0 };
     
     const totalScore = visibleResults.reduce((sum, r) => sum + parseFloat(r.percentage), 0);
@@ -168,7 +170,7 @@ export default function ViewCBTResults() {
                   </TableHeader>
                   <TableBody>
                     {results.map((result) => {
-                      const released = isScoreReleased(result.exam_id);
+                      const released = isScoreReleased(result);
                       return (
                       <TableRow key={result.id}>
                         <TableCell className="font-medium">{result.exam_title}</TableCell>

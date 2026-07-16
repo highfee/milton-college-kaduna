@@ -122,7 +122,7 @@ export default function TeacherCMS() {
   const cmsMenuItems = [
     ...(canMarkAttendance ? [{ icon: UserCheck, label: 'Mark Attendance', to: '/MarkAttendance', color: 'from-emerald-500 to-green-600', desc: 'Record daily attendance' }] : []),
     { icon: ClipboardList, label: 'Manage Assignments', to: '/ManageAssignments', color: 'from-blue-500 to-indigo-600', desc: 'Create assignments & homework' },
-    { icon: FileText, label: 'Manage CBT Exams', to: '/ManageCBT', color: 'from-purple-500 to-violet-600', desc: 'Create online exams & quizzes' },
+    { icon: FileText, label: 'Question Bank', to: '/ManageCBT', color: 'from-purple-500 to-violet-600', desc: 'Create CBT, assignments & homework' },
     { icon: BarChart2, label: 'Enter Results', to: '/EnterResults', color: 'from-green-500 to-teal-600', desc: 'Record scores and grades' },
     { icon: CheckSquare, label: 'Review Results', to: '/ReviewClassResults', color: 'from-orange-500 to-amber-600', desc: 'Review & add comments' },
     { icon: Calendar, label: 'Timetable', to: '/ManageTimetable', color: 'from-teal-500 to-cyan-600', desc: 'View class timetable' },
