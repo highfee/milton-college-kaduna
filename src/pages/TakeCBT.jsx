@@ -63,6 +63,11 @@ function MiniCalculator({ onClose }) {
   );
 }
 
+function isTheoryQuestion(q) {
+  if (q.type === 'theory') return true;
+  return !(q.options && q.options.filter(o => o && o.trim()).length > 0);
+}
+
 function getGrade(pct) {
   if (pct >= 80) return 'A';
   if (pct >= 70) return 'B';
@@ -162,7 +167,7 @@ export default function TakeCBT() {
     let objScore = 0;
     let objTotal = 0;
     const answersArray = exam.questions.map((q, idx) => {
-      const isObjective = q.options && q.options.filter(o => o && o.trim()).length > 0;
+      const isObjective = !isTheoryQuestion(q);
       if (isObjective) {
         objTotal += (q.marks || 1);
         const sel = answers[idx];
@@ -174,8 +179,8 @@ export default function TakeCBT() {
       }
     });
 
-    const hasTheory = exam.questions.some(q => !(q.options && q.options.filter(o => o && o.trim()).length > 0));
-    const totalObjectiveMarks = exam.questions.filter(q => q.type === 'objective').reduce((sum, q) => sum + (q.marks || 1), 0);
+    const hasTheory = exam.questions.some(q => isTheoryQuestion(q));
+    const totalObjectiveMarks = exam.questions.filter(q => !isTheoryQuestion(q)).reduce((sum, q) => sum + (q.marks || 1), 0);
     const percentage = totalObjectiveMarks > 0 ? ((objScore / totalObjectiveMarks) * 100).toFixed(1) : '0';
     const grade = getGrade(parseFloat(percentage));
     const timeTaken = exam.duration_minutes - Math.floor(timeRemaining / 60);
@@ -270,7 +275,7 @@ export default function TakeCBT() {
   // ===== INSTANT RESULTS SCREEN =====
   if (submitted && finalScore) {
     const examEnded = !selectedExam?.end_date || new Date(selectedExam.end_date) <= new Date();
-    const hasTheory = selectedExam?.questions?.some(q => !(q.options && q.options.filter(o => o && o.trim()).length > 0));
+    const hasTheory = selectedExam?.questions?.some(q => isTheoryQuestion(q));
     if (!examEnded || hasTheory) {
       return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex items-center justify-center p-4">
@@ -428,7 +433,7 @@ export default function TakeCBT() {
                       <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">
                         {currentQ + 1}
                       </div>
-                      <Badge variant="outline" className="text-xs">{(q.options && q.options.filter(o => o && o.trim()).length > 0) ? 'Objective' : 'Theory'}</Badge>
+                      <Badge variant="outline" className="text-xs">{isTheoryQuestion(q) ? 'Theory' : 'Objective'}</Badge>
                       <span className="text-sm text-slate-500">{q.marks} mark(s)</span>
                     </div>
                     <button
@@ -442,7 +447,7 @@ export default function TakeCBT() {
                   <div className="text-base font-semibold mb-4 text-slate-800" dangerouslySetInnerHTML={{ __html: `Q${currentQ + 1}. ${q.question}` }} />
                   {q.image_url && <img src={q.image_url} alt="question" className="mb-4 max-w-full rounded-lg border" />}
 
-                  {(q.options && q.options.filter(o => o && o.trim()).length > 0) ? (
+                  {!isTheoryQuestion(q) ? (
                     <RadioGroup value={answers[currentQ]?.toString()} onValueChange={v => setAnswers({ ...answers, [currentQ]: parseInt(v) })}>
                       <div className="space-y-3">
                         {(q.options || []).filter(o => o !== undefined).map((opt, idx) => (
@@ -565,7 +570,7 @@ export default function TakeCBT() {
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
             {availableExams.map(exam => {
-              const hasTheory = exam.questions?.some(q => !(q.options && q.options.filter(o => o && o.trim()).length > 0));
+              const hasTheory = exam.questions?.some(q => isTheoryQuestion(q));
               return (
                 <Card key={exam.id} className="border-0 shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 overflow-hidden">
                   <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 text-white">
