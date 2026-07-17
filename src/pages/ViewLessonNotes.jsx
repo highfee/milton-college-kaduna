@@ -168,9 +168,16 @@ export default function ViewLessonNotes({ student: studentProp, settings: settin
                 <div><p className="text-xs text-gray-500">Topic</p><p className="font-medium">{selected.topic}</p></div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Content</p>
-                  <div className="p-4 bg-gray-50 rounded-lg whitespace-pre-wrap text-sm max-h-96 overflow-y-auto border">
-                    {selected.content || '(No typed content)'}
-                  </div>
+                  {/<[a-z][\s\S]*>/i.test(selected.content || '') ? (
+                    <div
+                      className="p-4 bg-gray-50 rounded-lg text-sm border prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: selected.content }}
+                    />
+                  ) : (
+                    <div className="p-4 bg-gray-50 rounded-lg whitespace-pre-wrap text-sm border">
+                      {selected.content || '(No typed content)'}
+                    </div>
+                  )}
                 </div>
                 {selected.attachment_url && (
                   <a href={selected.attachment_url} target="_blank" rel="noreferrer"
