@@ -5,7 +5,7 @@ import {
   FileText, GraduationCap, LogOut, UserCircle, TrendingUp, BookOpen, 
   Eye, Bell, CreditCard, ClipboardCheck, CheckCircle2, XCircle, Clock, 
   AlertCircle, BarChart2, Award, Phone, Star, MessageCircle, Download,
-  Calendar, Newspaper, Layout, Lock, Key, Send, ShieldCheck
+  Calendar, Newspaper, Layout, Lock, Key, Send, ShieldCheck, Video, Calculator
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -591,6 +591,51 @@ export default function ParentPortal() {
             <StatCard icon={XCircle} iconColor="text-red-500" bg="bg-red-50" label="Days Absent" value={absentCount} sub="this term" />
             <StatCard icon={BookOpen} iconColor="text-blue-600" bg="bg-blue-50" label="Subjects" value={currentResults.length} sub="approved" />
             <StatCard icon={BarChart2} iconColor="text-purple-600" bg="bg-purple-50" label="Current Avg" value={currentAvg ? `${currentAvg}%` : 'N/A'} sub="results" />
+          </div>
+        )}
+
+        {/* Quick Links: Academic Progress, MICAS Chat, PTA Meeting */}
+        {selectedChild && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Link to="/ParentAcademicProgress">
+              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Calculator className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800">Academic Progress</p>
+                    <p className="text-xs text-gray-500">View C.A. scores & predict performance</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link to="/MICASChat">
+              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-teal-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800">MICAS Chat</p>
+                    <p className="text-xs text-gray-500">Message class/form teacher</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link to="/OnlineMeeting">
+              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <Video className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800">PTA Meeting</p>
+                    <p className="text-xs text-gray-500">Join online meeting</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         )}
 

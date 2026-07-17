@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   BookOpen, ClipboardList, FileText, Users, LogOut, Eye, EyeOff,
   GraduationCap, CheckCircle, MessageSquare, Star, Save, Search,
-  ChevronLeft, TrendingUp, ArrowUp, ArrowDown, UserCheck
+  ChevronLeft, TrendingUp, ArrowUp, ArrowDown, UserCheck, Video
 } from 'lucide-react';
 
 // Full ordered class progression map for Nursery + Primary (HT scope)
@@ -867,6 +867,16 @@ export default function HeadTeacherPortal() {
             <Link to="/MasterList">
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                 <ClipboardList className="w-4 h-4 mr-2" /> Master List
+              </button>
+            </Link>
+            <Link to="/MICASChat">
+              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                <MessageSquare className="w-4 h-4 mr-2" /> MICAS Chat
+              </button>
+            </Link>
+            <Link to="/OnlineMeeting">
+              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                <Video className="w-4 h-4 mr-2" /> PTA Meeting
               </button>
             </Link>
 

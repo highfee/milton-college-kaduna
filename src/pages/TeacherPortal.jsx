@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   BookOpen, ClipboardList, FileText, Users, Calendar,
   CheckSquare, MessageSquare, LogOut, GraduationCap, Eye, EyeOff, Star,
-  UserCheck, Camera, Key, UserCircle, BarChart2, Layers
+  UserCheck, Camera, Key, UserCircle, BarChart2, Layers, Video, MessageCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -157,6 +157,8 @@ export default function TeacherPortal() {
     { icon: Users, label: 'My Students', to: '/ManageStudents', color: 'bg-indigo-500' },
     { icon: Layers, label: 'CMS — Classroom Mgmt', to: '/TeacherCMS', color: 'bg-pink-500' },
     { icon: FileText, label: 'Lesson Notes', to: '/ManageLessonNotes', color: 'bg-cyan-600' },
+    { icon: MessageCircle, label: 'MICAS Chat', to: '/MICASChat', color: 'bg-indigo-600' },
+    { icon: Video, label: 'PTA Meeting', to: '/OnlineMeeting', color: 'bg-red-500' },
     ...(isClassOrFormTeacher ? [{ icon: UserCheck, label: 'Mark Attendance', to: '/MarkAttendance', color: 'bg-emerald-600' }] : []),
     ...(isClassOrFormTeacher ? [{ icon: Star, label: 'Enter Traits & Fees', to: '/ReviewClassResults', color: 'bg-amber-500' }] : []),
   ];

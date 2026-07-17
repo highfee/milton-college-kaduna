@@ -13,7 +13,7 @@ import {
   DollarSign, Receipt, Users, AlertCircle, 
   TrendingUp, LogOut, Plus, BarChart3, Eye, EyeOff,
   GraduationCap, CheckCircle, XCircle, FileText, Printer,
-  Search, Download
+  Search, Download, Video, MessageCircle
 } from 'lucide-react';
 import { generateAdmissionLetterPDF } from '@/lib/admissionLetterPDF';
 import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
@@ -336,6 +336,8 @@ export default function AccountantPortal() {
     { label: 'Manage Receipts', icon: Search, to: '/ReceiptManagement', color: 'bg-teal-600' },
     { label: 'Fee Payments', icon: DollarSign, to: '/FeePayments', color: 'bg-blue-600' },
     { label: 'Fee Defaulters', icon: AlertCircle, to: '/FeeDefaulters', color: 'bg-red-600' },
+    { label: 'MICAS Chat', icon: MessageCircle, to: '/MICASChat', color: 'bg-indigo-600' },
+    { label: 'PTA Meeting', icon: Video, to: '/OnlineMeeting', color: 'bg-purple-600' },
   ];
 
   const statusColor = {
