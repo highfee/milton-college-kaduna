@@ -128,7 +128,7 @@ export default function TeacherCMS() {
     { icon: CheckSquare, label: 'Review Results', to: '/ReviewClassResults', color: 'from-orange-500 to-amber-600', desc: 'Review & add comments' },
     { icon: Calendar, label: 'Timetable', to: '/ManageTimetable', color: 'from-teal-500 to-cyan-600', desc: 'View class timetable' },
     { icon: Users, label: 'My Students', to: '/ManageStudents', color: 'from-indigo-500 to-blue-600', desc: 'View all students' },
-    { icon: MessageSquare, label: 'Lesson Notes', to: '/ManageTimetable', color: 'from-pink-500 to-rose-600', desc: 'Upload lesson plans' },
+    { icon: MessageSquare, label: 'Lesson Notes', to: '/ManageLessonNotes', color: 'from-pink-500 to-rose-600', desc: 'Upload lesson plans' },
   ];
 
   return (
