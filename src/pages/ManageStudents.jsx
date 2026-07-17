@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SCHOOL_CLASSES, ALL_SCHOOL_CLASSES, SCHOOL_SECTIONS } from '@/components/GradingUtils';
+import { nigerianStates, getLGAsByState } from '@/components/NigerianData';
 
 const CLASSES = SCHOOL_CLASSES;
 const ALL_CLASSES = ALL_SCHOOL_CLASSES;
@@ -329,17 +330,28 @@ export default function ManageStudents() {
                 <div className="grid md:grid-cols-4 gap-4">
                   <div>
                     <Label>State of Origin</Label>
-                    <Input
+                    <Select
                       value={formData.state_of_origin}
-                      onChange={(e) => setFormData({ ...formData, state_of_origin: e.target.value })}
-                    />
+                      onValueChange={(v) => setFormData({ ...formData, state_of_origin: v, local_government: '' })}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+                      <SelectContent>
+                        {nigerianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Local Govt</Label>
-                    <Input
+                    <Select
                       value={formData.local_government}
-                      onChange={(e) => setFormData({ ...formData, local_government: e.target.value })}
-                    />
+                      onValueChange={(v) => setFormData({ ...formData, local_government: v })}
+                      disabled={!formData.state_of_origin}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Select LGA" /></SelectTrigger>
+                      <SelectContent>
+                        {getLGAsByState(formData.state_of_origin).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Blood Group</Label>
