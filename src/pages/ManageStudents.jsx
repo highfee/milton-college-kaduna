@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { 
-  Plus, Search, Edit, Trash2, User, Upload, GraduationCap, Download, BookOpen
+  Plus, Search, Edit, Trash2, User, Upload, GraduationCap, Download, BookOpen, Camera
 } from 'lucide-react';
 import StudentSubjectsDialog from '@/components/StudentSubjectsDialog';
+import CameraCaptureDialog from '@/components/CameraCaptureDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,6 +34,7 @@ export default function ManageStudents() {
   const [settings, setSettings] = useState(null);
   const [isTeacherView, setIsTeacherView] = useState(false);
   const [subjectsStudent, setSubjectsStudent] = useState(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [formData, setFormData] = useState({
     admission_number: '',
     first_name: '',
@@ -434,14 +436,26 @@ export default function ManageStudents() {
                         <Button type="button" variant="outline" size="sm" onClick={() => setFormData({ ...formData, passport_photo: '' })}>Remove</Button>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#1e3a5f]">
-                        <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                        <span className="text-sm text-gray-500">Upload photo</span>
-                        <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
-                      </label>
+                      <div className="space-y-2">
+                        <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#1e3a5f]">
+                          <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                          <span className="text-sm text-gray-500">Upload photo</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+                        </label>
+                        <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setCameraOpen(true)}>
+                          <Camera className="w-4 h-4 mr-2" />
+                          Use Live Camera
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
+
+                <CameraCaptureDialog
+                  open={cameraOpen}
+                  onClose={() => setCameraOpen(false)}
+                  onCapture={(url) => setFormData({ ...formData, passport_photo: url })}
+                />
 
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>Cancel</Button>
