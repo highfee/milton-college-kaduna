@@ -106,8 +106,29 @@ export default function ManageCBT() {
       // Question bank: closed exams
       setQuestionBank(examsData.filter(e => e.status === 'Closed').flatMap(e => (e.questions || []).map(q => ({ ...q, exam_title: e.title, subject: e.subject_name }))));
     } else if (teacherData[0]) {
-      setTeacher(teacherData[0]);
-      subjectsData = await base44.entities.Subject.filter({ teacher_id: teacherData[0].id, status: 'Active' });
+      const t = teacherData[0];
+      setTeacher(t);
+      // Load subjects based on teacher type — restrict to assigned subjects/classes
+      const tt = t.teacher_type;
+      if (tt === 'Class Teacher' || tt === 'Head Teacher') {
+        const myClass = t.assigned_class || t.form_teacher_class;
+        const sectionSubjects = await base44.entities.Subject.filter({ section: t.section, status: 'Active' });
+        subjectsData = myClass
+          ? sectionSubjects.filter(s => !s.classes || s.classes.length === 0 || s.classes.includes(myClass))
+          : sectionSubjects;
+      } else if (tt === 'Form Teacher') {
+        const formClass = t.form_teacher_class || t.assigned_class;
+        const sectionSubjects = await base44.entities.Subject.filter({ section: t.section || 'Secondary', status: 'Active' });
+        subjectsData = formClass
+          ? sectionSubjects.filter(s => !s.classes || s.classes.length === 0 || s.classes.includes(formClass))
+          : sectionSubjects;
+      } else {
+        // Subject Teacher / Principal — only subjects assigned to them
+        const allSubjects = await base44.entities.Subject.filter({ status: 'Active' });
+        subjectsData = allSubjects.filter(s =>
+          s.teacher_id === t.id || (t.assigned_subjects || []).includes(s.id)
+        );
+      }
       const [examsData, resultsData] = await Promise.all([
         base44.entities.CBTExam.filter({ created_by: userData.email }),
         base44.entities.CBTResult.list('-created_date', 500)
@@ -467,9 +488,14 @@ export default function ManageCBT() {
                       const selSubj = subjects.find(s => s.id === formData.subject_id);
                       let avail;
                       if (teacher) {
-                        avail = selSubj?.classes?.length
-                          ? selSubj.classes
-                          : [teacher.assigned_class, teacher.form_teacher_class].filter(Boolean);
+                        const tt = teacher.teacher_type;
+                        if (tt === 'Class Teacher' || tt === 'Head Teacher' || tt === 'Form Teacher') {
+                          avail = [teacher.assigned_class, teacher.form_teacher_class].filter(Boolean);
+                        } else {
+                          avail = selSubj?.classes?.length
+                            ? selSubj.classes
+                            : [teacher.assigned_class, teacher.form_teacher_class].filter(Boolean);
+                        }
                       } else {
                         avail = selSubj?.classes?.length
                           ? selSubj.classes
