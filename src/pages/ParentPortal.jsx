@@ -5,8 +5,10 @@ import {
   FileText, GraduationCap, LogOut, UserCircle, TrendingUp, BookOpen, 
   Eye, Bell, CreditCard, ClipboardCheck, CheckCircle2, XCircle, Clock, 
   AlertCircle, BarChart2, Award, Phone, Star, MessageCircle, Download,
-  Calendar, Newspaper, Layout, Lock, Key, Send, ShieldCheck, Video, Calculator
+  Calendar, Newspaper, Layout, Lock, Key, Send, ShieldCheck, Video, Calculator,
+  Smartphone
 } from 'lucide-react';
+import { downloadCalendarICS } from '@/lib/icsGenerator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1100,13 +1102,25 @@ export default function ParentPortal() {
                                   <p className="font-medium text-sm">{cal.title}</p>
                                   <p className="text-xs text-gray-500">{cal.term} · {cal.session} · {cal.section}</p>
                                 </div>
-                                {cal.attachment_url && (
-                                  <a href={cal.attachment_url} download target="_blank" rel="noopener noreferrer">
-                                    <Button size="sm" variant="outline" className="text-xs h-7">
-                                      <Download className="w-3 h-3 mr-1" /> Download
+                                <div className="flex items-center gap-2">
+                                  {cal.activities?.length > 0 && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs h-7"
+                                      onClick={() => downloadCalendarICS(cal)}
+                                    >
+                                      <Smartphone className="w-3 h-3 mr-1" /> Sync to Device
                                     </Button>
-                                  </a>
-                                )}
+                                  )}
+                                  {cal.attachment_url && (
+                                    <a href={cal.attachment_url} download target="_blank" rel="noopener noreferrer">
+                                      <Button size="sm" variant="outline" className="text-xs h-7">
+                                        <Download className="w-3 h-3 mr-1" /> Download
+                                      </Button>
+                                    </a>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>
