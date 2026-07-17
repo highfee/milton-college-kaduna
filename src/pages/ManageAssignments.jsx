@@ -50,15 +50,24 @@ export default function ManageAssignments() {
   }, []);
 
   const loadData = async () => {
-    const userData = await base44.auth.me();
-    setUser(userData);
+    let userData = null;
+    try { userData = await base44.auth.me(); setUser(userData); } catch (e) { /* teacher via portal session */ }
 
-    const [teacherData, staffRoles] = await Promise.all([
-      base44.entities.Teacher.filter({ email: userData.email }),
-      base44.entities.StaffRole.filter({ user_email: userData.email })
-    ]);
+    // Portal session takes priority (teacher logged in via Teacher / Head Teacher portal)
+    const portalStaffId = sessionStorage.getItem('teacher_portal_staff_id') || sessionStorage.getItem('ht_portal_staff_id');
 
-    const isAdmin = userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin');
+    let teacherData = [];
+    let staffRoles = [];
+    if (portalStaffId) {
+      teacherData = await base44.entities.Teacher.filter({ staff_id: portalStaffId });
+    } else if (userData) {
+      [teacherData, staffRoles] = await Promise.all([
+        base44.entities.Teacher.filter({ email: userData.email }),
+        base44.entities.StaffRole.filter({ user_email: userData.email })
+      ]);
+    }
+
+    const isAdmin = !portalStaffId && userData && (userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin'));
 
     if (isAdmin) {
       const [allSubjects, allAssignments] = await Promise.all([

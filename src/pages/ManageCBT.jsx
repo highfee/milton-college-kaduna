@@ -82,18 +82,28 @@ export default function ManageCBT() {
 
   const loadData = async () => {
     setLoading(true);
-    const userData = await base44.auth.me();
-    setUser(userData);
+    let userData = null;
+    try { userData = await base44.auth.me(); setUser(userData); } catch (e) { /* teacher via portal session */ }
 
-    const [teacherData, staffRoles, settings] = await Promise.all([
-      base44.entities.Teacher.filter({ email: userData.email }),
-      base44.entities.StaffRole.filter({ user_email: userData.email }),
-      base44.entities.SchoolSettings.list()
-    ]);
+    // Portal session takes priority (teacher logged in via Teacher / Head Teacher portal)
+    const portalStaffId = sessionStorage.getItem('teacher_portal_staff_id') || sessionStorage.getItem('ht_portal_staff_id');
+
+    let teacherData = [];
+    let staffRoles = [];
+    if (portalStaffId) {
+      teacherData = await base44.entities.Teacher.filter({ staff_id: portalStaffId });
+    } else if (userData) {
+      [teacherData, staffRoles] = await Promise.all([
+        base44.entities.Teacher.filter({ email: userData.email }),
+        base44.entities.StaffRole.filter({ user_email: userData.email })
+      ]);
+    }
+
+    const settings = await base44.entities.SchoolSettings.list();
 
     if (settings[0]) setFormData(prev => ({ ...prev, term: settings[0].current_term, session: settings[0].current_session }));
 
-    const isAdmin = userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin');
+    const isAdmin = !portalStaffId && userData && (userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin'));
     let subjectsData;
     if (isAdmin) {
       subjectsData = await base44.entities.Subject.filter({ status: 'Active' });
@@ -130,7 +140,7 @@ export default function ManageCBT() {
         );
       }
       const [examsData, resultsData] = await Promise.all([
-        base44.entities.CBTExam.filter({ created_by: userData.email }),
+        base44.entities.CBTExam.filter({ created_by: t.email }),
         base44.entities.CBTResult.list('-created_date', 500)
       ]);
       setExams(examsData);
@@ -146,7 +156,7 @@ export default function ManageCBT() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const selectedSubject = subjects.find(s => s.id === formData.subject_id);
-    const dataToSave = { ...formData, subject_name: selectedSubject?.name, created_by: user?.email };
+    const dataToSave = { ...formData, subject_name: selectedSubject?.name, created_by: user?.email || teacher?.email };
     if (editingExam) {
       await base44.entities.CBTExam.update(editingExam.id, dataToSave);
     } else {
