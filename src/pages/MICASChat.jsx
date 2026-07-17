@@ -164,12 +164,18 @@ export default function MICASChat() {
     setPresence(map);
   }, []);
 
-  // Load messages for a conversation
+  // Load messages for a conversation (includes broadcasts)
   const loadMessages = useCallback(async (contact) => {
     if (!contact || !currentUser) return;
     const convId = getConversationId(currentUser.id, contact.id);
-    const msgs = await base44.entities.ChatMessage.filter({ conversation_id: convId });
-    setMessages(msgs);
+    const [dmMsgs, broadcasts] = await Promise.all([
+      base44.entities.ChatMessage.filter({ conversation_id: convId }),
+      base44.entities.ChatMessage.filter({ is_broadcast: true })
+    ]);
+    const all = [...dmMsgs, ...broadcasts].sort((a, b) =>
+      new Date(a.created_date) - new Date(b.created_date)
+    );
+    setMessages(all);
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   }, [currentUser]);
 
@@ -178,15 +184,17 @@ export default function MICASChat() {
     if (!textInput.trim() || !selectedContact || !currentUser) return;
     setSending(true);
     const convId = getConversationId(currentUser.id, selectedContact.id);
-    await base44.entities.ChatMessage.create({
+    const newMsg = await base44.entities.ChatMessage.create({
       conversation_id: convId,
       sender_id: currentUser.id, sender_name: currentUser.name, sender_role: currentUser.role,
       recipient_id: selectedContact.id, recipient_name: selectedContact.name,
       content: textInput.trim(), message_type: 'text', is_broadcast: false, read: false
     });
+    setMessages(prev => [...prev, newMsg]);
     playSound(true);
     setTextInput('');
     setSending(false);
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
   // Send voice note
@@ -195,14 +203,16 @@ export default function MICASChat() {
     setSending(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     const convId = getConversationId(currentUser.id, selectedContact.id);
-    await base44.entities.ChatMessage.create({
+    const newMsg = await base44.entities.ChatMessage.create({
       conversation_id: convId,
       sender_id: currentUser.id, sender_name: currentUser.name, sender_role: currentUser.role,
       recipient_id: selectedContact.id, recipient_name: selectedContact.name,
       content: '[voice note]', message_type: 'voice', file_url, voice_duration: duration, is_broadcast: false, read: false
     });
+    setMessages(prev => [...prev, newMsg]);
     playSound(true);
     setSending(false);
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
   // Send image
@@ -212,15 +222,17 @@ export default function MICASChat() {
     setSending(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     const convId = getConversationId(currentUser.id, selectedContact.id);
-    await base44.entities.ChatMessage.create({
+    const newMsg = await base44.entities.ChatMessage.create({
       conversation_id: convId,
       sender_id: currentUser.id, sender_name: currentUser.name, sender_role: currentUser.role,
       recipient_id: selectedContact.id, recipient_name: selectedContact.name,
       content: '[image]', message_type: 'image', file_url, is_broadcast: false, read: false
     });
+    setMessages(prev => [...prev, newMsg]);
     playSound(true);
     setSending(false);
     e.target.value = '';
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
   // Send broadcast
@@ -285,24 +297,32 @@ export default function MICASChat() {
     };
   }, []);
 
-  // Subscribe to new messages
+  // Subscribe to new messages — reload on any relevant event
   useEffect(() => {
     if (!currentUser) return;
     const unsubscribe = base44.entities.ChatMessage.subscribe((event) => {
       if (event.type === 'create') {
         const msg = event.data;
-        // Check if this message is relevant to the current user
-        if (msg.sender_id === currentUser.id) return; // Skip own messages (already shown)
-        if (msg.is_broadcast || msg.recipient_id === currentUser.id) {
-          if (selectedContact && msg.conversation_id === getConversationId(currentUser.id, selectedContact.id)) {
-            setMessages(prev => [...prev, msg]);
-          }
+        const isRelevant = msg.is_broadcast || msg.recipient_id === currentUser.id || msg.sender_id === currentUser.id;
+        if (!isRelevant) return;
+        // Reload messages so both sent and received messages appear
+        if (selectedContact) {
+          loadMessages(selectedContact);
+        }
+        if (msg.sender_id !== currentUser.id) {
           playSound(false);
         }
       }
     });
     return unsubscribe;
-  }, [currentUser, selectedContact]);
+  }, [currentUser, selectedContact, loadMessages]);
+
+  // Polling fallback — refresh messages every 5 seconds in case realtime misses events
+  useEffect(() => {
+    if (!selectedContact || !currentUser) return;
+    const interval = setInterval(() => loadMessages(selectedContact), 5000);
+    return () => clearInterval(interval);
+  }, [selectedContact, currentUser, loadMessages]);
 
   // Reload messages when contact changes
   useEffect(() => {
