@@ -41,6 +41,7 @@ export default function MICASChat() {
   const messagesEndRef = useRef(null);
   const heartbeatRef = useRef(null);
   const currentUserRef = useRef(null);
+  const selectedContactRef = useRef(null);
 
   // Detect current user from portal sessions
   const detectUser = useCallback(async () => {
@@ -164,18 +165,29 @@ export default function MICASChat() {
     setPresence(map);
   }, []);
 
-  // Load messages for a conversation (includes broadcasts)
+  // Load messages for a conversation (includes broadcasts).
+  // MERGE by ID instead of replacing — prevents messages from disappearing
+  // when polling, subscription, or send-optimistic-update overlap.
   const loadMessages = useCallback(async (contact) => {
     if (!contact || !currentUser) return;
     const convId = getConversationId(currentUser.id, contact.id);
     const [dmMsgs, broadcasts] = await Promise.all([
-      base44.entities.ChatMessage.filter({ conversation_id: convId }),
-      base44.entities.ChatMessage.filter({ is_broadcast: true })
+      base44.entities.ChatMessage.filter({ conversation_id: convId }, '-created_date', 500),
+      base44.entities.ChatMessage.filter({ is_broadcast: true }, '-created_date', 500)
     ]);
-    const all = [...dmMsgs, ...broadcasts].sort((a, b) =>
-      new Date(a.created_date) - new Date(b.created_date)
-    );
-    setMessages(all);
+    // Ignore if user switched to a different contact while fetching
+    if (selectedContactRef.current?.id !== contact.id) return;
+    const serverMsgs = [...dmMsgs, ...broadcasts];
+    setMessages(prev => {
+      const map = new Map();
+      // Preserve existing messages first (optimistic sends, etc.)
+      prev.forEach(m => map.set(m.id, m));
+      // Merge in server data — server values take precedence for existing IDs
+      serverMsgs.forEach(m => map.set(m.id, m));
+      return Array.from(map.values()).sort((a, b) =>
+        new Date(a.created_date) - new Date(b.created_date)
+      );
+    });
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   }, [currentUser]);
 
@@ -327,6 +339,8 @@ export default function MICASChat() {
   // Reload messages when contact changes
   useEffect(() => {
     if (selectedContact) {
+      selectedContactRef.current = selectedContact;
+      setMessages([]); // Clear previous contact's messages
       loadMessages(selectedContact);
       setView('chat');
     }
