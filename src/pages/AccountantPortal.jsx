@@ -336,6 +336,7 @@ export default function AccountantPortal() {
     { label: 'Manage Receipts', icon: Search, to: '/ReceiptManagement', color: 'bg-teal-600' },
     { label: 'Fee Payments', icon: DollarSign, to: '/FeePayments', color: 'bg-blue-600' },
     { label: 'Fee Defaulters', icon: AlertCircle, to: '/FeeDefaulters', color: 'bg-red-600' },
+    { label: 'Manage Parents', icon: Users, to: '/ManageParents', color: 'bg-pink-600' },
     { label: 'MICAS Chat', icon: MessageCircle, to: '/MICASChat', color: 'bg-indigo-600' },
     { label: 'PTA Meeting', icon: Video, to: '/OnlineMeeting', color: 'bg-purple-600' },
   ];
