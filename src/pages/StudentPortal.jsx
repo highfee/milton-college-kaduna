@@ -159,6 +159,7 @@ export default function StudentPortal() {
     { icon: TrendingUp, label: 'My CBT Results', to: '/ViewCBTResults', color: 'bg-orange-500' },
     { icon: Award, label: 'Assignment Scores', to: '/StudentAssignmentScores', color: 'bg-pink-500' },
     { icon: BarChart2, label: 'LMS — Learning Portal', to: '/StudentLMS', color: 'bg-indigo-600' },
+    { icon: BookOpen, label: 'Lesson Notes', to: '/ViewLessonNotes', color: 'bg-cyan-600' },
     { icon: Calendar, label: 'School Calendar', to: '/ManageCalendar', color: 'bg-teal-500' },
   ];
 

@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SCHOOL_CLASSES } from '@/components/GradingUtils';
 import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
+import LessonNoteReview from '@/components/LessonNoteReview';
 
 const DEFAULT_PASSWORD = 'User123';
 // Principal approves Secondary classes only
@@ -750,6 +751,9 @@ export default function PrincipalPortal() {
             <TabsTrigger value="students" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">
               <GraduationCap className="w-4 h-4 mr-2" /> Students
             </TabsTrigger>
+            <TabsTrigger value="lesson_notes" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">
+              <FileText className="w-4 h-4 mr-2" /> Lesson Notes
+            </TabsTrigger>
             <Link to="/EnterResults">
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                 <Edit className="w-4 h-4 mr-2" /> Enter Results
@@ -778,6 +782,9 @@ export default function PrincipalPortal() {
           </TabsContent>
           <TabsContent value="students">
             <StudentsTab />
+          </TabsContent>
+          <TabsContent value="lesson_notes">
+            <LessonNoteReview reviewer={principal} sections={['Secondary']} />
           </TabsContent>
         </Tabs>
       </div>
