@@ -1,0 +1,33 @@
+{
+  "name": "MICAS - Milton College of Arts and Science",
+  "short_name": "MICAS",
+  "description": "School management system for Milton College of Arts and Science, Kaduna. Student admissions, results, CBT exams, assignments, and parent portal.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1e3a5f",
+  "theme_color": "#1e3a5f",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "https://media.base44.com/images/public/696cc2e2095499293173480a/fc0aced09_generated_image.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://media.base44.com/images/public/696cc2e2095499293173480a/fc0aced09_generated_image.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://media.base44.com/images/public/696cc2e2095499293173480a/fc0aced09_generated_image.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
