@@ -27,15 +27,23 @@ export default function GradingDashboard() {
 
   const loadData = async () => {
     setLoading(true);
-    const userData = await base44.auth.me();
-    setUser(userData);
+    let userData = null;
+    try { userData = await base44.auth.me(); setUser(userData); } catch (e) { /* teacher via portal session */ }
 
-    const [teacherData, staffRoles] = await Promise.all([
-      base44.entities.Teacher.filter({ email: userData.email }),
-      base44.entities.StaffRole.filter({ user_email: userData.email })
-    ]);
+    const portalStaffId = sessionStorage.getItem('teacher_portal_staff_id') || sessionStorage.getItem('ht_portal_staff_id');
 
-    const isAdmin = userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin');
+    let teacherData = [];
+    let staffRoles = [];
+    if (portalStaffId) {
+      teacherData = await base44.entities.Teacher.filter({ staff_id: portalStaffId });
+    } else if (userData) {
+      [teacherData, staffRoles] = await Promise.all([
+        base44.entities.Teacher.filter({ email: userData.email }),
+        base44.entities.StaffRole.filter({ user_email: userData.email })
+      ]);
+    }
+
+    const isAdmin = !portalStaffId && userData && (userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin'));
 
     if (isAdmin) {
       const [exams, results, assigns, subs] = await Promise.all([
@@ -48,7 +56,7 @@ export default function GradingDashboard() {
     } else if (teacherData[0]) {
       setTeacher(teacherData[0]);
       const [exams, results, assigns, subs] = await Promise.all([
-        base44.entities.CBTExam.filter({ created_by: userData.email }),
+        base44.entities.CBTExam.filter({ created_by: teacherData[0].email }),
         base44.entities.CBTResult.list('-created_date', 500),
         base44.entities.Assignment.filter({ teacher_id: teacherData[0].id }),
         base44.entities.AssignmentSubmission.list('-created_date', 500)
@@ -88,7 +96,7 @@ export default function GradingDashboard() {
     await base44.entities.AssignmentSubmission.update(submission.id, {
       score: parseFloat(score),
       teacher_feedback: feedback || '',
-      graded_by: user.email,
+      graded_by: user?.email || teacher?.email || 'Teacher',
       graded_date: new Date().toISOString().split('T')[0],
       status: 'Graded'
     });
@@ -233,7 +241,11 @@ export default function GradingDashboard() {
                         {sub.submission_text && (
                           <div className="mb-3 p-3 bg-slate-50 rounded-lg">
                             <p className="text-xs text-slate-400 mb-1">Student's Response:</p>
-                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{sub.submission_text}</p>
+                            {/<[a-z][\s\S]*>/i.test(sub.submission_text) ? (
+                              <div className="text-sm text-slate-700 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sub.submission_text }} />
+                            ) : (
+                              <p className="text-sm text-slate-700 whitespace-pre-wrap">{sub.submission_text}</p>
+                            )}
                           </div>
                         )}
                         {sub.file_url && (

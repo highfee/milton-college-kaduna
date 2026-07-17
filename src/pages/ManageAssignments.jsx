@@ -195,9 +195,9 @@ export default function ManageAssignments() {
   const handleGradeSubmission = async (submission, score, feedback) => {
     await base44.entities.AssignmentSubmission.update(submission.id, {
       score: parseFloat(score),
-      feedback,
-      graded_by: user.email,
-      graded_at: new Date().toISOString(),
+      teacher_feedback: feedback,
+      graded_by: user?.email || teacher?.email || 'Teacher',
+      graded_date: new Date().toISOString().split('T')[0],
       status: 'Graded'
     });
     handleViewSubmissions(selectedAssignment);
@@ -440,14 +440,19 @@ export default function ManageAssignments() {
                         {submission.status}
                       </Badge>
                     </div>
-                    {submission.content && (
+                    {submission.submission_text && (
                       <div className="mb-2">
-                        <p className="text-sm text-gray-600">{submission.content}</p>
+                        <p className="text-xs text-gray-500 mb-1">Student's Answer:</p>
+                        {/<[a-z][\s\S]*>/i.test(submission.submission_text) ? (
+                          <div className="text-sm text-gray-700 prose prose-sm max-w-none p-3 bg-gray-50 rounded-lg" dangerouslySetInnerHTML={{ __html: submission.submission_text }} />
+                        ) : (
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap p-3 bg-gray-50 rounded-lg">{submission.submission_text}</p>
+                        )}
                       </div>
                     )}
-                    {submission.attachment_url && (
-                      <a href={submission.attachment_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
-                        View Attachment
+                    {submission.file_url && (
+                      <a href={submission.file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">
+                        📎 View Submitted File
                       </a>
                     )}
                     {submission.status !== 'Graded' && (
@@ -477,7 +482,7 @@ export default function ManageAssignments() {
                     {submission.status === 'Graded' && (
                       <div className="mt-3 p-3 bg-green-50 rounded">
                         <p className="text-sm"><strong>Score:</strong> {submission.score}/{submission.total_marks}</p>
-                        {submission.feedback && <p className="text-sm"><strong>Feedback:</strong> {submission.feedback}</p>}
+                        {submission.teacher_feedback && <p className="text-sm"><strong>Feedback:</strong> {submission.teacher_feedback}</p>}
                       </div>
                     )}
                   </CardContent>
