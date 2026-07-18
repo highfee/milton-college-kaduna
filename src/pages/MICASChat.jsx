@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import VoiceRecorder from '@/components/chat/VoiceRecorder';
 import ChatMessageBubble from '@/components/chat/ChatMessageBubble';
 
@@ -36,6 +38,7 @@ export default function MICASChat() {
   const [sending, setSending] = useState(false);
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [broadcastText, setBroadcastText] = useState('');
+  const [broadcastTarget, setBroadcastTarget] = useState('All');
   const [view, setView] = useState('contacts');
   const [isAdmin, setIsAdmin] = useState(false);
   const messagesEndRef = useRef(null);
@@ -125,6 +128,30 @@ export default function MICASChat() {
       ].filter(c => c.id !== user.id);
     }
 
+    // For class/form/head teachers, add parents of students in their class
+    if (user.record && ['Class Teacher', 'Form Teacher', 'Head Teacher'].includes(user.record.teacher_type)) {
+      const teacher = user.record;
+      const myClass = teacher.assigned_class || teacher.form_teacher_class;
+      if (myClass) {
+        const [students, allParents] = await Promise.all([
+          base44.entities.Student.filter({ current_class: myClass, status: 'Active' }),
+          base44.entities.Parent.filter({ status: 'Active' })
+        ]);
+        students.forEach(s => {
+          const parent = allParents.find(p =>
+            (s.parent_email && p.email === s.parent_email) ||
+            (s.parent_phone && p.phone === s.parent_phone)
+          );
+          if (parent && !standardContacts.find(c => c.id === parent.id)) {
+            standardContacts.push({
+              id: parent.id, name: parent.full_name, role: 'parent',
+              subtitle: `Parent of ${s.first_name} ${s.last_name}`
+            });
+          }
+        });
+      }
+    }
+
     // Also find contacts from existing conversations
     const allMsgs = await base44.entities.ChatMessage.list('-created_date', 500);
     const myMsgs = allMsgs.filter(m => m.sender_id === user.id || m.recipient_id === user.id);
@@ -171,10 +198,17 @@ export default function MICASChat() {
   const loadMessages = useCallback(async (contact) => {
     if (!contact || !currentUser) return;
     const convId = getConversationId(currentUser.id, contact.id);
-    const [dmMsgs, broadcasts] = await Promise.all([
+    const [dmMsgs, allBroadcasts] = await Promise.all([
       base44.entities.ChatMessage.filter({ conversation_id: convId }, '-created_date', 500),
       base44.entities.ChatMessage.filter({ is_broadcast: true }, '-created_date', 500)
     ]);
+    // Filter broadcasts by target audience (senders always see their own)
+    const isParent = currentUser.role === 'parent';
+    const broadcasts = allBroadcasts.filter(m => {
+      if (m.sender_id === currentUser.id) return true;
+      const target = m.target_audience || 'All';
+      return target === 'All' || (isParent ? target === 'Parents' : target === 'Staff');
+    });
     // Ignore if user switched to a different contact while fetching
     if (selectedContactRef.current?.id !== contact.id) return;
     const serverMsgs = [...dmMsgs, ...broadcasts];
@@ -251,13 +285,15 @@ export default function MICASChat() {
   const sendBroadcast = async () => {
     if (!broadcastText.trim() || !currentUser) return;
     setSending(true);
-    await base44.entities.ChatMessage.create({
+    const newBroadcast = await base44.entities.ChatMessage.create({
       conversation_id: 'BROADCAST',
       sender_id: currentUser.id, sender_name: currentUser.name, sender_role: currentUser.role,
-      content: broadcastText.trim(), message_type: 'text', is_broadcast: true, read: false
+      content: broadcastText.trim(), message_type: 'text', is_broadcast: true, target_audience: broadcastTarget, read: false
     });
+    setMessages(prev => [...prev, newBroadcast]);
     playSound(true);
     setBroadcastText('');
+    setBroadcastTarget('All');
     setSending(false);
     setShowBroadcast(false);
   };
@@ -267,11 +303,12 @@ export default function MICASChat() {
     if (!currentUser) return;
     setSending(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    await base44.entities.ChatMessage.create({
+    const newBroadcast = await base44.entities.ChatMessage.create({
       conversation_id: 'BROADCAST',
       sender_id: currentUser.id, sender_name: currentUser.name, sender_role: currentUser.role,
-      content: '[voice note]', message_type: 'voice', file_url, voice_duration: duration, is_broadcast: true, read: false
+      content: '[voice note]', message_type: 'voice', file_url, voice_duration: duration, is_broadcast: true, target_audience: broadcastTarget, read: false
     });
+    setMessages(prev => [...prev, newBroadcast]);
     playSound(true);
     setSending(false);
   };
@@ -512,7 +549,17 @@ export default function MICASChat() {
               <Button variant="ghost" size="icon" onClick={() => setShowBroadcast(false)}><ArrowLeft className="w-4 h-4" /></Button>
             </div>
             <div className="p-4 space-y-3">
-              <p className="text-sm text-gray-500">This message will be sent to all parents, teachers, and staff.</p>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Send To</Label>
+                <Select value={broadcastTarget} onValueChange={setBroadcastTarget}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">Parents and Staff</SelectItem>
+                    <SelectItem value="Parents">Parents Only</SelectItem>
+                    <SelectItem value="Staff">Staff/Teachers Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Textarea
                 placeholder="Type your broadcast message..." value={broadcastText}
                 onChange={e => setBroadcastText(e.target.value)} rows={4}

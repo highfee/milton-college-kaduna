@@ -44,6 +44,16 @@
       "type": "boolean",
       "default": false
     },
+    "target_audience": {
+      "type": "string",
+      "enum": [
+        "All",
+        "Parents",
+        "Staff"
+      ],
+      "default": "All",
+      "description": "For broadcast messages: who should receive this"
+    },
     "read": {
       "type": "boolean",
       "default": false

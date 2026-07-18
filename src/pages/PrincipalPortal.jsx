@@ -255,13 +255,22 @@ function ReviewResultsTab({ principal, settings }) {
         status: 'Approved',
         approved_by: principal?.email || principal?.staff_id,
         approved_date: new Date().toISOString().split('T')[0],
-        ...(selectedTerm === 'Third Term' ? { promotion_status: promotionStatus } : {})
+        ...(selectedTerm === 'Third Term' ? { promotion_status: promotionStatus, promoted_to_class: nextClass } : {})
       });
     }
     if (selectedTerm === 'Third Term' && promotion) {
       const newSection = ['Reception Class','Nursery 1','Nursery 2'].includes(nextClass) ? 'Nursery'
         : nextClass.startsWith('Primary') ? 'Primary' : 'Secondary';
-      await base44.entities.Student.update(selectedStudent.id, { current_class: nextClass, section: newSection });
+      // Update student's class, section, and subjects for the new class
+      const allSubjects = await base44.entities.Subject.filter({ status: 'Active' });
+      const classSubjectIds = allSubjects
+        .filter(s => s.classes && s.classes.includes(nextClass))
+        .map(s => s.id);
+      await base44.entities.Student.update(selectedStudent.id, {
+        current_class: nextClass,
+        section: newSection,
+        ...(classSubjectIds.length > 0 ? { subjects: classSubjectIds } : {})
+      });
     }
     setSaving(false);
     alert(`Results approved! Student ${promotionStatus === 'Promoted' ? `promoted to ${nextClass}` : promotionStatus === 'Demoted' ? `demoted to ${nextClass}` : 'set to repeat class'}.`);

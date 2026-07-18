@@ -423,10 +423,11 @@ export default function ResultSlip({ student, results, settings, term, session, 
             {isPromoted && (() => {
               const parts = session?.split('/');
               const nextSession = parts?.length === 2 ? `${parts[1]}/${parseInt(parts[1]) + 1}` : 'next';
-              return `✓ This student has been PROMOTED to ${student.current_class} for the ${nextSession} academic session.`;
+              const promotedTo = results[0]?.promoted_to_class || student.current_class;
+              return `✓ This student has been PROMOTED to ${promotedTo} for the ${nextSession} academic session.`;
             })()}
             {isRepeated && `↺ This student is to REPEAT ${displayClass} in the next academic session.`}
-            {isDemoted && `↓ This student has been DEMOTED to ${student.current_class} for the next academic session.`}
+            {isDemoted && `↓ This student has been DEMOTED to ${results[0]?.promoted_to_class || student.current_class} for the next academic session.`}
           </div>
         )}
 

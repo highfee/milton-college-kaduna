@@ -171,6 +171,10 @@
       ],
       "description": "Promotion decision stamped on Third Term results by Principal or Head Teacher"
     },
+    "promoted_to_class": {
+      "type": "string",
+      "description": "The class the student is promoted/demoted to (stored permanently on the result record)"
+    },
     "status": {
       "type": "string",
       "enum": [
