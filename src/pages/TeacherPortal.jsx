@@ -134,15 +134,19 @@ export default function TeacherPortal() {
       const { file_url } = await base44.integrations.Core.UploadFile({ file: photoFile });
       updates.passport_photo = file_url;
     }
-    if (bankName) updates.bank_name = bankName;
-    if (accountNumber) updates.account_number = accountNumber;
-    if (accountName) updates.account_name = accountName;
+    if (bankName !== '') updates.bank_name = bankName;
+    if (accountNumber !== '') updates.account_number = accountNumber;
+    if (accountName !== '') updates.account_name = accountName;
     if (Object.keys(updates).length === 0) { setProfileMsg('No changes to save'); setProfileSaving(false); return; }
-    await base44.entities.Teacher.update(teacher.id, updates);
-    setTeacher({ ...teacher, ...updates });
-    setProfileMsg('Profile updated successfully!');
-    setNewPassword(''); setConfirmPassword(''); setPhotoFile(null);
-    setBankName(''); setAccountNumber(''); setAccountName('');
+    try {
+      await base44.entities.Teacher.update(teacher.id, updates);
+      setTeacher({ ...teacher, ...updates });
+      setProfileMsg('Profile updated successfully!');
+      setNewPassword(''); setConfirmPassword(''); setPhotoFile(null);
+      setBankName(''); setAccountNumber(''); setAccountName('');
+    } catch (err) {
+      setProfileMsg('Failed to save: ' + (err.message || 'Unknown error. Please try again.'));
+    }
     setProfileSaving(false);
   };
 

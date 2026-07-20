@@ -164,7 +164,9 @@ export default function MICASChat() {
       }
     });
 
-    return [...standardContacts, ...extraContacts];
+    // Always add a Broadcast Announcements channel at the top
+    const broadcastChannel = { id: '__broadcast__', name: 'Broadcast Announcements', role: 'channel', subtitle: 'Director & Admin notices', isBroadcast: true };
+    return [broadcastChannel, ...standardContacts, ...extraContacts];
   }, []);
 
   // Presence management
@@ -197,6 +199,25 @@ export default function MICASChat() {
   // when polling, subscription, or send-optimistic-update overlap.
   const loadMessages = useCallback(async (contact) => {
     if (!contact || !currentUser) return;
+    // Broadcast channel: show ONLY broadcast messages (no DMs)
+    if (contact.isBroadcast) {
+      const allBroadcasts = await base44.entities.ChatMessage.filter({ is_broadcast: true }, '-created_date', 500);
+      const isParent = currentUser.role === 'parent';
+      const broadcasts = allBroadcasts.filter(m => {
+        if (m.sender_id === currentUser.id) return true;
+        const target = m.target_audience || 'All';
+        return target === 'All' || (isParent ? target === 'Parents' : target === 'Staff');
+      });
+      if (selectedContactRef.current?.id !== contact.id) return;
+      setMessages(prev => {
+        const map = new Map();
+        prev.forEach(m => map.set(m.id, m));
+        broadcasts.forEach(m => map.set(m.id, m));
+        return Array.from(map.values()).sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+      });
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      return;
+    }
     const convId = getConversationId(currentUser.id, contact.id);
     const [dmMsgs, allBroadcasts] = await Promise.all([
       base44.entities.ChatMessage.filter({ conversation_id: convId }, '-created_date', 500),
@@ -228,6 +249,7 @@ export default function MICASChat() {
   // Send text message
   const sendText = async () => {
     if (!textInput.trim() || !selectedContact || !currentUser) return;
+    if (selectedContact.isBroadcast) return; // Broadcast channel is read-only for DMs
     setSending(true);
     const convId = getConversationId(currentUser.id, selectedContact.id);
     const newMsg = await base44.entities.ChatMessage.create({
@@ -325,6 +347,12 @@ export default function MICASChat() {
       setIsAdmin(canBroadcast);
       const [contactsList] = await Promise.all([loadContacts(user), updatePresence(user, true)]);
       setContacts(contactsList);
+      // Auto-select the broadcast channel so staff see announcements immediately
+      if (contactsList[0]?.isBroadcast) {
+        setSelectedContact(contactsList[0]);
+        selectedContactRef.current = contactsList[0];
+        loadMessages(contactsList[0]);
+      }
       loadPresence();
       setLoading(false);
 
@@ -509,22 +537,34 @@ export default function MICASChat() {
               </div>
 
               <div className="p-3 border-t">
-                <div className="flex items-end gap-2">
-                  <VoiceRecorder onSend={sendVoice} disabled={sending} />
-                  <label className="cursor-pointer p-2 text-gray-500 hover:text-blue-600">
-                    <ImageIcon className="w-5 h-5" />
-                    <input type="file" accept="image/*" className="hidden" onChange={sendImage} />
-                  </label>
-                  <Textarea
-                    placeholder="Type a message..." value={textInput}
-                    onChange={e => setTextInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); } }}
-                    rows={1} className="flex-1 resize-none min-h-[40px] max-h-32"
-                  />
-                  <Button size="icon" className="bg-blue-600 hover:bg-blue-700 h-10 w-10" onClick={sendText} disabled={sending || !textInput.trim()}>
-                    <Send className="w-5 h-5" />
-                  </Button>
-                </div>
+                {selectedContact.isBroadcast && !isAdmin ? (
+                  <div className="text-center py-3 text-sm text-gray-400">
+                    <Megaphone className="w-5 h-5 inline mr-1" />
+                    This is a read-only broadcast channel. Only administrators can post here.
+                  </div>
+                ) : selectedContact.isBroadcast && isAdmin ? (
+                  <div className="text-center py-3 text-sm text-blue-500">
+                    <Megaphone className="w-5 h-5 inline mr-1" />
+                    Use the "Broadcast" button to send announcements to this channel.
+                  </div>
+                ) : (
+                  <div className="flex items-end gap-2">
+                    <VoiceRecorder onSend={sendVoice} disabled={sending} />
+                    <label className="cursor-pointer p-2 text-gray-500 hover:text-blue-600">
+                      <ImageIcon className="w-5 h-5" />
+                      <input type="file" accept="image/*" className="hidden" onChange={sendImage} />
+                    </label>
+                    <Textarea
+                      placeholder="Type a message..." value={textInput}
+                      onChange={e => setTextInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); } }}
+                      rows={1} className="flex-1 resize-none min-h-[40px] max-h-32"
+                    />
+                    <Button size="icon" className="bg-blue-600 hover:bg-blue-700 h-10 w-10" onClick={sendText} disabled={sending || !textInput.trim()}>
+                      <Send className="w-5 h-5" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </>
           ) : (

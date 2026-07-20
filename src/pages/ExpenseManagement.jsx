@@ -53,27 +53,32 @@ export default function ExpenseManagement() {
   const handleSave = async () => {
     if (!form.expense_name || !form.department) { alert('Please fill required fields'); return; }
     setSaving(true);
-    const now = new Date();
-    const rn = 'EXP' + Date.now();
-    const grand_total = calcGrandTotal(form.items);
-    await base44.entities.Expense.create({
-      ...form,
-      grand_total,
-      receipt_number: rn,
-      expense_date: now.toISOString().split('T')[0],
-      expense_time: now.toTimeString().split(' ')[0].substring(0, 5),
-      status: 'Pending Approval',
-    });
-    // Notify director
-    await base44.entities.DirectorNotification.create({
-      title: 'New Expense Recorded',
-      message: `${form.expense_name} — ₦${grand_total.toLocaleString()} by ${form.department}. Awaiting approval.`,
-      type: 'expense'
-    });
-    setShowForm(false);
-    setForm({ expense_name: '', reason: '', department: '', collected_by: '', items: [{ item_name: '', description: '', quantity: 1, unit_cost: 0, total_amount: 0 }], notes: '' });
+    try {
+      const now = new Date();
+      const rn = 'EXP' + Date.now();
+      const grand_total = calcGrandTotal(form.items);
+      await base44.entities.Expense.create({
+        ...form,
+        grand_total,
+        receipt_number: rn,
+        expense_date: now.toISOString().split('T')[0],
+        expense_time: now.toTimeString().split(' ')[0].substring(0, 5),
+        status: 'Pending Approval',
+      });
+      // Notify director
+      await base44.entities.DirectorNotification.create({
+        title: 'New Expense Recorded',
+        message: `${form.expense_name} — ₦${grand_total.toLocaleString()} by ${form.department}. Awaiting approval.`,
+        type: 'expense'
+      });
+      setShowForm(false);
+      setForm({ expense_name: '', reason: '', department: '', collected_by: '', items: [{ item_name: '', description: '', quantity: 1, unit_cost: 0, total_amount: 0 }], notes: '', term: form.term, session: form.session });
+      await load();
+      alert('Expense saved successfully! Receipt is available for printing.');
+    } catch (err) {
+      alert('Failed to save expense: ' + (err.message || 'Unknown error. Please try again.'));
+    }
     setSaving(false);
-    load();
   };
 
   const printReceipt = (exp) => {

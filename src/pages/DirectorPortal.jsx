@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   Building2, LogOut, Eye, EyeOff, TrendingUp, DollarSign, Users, BarChart3,
   Bell, Briefcase, Receipt, AlertCircle, CheckCircle, Clock, Megaphone,
-  HardHat, BookOpen, Send, Printer, Plus, Edit, X, TrendingDown
+  HardHat, BookOpen, Send, Printer, Plus, Edit, X, TrendingDown, KeyRound, ShieldCheck
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,9 +15,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
+import { sendVerificationEmail } from '@/lib/sendVerificationEmail';
 
 const DIRECTOR_EMAIL = 'miltoncollegekd@gmail.com';
-const DIRECTOR_PASSWORD = '2Win@MICAS';
+const DEFAULT_DIRECTOR_PASSWORD = '2Win@MICAS';
 
 export default function DirectorPortal() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -60,6 +62,25 @@ export default function DirectorPortal() {
 
   // Expense approval
   const [expenseApproving, setExpenseApproving] = useState(null);
+  const [viewExpense, setViewExpense] = useState(null);
+
+  // Salary edit
+  const [editSalaryStaff, setEditSalaryStaff] = useState(null);
+  const [editSalaryValue, setEditSalaryValue] = useState('');
+  const [editSalarySaving, setEditSalarySaving] = useState(false);
+
+  // Forgot / Reset password
+  const [showForgotPw, setShowForgotPw] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1);
+  const [resetCode, setResetCode] = useState('');
+  const [enteredCode, setEnteredCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [showResetPw, setShowResetPw] = useState(false);
+
+  const { toast } = useToast();
 
   // Period filter
   const [period, setPeriod] = useState('term');
@@ -67,13 +88,16 @@ export default function DirectorPortal() {
   useEffect(() => {
     const s = sessionStorage.getItem('director_logged_in');
     if (s === 'true') { setLoggedIn(true); loadAll(); }
+    else { base44.entities.SchoolSettings.list().then(r => setSettings(r[0] || {})); }
   }, []);
 
   const handleLogin = () => {
     if (!email || !password) { setLoginError('Enter email and password'); return; }
     setLoginLoading(true);
     setTimeout(() => {
-      if (email.trim() === DIRECTOR_EMAIL && password === DIRECTOR_PASSWORD) {
+      const directorEmail = settings?.director_email || DIRECTOR_EMAIL;
+      const directorPassword = settings?.director_password || DEFAULT_DIRECTOR_PASSWORD;
+      if (email.trim() === directorEmail && password === directorPassword) {
         sessionStorage.setItem('director_logged_in', 'true');
         setLoggedIn(true);
         loadAll();
@@ -82,6 +106,69 @@ export default function DirectorPortal() {
       }
       setLoginLoading(false);
     }, 500);
+  };
+
+  const handleForgotPassword = async () => {
+    setForgotError('');
+    if (forgotStep === 1) {
+      setForgotLoading(true);
+      try {
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        sessionStorage.setItem('director_reset_code', code);
+        await sendVerificationEmail(DIRECTOR_EMAIL, code);
+        setForgotStep(2);
+      } catch (err) {
+        setForgotError('Failed to send reset code. Please try again or contact IT.');
+      }
+      setForgotLoading(false);
+    } else if (forgotStep === 2) {
+      const stored = sessionStorage.getItem('director_reset_code');
+      if (enteredCode.trim() !== stored) { setForgotError('Incorrect verification code.'); return; }
+      setForgotStep(3);
+    } else if (forgotStep === 3) {
+      if (!newPassword || newPassword.length < 6) { setForgotError('Password must be at least 6 characters.'); return; }
+      if (newPassword !== confirmNewPassword) { setForgotError('Passwords do not match.'); return; }
+      setForgotLoading(true);
+      try {
+        const settingsRec = await base44.entities.SchoolSettings.list();
+        if (settingsRec[0]) {
+          await base44.entities.SchoolSettings.update(settingsRec[0].id, { director_password: newPassword });
+        }
+        setSettings(prev => ({ ...prev, director_password: newPassword }));
+        sessionStorage.removeItem('director_reset_code');
+        toast({ title: 'Password reset successfully! You can now log in.', duration: 4000 });
+        setShowForgotPw(false);
+        resetForgotState();
+      } catch (err) {
+        setForgotError('Failed to save new password. Please try again.');
+      }
+      setForgotLoading(false);
+    }
+  };
+
+  const resetForgotState = () => {
+    setForgotStep(1); setResetCode(''); setEnteredCode(''); setNewPassword('');
+    setConfirmNewPassword(''); setForgotError(''); setForgotLoading(false);
+  };
+
+  const handleResetPasswordLoggedIn = async () => {
+    setForgotError('');
+    if (!newPassword || newPassword.length < 6) { setForgotError('Password must be at least 6 characters.'); return; }
+    if (newPassword !== confirmNewPassword) { setForgotError('Passwords do not match.'); return; }
+    setForgotLoading(true);
+    try {
+      const settingsRec = await base44.entities.SchoolSettings.list();
+      if (settingsRec[0]) {
+        await base44.entities.SchoolSettings.update(settingsRec[0].id, { director_password: newPassword });
+      }
+      setSettings(prev => ({ ...prev, director_password: newPassword }));
+      toast({ title: 'Password changed successfully!', duration: 3000 });
+      setShowResetPw(false);
+      setNewPassword(''); setConfirmNewPassword(''); setForgotError('');
+    } catch (err) {
+      setForgotError('Failed to change password. Please try again.');
+    }
+    setForgotLoading(false);
   };
 
   const handleLogout = () => {
@@ -149,19 +236,51 @@ export default function DirectorPortal() {
   };
 
   const handlePaySalary = async () => {
+    if (!salaryForm.staff_name || !salaryForm.amount || !salaryForm.month) {
+      toast({ title: 'Please fill in staff name, amount, and month.', variant: 'destructive', duration: 4000 });
+      return;
+    }
     setSalarySaving(true);
-    const rn = 'SAL' + Date.now();
-    await base44.entities.SalaryPayment.create({ ...salaryForm, receipt_number: rn, payment_date: new Date().toISOString().split('T')[0], paid_by: 'Director', status: 'Paid' });
-    // Notify teacher
-    await base44.entities.DirectorNotification.create({
-      title: 'Salary Paid',
-      message: `Salary of ₦${(salaryForm.amount || 0).toLocaleString()} has been paid to ${salaryForm.staff_name}`,
-      type: 'salary_due'
-    });
-    setSalaryDialog(null);
-    setSalaryForm({});
+    try {
+      const rn = 'SAL' + Date.now();
+      const data = {
+        ...salaryForm,
+        receipt_number: rn,
+        payment_date: new Date().toISOString().split('T')[0],
+        paid_by: 'Director',
+        status: 'Paid',
+        session: salaryForm.session || settings?.current_session || ''
+      };
+      await base44.entities.SalaryPayment.create(data);
+      await base44.entities.DirectorNotification.create({
+        title: 'Salary Paid',
+        message: `Salary of ₦${(salaryForm.amount || 0).toLocaleString()} has been paid to ${salaryForm.staff_name}`,
+        type: 'salary_due'
+      });
+      toast({ title: 'Salary payment recorded successfully!', duration: 3000 });
+      setSalaryDialog(null);
+      setSalaryForm({});
+      loadAll();
+    } catch (err) {
+      toast({ title: 'Failed to record payment: ' + (err.message || 'Unknown error'), variant: 'destructive', duration: 5000 });
+    }
     setSalarySaving(false);
-    loadAll();
+  };
+
+  const handleEditSalary = async () => {
+    if (!editSalaryValue || editSalaryValue < 0) { toast({ title: 'Enter a valid salary amount.', variant: 'destructive' }); return; }
+    setEditSalarySaving(true);
+    try {
+      const entity = editSalaryStaff.__type === 'NonAcademicStaff' ? 'NonAcademicStaff' : 'Teacher';
+      await base44.entities[entity].update(editSalaryStaff.id, { salary: parseFloat(editSalaryValue) });
+      toast({ title: 'Salary updated successfully!', duration: 3000 });
+      setEditSalaryStaff(null);
+      setEditSalaryValue('');
+      loadAll();
+    } catch (err) {
+      toast({ title: 'Failed to update salary: ' + (err.message || 'Unknown error'), variant: 'destructive', duration: 5000 });
+    }
+    setEditSalarySaving(false);
   };
 
   const markNotifRead = async (id) => {
@@ -184,7 +303,12 @@ export default function DirectorPortal() {
   const newIntakeRevenueThisMonth = feePayments.filter(p => (p.payment_date || '').startsWith(thisMonth)).reduce((s, p) => s + (p.amount_paid || 0), 0);
 
   const pendingExpenses = expenses.filter(e => e.status === 'Pending Approval');
-  const allStaff = [...teachers, ...nonAcadStaff];
+  // Filter out Secondary section Form Teachers (issue #8) and tag staff with type for salary edits
+  const filteredTeachers = teachers.filter(t => !(t.section === 'Secondary' && t.teacher_type === 'Form Teacher'));
+  const allStaff = [
+    ...filteredTeachers.map(t => ({ ...t, __type: 'Teacher' })),
+    ...nonAcadStaff.map(s => ({ ...s, __type: 'NonAcademicStaff' }))
+  ];
 
   if (!loggedIn) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 flex items-center justify-center p-4">
@@ -214,9 +338,58 @@ export default function DirectorPortal() {
           <Button className="w-full bg-slate-800 hover:bg-slate-700" onClick={handleLogin} disabled={loginLoading}>
             {loginLoading ? 'Signing in...' : 'Sign In'}
           </Button>
-          <p className="text-xs text-center text-gray-400">Forgot password? Contact IT administrator</p>
+          <button type="button" className="w-full text-sm text-slate-600 hover:text-slate-800 font-medium" onClick={() => { setShowForgotPw(true); resetForgotState(); }}>
+            Forgotten Password?
+          </button>
         </CardContent>
       </Card>
+
+      {/* FORGOT PASSWORD DIALOG */}
+      <Dialog open={showForgotPw} onOpenChange={(v) => { setShowForgotPw(v); if (!v) resetForgotState(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><KeyRound className="w-5 h-5" /> Forgot Password</DialogTitle></DialogHeader>
+          {forgotStep === 1 && (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-500">A 6-digit verification code will be sent to the director's registered email: <strong>{DIRECTOR_EMAIL}</strong></p>
+              {forgotError && <p className="text-red-500 text-sm">{forgotError}</p>}
+              <Button className="w-full bg-slate-800 hover:bg-slate-700" onClick={handleForgotPassword} disabled={forgotLoading}>
+                {forgotLoading ? 'Sending...' : 'Send Reset Code'}
+              </Button>
+            </div>
+          )}
+          {forgotStep === 2 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-green-600 text-sm bg-green-50 p-3 rounded-lg">
+                <ShieldCheck className="w-4 h-4" /> Code sent to your email. Enter it below.
+              </div>
+              <Input placeholder="Enter 6-digit code" value={enteredCode} onChange={e => setEnteredCode(e.target.value)} className="text-center text-lg tracking-widest" />
+              {forgotError && <p className="text-red-500 text-sm">{forgotError}</p>}
+              <Button className="w-full bg-slate-800 hover:bg-slate-700" onClick={handleForgotPassword} disabled={forgotLoading}>
+                {forgotLoading ? 'Verifying...' : 'Verify Code'}
+              </Button>
+            </div>
+          )}
+          {forgotStep === 3 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-green-600 text-sm bg-green-50 p-3 rounded-lg">
+                <ShieldCheck className="w-4 h-4" /> Verified! Set your new password.
+              </div>
+              <div>
+                <Label>New Password</Label>
+                <Input type="password" placeholder="Minimum 6 characters" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label>Confirm Password</Label>
+                <Input type="password" placeholder="Re-enter password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} className="mt-1" />
+              </div>
+              {forgotError && <p className="text-red-500 text-sm">{forgotError}</p>}
+              <Button className="w-full bg-slate-800 hover:bg-slate-700" onClick={handleForgotPassword} disabled={forgotLoading}>
+                {forgotLoading ? 'Saving...' : 'Save New Password'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
@@ -247,6 +420,9 @@ export default function DirectorPortal() {
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center">{unreadNotifs}</span>
               </div>
             )}
+            <Button variant="ghost" size="sm" className="text-white hover:bg-white/20" onClick={() => { setShowResetPw(true); setNewPassword(''); setConfirmNewPassword(''); setForgotError(''); }}>
+              <KeyRound className="w-4 h-4 mr-1" /><span className="hidden sm:inline">Reset Password</span>
+            </Button>
             <Button variant="ghost" size="sm" className="text-white hover:bg-white/20" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-1" />Logout
             </Button>
@@ -457,11 +633,11 @@ export default function DirectorPortal() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b">
-                      <tr>{['Receipt', 'Expense Name', 'Reason', 'Department', 'Collected By', 'Amount', 'Date', 'Time', 'Status'].map(h => <th key={h} className="text-left px-3 py-2 text-xs font-semibold text-gray-500">{h}</th>)}</tr>
+                      <tr>{['Receipt', 'Expense Name', 'Reason', 'Department', 'Collected By', 'Amount', 'Date', 'Time', 'Status', 'Action'].map(h => <th key={h} className="text-left px-3 py-2 text-xs font-semibold text-gray-500">{h}</th>)}</tr>
                     </thead>
                     <tbody>
                       {expenses.length === 0 ? (
-                        <tr><td colSpan={9} className="text-center py-8 text-gray-400">No expenses recorded yet</td></tr>
+                        <tr><td colSpan={10} className="text-center py-8 text-gray-400">No expenses recorded yet</td></tr>
                       ) : expenses.map(exp => (
                         <tr key={exp.id} className="border-b hover:bg-gray-50">
                           <td className="px-3 py-2 font-mono text-xs">{exp.receipt_number}</td>
@@ -481,6 +657,11 @@ export default function DirectorPortal() {
                                 </Button>
                               )}
                             </div>
+                          </td>
+                          <td className="px-3 py-2">
+                            <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setViewExpense(exp)}>
+                              <Eye className="w-3 h-3 mr-1" />Receipt
+                            </Button>
                           </td>
                         </tr>
                       ))}
@@ -622,12 +803,12 @@ export default function DirectorPortal() {
           {/* ===== STAFF TAB ===== */}
           <TabsContent value="staff">
             <Card className="border-0 shadow-md mb-4">
-              <CardHeader><CardTitle>Teaching Staff ({teachers.length})</CardTitle></CardHeader>
+              <CardHeader><CardTitle>Teaching Staff ({filteredTeachers.length})</CardTitle></CardHeader>
               <CardContent className="p-0 overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b"><tr>{['Name', 'Role', 'Section', 'Salary', 'Bank', 'Account', 'Status'].map(h => <th key={h} className="text-left px-3 py-2 text-xs">{h}</th>)}</tr></thead>
+                  <thead className="bg-gray-50 border-b"><tr>{['Name', 'Role', 'Section', 'Salary', 'Bank', 'Account No', 'Account Name', 'Status', 'Action'].map(h => <th key={h} className="text-left px-3 py-2 text-xs">{h}</th>)}</tr></thead>
                   <tbody>
-                    {teachers.map(t => (
+                    {filteredTeachers.map(t => (
                       <tr key={t.id} className="border-b hover:bg-gray-50">
                         <td className="px-3 py-2 font-medium">{t.first_name} {t.last_name}</td>
                         <td className="px-3 py-2">{t.teacher_type}</td>
@@ -635,7 +816,13 @@ export default function DirectorPortal() {
                         <td className="px-3 py-2 font-bold text-green-700">{t.salary ? `₦${t.salary.toLocaleString()}` : 'Not set'}</td>
                         <td className="px-3 py-2 text-gray-500">{t.bank_name || '—'}</td>
                         <td className="px-3 py-2 font-mono text-xs">{t.account_number || '—'}</td>
+                        <td className="px-3 py-2 text-xs">{t.account_name || '—'}</td>
                         <td className="px-3 py-2"><Badge className={`text-xs ${t.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>{t.status}</Badge></td>
+                        <td className="px-3 py-2">
+                          <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { setEditSalaryStaff({ ...t, __type: 'Teacher' }); setEditSalaryValue(t.salary || ''); }}>
+                            <Edit className="w-3 h-3 mr-1" />Salary
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -646,7 +833,7 @@ export default function DirectorPortal() {
               <CardHeader><CardTitle>Non-Academic Staff ({nonAcadStaff.length})</CardTitle></CardHeader>
               <CardContent className="p-0 overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b"><tr>{['Name', 'Role', 'Department', 'Salary', 'Bank', 'Account', 'Status'].map(h => <th key={h} className="text-left px-3 py-2 text-xs">{h}</th>)}</tr></thead>
+                  <thead className="bg-gray-50 border-b"><tr>{['Name', 'Role', 'Department', 'Salary', 'Bank', 'Account No', 'Account Name', 'Status', 'Action'].map(h => <th key={h} className="text-left px-3 py-2 text-xs">{h}</th>)}</tr></thead>
                   <tbody>
                     {nonAcadStaff.map(s => (
                       <tr key={s.id} className="border-b hover:bg-gray-50">
@@ -656,7 +843,13 @@ export default function DirectorPortal() {
                         <td className="px-3 py-2 font-bold text-green-700">{s.salary ? `₦${s.salary.toLocaleString()}` : 'Not set'}</td>
                         <td className="px-3 py-2 text-gray-500">{s.bank_name || '—'}</td>
                         <td className="px-3 py-2 font-mono text-xs">{s.account_number || '—'}</td>
+                        <td className="px-3 py-2 text-xs">{s.account_name || '—'}</td>
                         <td className="px-3 py-2"><Badge className={`text-xs ${s.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>{s.status}</Badge></td>
+                        <td className="px-3 py-2">
+                          <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { setEditSalaryStaff({ ...s, __type: 'NonAcademicStaff' }); setEditSalaryValue(s.salary || ''); }}>
+                            <Edit className="w-3 h-3 mr-1" />Salary
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -817,19 +1010,82 @@ export default function DirectorPortal() {
           <DialogHeader><DialogTitle>Pay Staff Salary</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Staff Name *</Label>
-              <Input value={salaryForm.staff_name || ''} onChange={e => setSalaryForm({ ...salaryForm, staff_name: e.target.value })} placeholder="Full name" className="mt-1" />
+              <Label>Select Staff *</Label>
+              <Select
+                value={salaryForm._selectedStaffId || 'others'}
+                onValueChange={(v) => {
+                  if (v === 'others') {
+                    setSalaryForm({ ...salaryForm, _selectedStaffId: 'others', staff_name: '', role: '', bank_name: '', account_number: '', account_name: '', amount: '', staff_id: '' });
+                  } else {
+                    const staff = allStaff.find(s => s.id === v);
+                    if (staff) {
+                      setSalaryForm({
+                        ...salaryForm,
+                        _selectedStaffId: v,
+                        staff_name: `${staff.first_name} ${staff.last_name}`,
+                        staff_id: staff.staff_id || staff.id,
+                        role: staff.teacher_type || staff.role || '',
+                        bank_name: staff.bank_name || '',
+                        account_number: staff.account_number || '',
+                        account_name: staff.account_name || '',
+                        amount: staff.salary || '',
+                        staff_type: staff.__type === 'NonAcademicStaff' ? 'Non-Academic Staff' : 'Teacher'
+                      });
+                    }
+                  }
+                }}
+              >
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select staff or 'Others'" /></SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="others">— Others (manual entry) —</SelectItem>
+                  {allStaff.map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.first_name} {s.last_name} {s.staff_id ? `(${s.staff_id})` : ''} — {s.teacher_type || s.role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Role</Label>
-                <Input value={salaryForm.role || ''} onChange={e => setSalaryForm({ ...salaryForm, role: e.target.value })} placeholder="e.g. Teacher" className="mt-1" />
+
+            {/* Auto-filled details (read-only when a registered staff is selected) */}
+            {salaryForm._selectedStaffId && salaryForm._selectedStaffId !== 'others' && (
+              <div className="bg-slate-50 border rounded-lg p-3 space-y-1 text-sm">
+                <div className="flex justify-between"><span className="text-gray-500">Role:</span><strong>{salaryForm.role || '—'}</strong></div>
+                <div className="flex justify-between"><span className="text-gray-500">Bank:</span><strong>{salaryForm.bank_name || 'Not set'}</strong></div>
+                <div className="flex justify-between"><span className="text-gray-500">Account No:</span><strong className="font-mono">{salaryForm.account_number || 'Not set'}</strong></div>
+                <div className="flex justify-between"><span className="text-gray-500">Account Name:</span><strong>{salaryForm.account_name || 'Not set'}</strong></div>
+                <div className="flex justify-between"><span className="text-gray-500">Monthly Salary:</span><strong className="text-green-700">₦{(salaryForm.amount || 0).toLocaleString()}</strong></div>
               </div>
-              <div>
-                <Label>Month *</Label>
-                <Input value={salaryForm.month || ''} onChange={e => setSalaryForm({ ...salaryForm, month: e.target.value })} placeholder="e.g. July 2026" className="mt-1" />
-              </div>
-            </div>
+            )}
+
+            {/* Manual entry fields for "Others" */}
+            {salaryForm._selectedStaffId === 'others' && (
+              <>
+                <div>
+                  <Label>Staff Name *</Label>
+                  <Input value={salaryForm.staff_name || ''} onChange={e => setSalaryForm({ ...salaryForm, staff_name: e.target.value })} placeholder="Full name" className="mt-1" />
+                </div>
+                <div>
+                  <Label>Role</Label>
+                  <Input value={salaryForm.role || ''} onChange={e => setSalaryForm({ ...salaryForm, role: e.target.value })} placeholder="e.g. External Consultant" className="mt-1" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Bank Name</Label>
+                    <Input value={salaryForm.bank_name || ''} onChange={e => setSalaryForm({ ...salaryForm, bank_name: e.target.value })} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label>Account Number</Label>
+                    <Input value={salaryForm.account_number || ''} onChange={e => setSalaryForm({ ...salaryForm, account_number: e.target.value })} className="mt-1" />
+                  </div>
+                </div>
+                <div>
+                  <Label>Account Name</Label>
+                  <Input value={salaryForm.account_name || ''} onChange={e => setSalaryForm({ ...salaryForm, account_name: e.target.value })} className="mt-1" />
+                </div>
+              </>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Amount (₦) *</Label>
@@ -847,15 +1103,22 @@ export default function DirectorPortal() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Bank Name</Label>
-                <Input value={salaryForm.bank_name || ''} onChange={e => setSalaryForm({ ...salaryForm, bank_name: e.target.value })} className="mt-1" />
-              </div>
-              <div>
-                <Label>Account Number</Label>
-                <Input value={salaryForm.account_number || ''} onChange={e => setSalaryForm({ ...salaryForm, account_number: e.target.value })} className="mt-1" />
-              </div>
+            <div>
+              <Label>Month *</Label>
+              <Select
+                value={salaryForm._month || ''}
+                onValueChange={v => {
+                  const year = new Date().getFullYear();
+                  setSalaryForm({ ...salaryForm, _month: v, month: `${v} ${year}` });
+                }}
+              >
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select month" /></SelectTrigger>
+                <SelectContent>
+                  {['January','February','March','April','May','June','July','August','September','October','November','December'].map(m => (
+                    <SelectItem key={m} value={m}>{m} {new Date().getFullYear()}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Term</Label>
@@ -872,8 +1135,108 @@ export default function DirectorPortal() {
               <Label>Notes</Label>
               <Textarea value={salaryForm.notes || ''} onChange={e => setSalaryForm({ ...salaryForm, notes: e.target.value })} rows={2} className="mt-1" />
             </div>
-            <Button className="w-full bg-slate-800 hover:bg-slate-700" onClick={handlePaySalary} disabled={salarySaving || !salaryForm.staff_name || !salaryForm.amount}>
+            <Button className="w-full bg-slate-800 hover:bg-slate-700" onClick={handlePaySalary} disabled={salarySaving || !salaryForm.staff_name || !salaryForm.amount || !salaryForm._month}>
               {salarySaving ? 'Processing...' : 'Confirm & Pay Salary'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* EXPENSE RECEIPT VIEWER */}
+      <Dialog open={!!viewExpense} onOpenChange={() => setViewExpense(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Receipt className="w-5 h-5 text-orange-600" />Expense Receipt</DialogTitle></DialogHeader>
+          {viewExpense && (
+            <div className="space-y-4">
+              <div className="border rounded-lg p-6 bg-white">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold">MILTON COLLEGE OF ARTS AND SCIENCE</h2>
+                  <p className="text-gray-500 text-sm">Kaduna</p>
+                  <h3 className="text-lg font-bold mt-3 border-t pt-3">EXPENSE RECEIPT</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                  <div><span className="text-gray-500">Receipt No:</span> <strong>{viewExpense.receipt_number}</strong></div>
+                  <div><span className="text-gray-500">Date:</span> <strong>{viewExpense.expense_date}</strong></div>
+                  <div><span className="text-gray-500">Time:</span> <strong>{viewExpense.expense_time}</strong></div>
+                  <div><span className="text-gray-500">Department:</span> <strong>{viewExpense.department}</strong></div>
+                  <div><span className="text-gray-500">Collected By:</span> <strong>{viewExpense.collected_by}</strong></div>
+                  <div><span className="text-gray-500">Reason:</span> <strong>{viewExpense.reason}</strong></div>
+                </div>
+                <div className="mb-4">
+                  <h4 className="font-semibold mb-2">Expense: {viewExpense.expense_name}</h4>
+                  <table className="w-full text-sm border-collapse border">
+                    <thead><tr className="bg-gray-100">{['Item', 'Description', 'Qty', 'Unit Cost', 'Total'].map(h => <th key={h} className="border px-2 py-1 text-left text-xs">{h}</th>)}</tr></thead>
+                    <tbody>
+                      {(viewExpense.items || []).map((item, i) => (
+                        <tr key={i}><td className="border px-2 py-1">{item.item_name}</td><td className="border px-2 py-1">{item.description}</td><td className="border px-2 py-1">{item.quantity}</td><td className="border px-2 py-1">₦{(item.unit_cost || 0).toLocaleString()}</td><td className="border px-2 py-1 font-bold">₦{(item.total_amount || 0).toLocaleString()}</td></tr>
+                      ))}
+                    </tbody>
+                    <tfoot><tr className="bg-gray-50"><td colSpan={4} className="border px-2 py-1 font-bold text-right">Grand Total:</td><td className="border px-2 py-1 font-bold text-red-600">₦{(viewExpense.grand_total || 0).toLocaleString()}</td></tr></tfoot>
+                  </table>
+                </div>
+                <div className="mt-6 pt-4 border-t">
+                  <div className="flex justify-between">
+                    <div className="text-center">
+                      <div className="border-t border-gray-400 w-40 mt-8 mx-auto"></div>
+                      <p className="text-xs mt-1">Prepared By (Accountant)</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="border-t border-gray-400 w-40 mt-8 mx-auto"></div>
+                      <p className="text-xs mt-1">
+                        Director's Signature
+                        {viewExpense.status !== 'Approved' && <span className="block text-orange-500 font-bold text-xs">(PENDING APPROVAL)</span>}
+                        {viewExpense.status === 'Approved' && <span className="block text-green-600 font-bold text-xs">(APPROVED)</span>}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {viewExpense.status === 'Pending Approval' && (
+                <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => { handleApproveExpense(viewExpense); setViewExpense(null); }} disabled={expenseApproving === viewExpense.id}>
+                  <CheckCircle className="w-4 h-4 mr-2" />{expenseApproving === viewExpense.id ? 'Approving...' : 'Approve This Expense'}
+                </Button>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* SALARY EDIT DIALOG */}
+      <Dialog open={!!editSalaryStaff} onOpenChange={() => setEditSalaryStaff(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Edit Salary — {editSalaryStaff?.first_name} {editSalaryStaff?.last_name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700">
+              <p>Current Salary: <strong>{editSalaryStaff?.salary ? `₦${editSalaryStaff.salary.toLocaleString()}` : 'Not set'}</strong></p>
+              <p className="text-xs mt-1">Role: {editSalaryStaff?.teacher_type || editSalaryStaff?.role}</p>
+            </div>
+            <div>
+              <Label>New Monthly Salary (₦)</Label>
+              <Input type="number" value={editSalaryValue} onChange={e => setEditSalaryValue(e.target.value)} className="mt-1" placeholder="Enter salary amount" />
+            </div>
+            <Button className="w-full bg-slate-800 hover:bg-slate-700" onClick={handleEditSalary} disabled={editSalarySaving}>
+              {editSalarySaving ? 'Saving...' : 'Save Salary'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* RESET PASSWORD DIALOG (when logged in) */}
+      <Dialog open={showResetPw} onOpenChange={setShowResetPw}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><KeyRound className="w-5 h-5" /> Reset Password</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>New Password</Label>
+              <Input type="password" placeholder="Minimum 6 characters" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label>Confirm Password</Label>
+              <Input type="password" placeholder="Re-enter password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} className="mt-1" />
+            </div>
+            {forgotError && <p className="text-red-500 text-sm">{forgotError}</p>}
+            <Button className="w-full bg-slate-800 hover:bg-slate-700" onClick={handleResetPasswordLoggedIn} disabled={forgotLoading}>
+              {forgotLoading ? 'Saving...' : 'Change Password'}
             </Button>
           </div>
         </DialogContent>
