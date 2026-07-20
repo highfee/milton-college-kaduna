@@ -125,33 +125,9 @@
     "duration_minutes"
   ],
   "rls": {
-    "create": {
-      "created_by": "{{user.email}}"
-    },
+    "create": true,
     "read": true,
-    "update": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
+    "update": true,
+    "delete": true
   }
 }
