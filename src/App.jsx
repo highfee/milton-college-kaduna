@@ -23,6 +23,8 @@ import ViewLessonNotes from './pages/ViewLessonNotes';
 import MICASChat from './pages/MICASChat';
 import ParentAcademicProgress from './pages/ParentAcademicProgress';
 import OnlineMeeting from './pages/OnlineMeeting';
+import DirectorPortal from './pages/DirectorPortal';
+import ExpenseManagement from './pages/ExpenseManagement';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -90,6 +92,8 @@ const AuthenticatedApp = () => {
       <Route path="/MICASChat" element={<LayoutWrapper currentPageName="MICASChat"><MICASChat /></LayoutWrapper>} />
       <Route path="/ParentAcademicProgress" element={<LayoutWrapper currentPageName="ParentAcademicProgress"><ParentAcademicProgress /></LayoutWrapper>} />
       <Route path="/OnlineMeeting" element={<LayoutWrapper currentPageName="OnlineMeeting"><OnlineMeeting /></LayoutWrapper>} />
+      <Route path="/DirectorPortal" element={<LayoutWrapper currentPageName="DirectorPortal"><DirectorPortal /></LayoutWrapper>} />
+      <Route path="/ExpenseManagement" element={<LayoutWrapper currentPageName="ExpenseManagement"><ExpenseManagement /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

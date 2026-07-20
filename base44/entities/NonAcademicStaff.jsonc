@@ -58,6 +58,15 @@
     "salary": {
       "type": "number"
     },
+    "bank_name": {
+      "type": "string"
+    },
+    "account_number": {
+      "type": "string"
+    },
+    "account_name": {
+      "type": "string"
+    },
     "status": {
       "type": "string",
       "enum": [

@@ -1,0 +1,106 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "expense_name": {
+      "type": "string",
+      "description": "Name/title of the expense"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for the expense"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department that owns the expense"
+    },
+    "collected_by": {
+      "type": "string",
+      "description": "Who collected the money"
+    },
+    "expense_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expense_time": {
+      "type": "string",
+      "description": "Time of expense"
+    },
+    "term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "session": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit_cost": {
+            "type": "number"
+          },
+          "total_amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "grand_total": {
+      "type": "number"
+    },
+    "receipt_number": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Pending Approval",
+        "Approved",
+        "Rejected"
+      ],
+      "default": "Pending Approval"
+    },
+    "approved_by": {
+      "type": "string"
+    },
+    "approved_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "recorded_by": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "expense_name",
+    "grand_total"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

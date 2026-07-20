@@ -75,6 +75,22 @@
     "custom_password": {
       "type": "string",
       "description": "Teacher's custom password"
+    },
+    "salary": {
+      "type": "number",
+      "description": "Monthly salary amount"
+    },
+    "bank_name": {
+      "type": "string",
+      "description": "Bank name for salary payment"
+    },
+    "account_number": {
+      "type": "string",
+      "description": "Account number for salary payment"
+    },
+    "account_name": {
+      "type": "string",
+      "description": "Account name for salary payment"
     }
   },
   "required": [

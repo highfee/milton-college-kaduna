@@ -1,0 +1,94 @@
+{
+  "name": "SalaryPayment",
+  "type": "object",
+  "properties": {
+    "receipt_number": {
+      "type": "string"
+    },
+    "staff_id": {
+      "type": "string"
+    },
+    "staff_name": {
+      "type": "string"
+    },
+    "staff_type": {
+      "type": "string",
+      "enum": [
+        "Teacher",
+        "Non-Academic Staff"
+      ]
+    },
+    "role": {
+      "type": "string"
+    },
+    "bank_name": {
+      "type": "string"
+    },
+    "account_number": {
+      "type": "string"
+    },
+    "account_name": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "month": {
+      "type": "string"
+    },
+    "term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "session": {
+      "type": "string"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "Bank Transfer",
+        "Cash",
+        "Cheque"
+      ],
+      "default": "Bank Transfer"
+    },
+    "paid_by": {
+      "type": "string",
+      "description": "Director/Admin who approved payment"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Paid",
+        "Pending"
+      ],
+      "default": "Paid"
+    }
+  },
+  "required": [
+    "staff_name",
+    "amount",
+    "month"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

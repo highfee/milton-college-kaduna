@@ -58,6 +58,10 @@
     "instructions": {
       "type": "string"
     },
+    "exam_password": {
+      "type": "string",
+      "description": "Password required for students to start this exam"
+    },
     "questions": {
       "type": "array",
       "items": {

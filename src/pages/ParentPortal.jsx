@@ -653,8 +653,9 @@ export default function ParentPortal() {
                 { value: 'timetable', label: 'Timetable' },
                 { value: 'newsletter', label: 'Newsletter' },
                 { value: 'messages', label: 'Messages' },
+                { value: 'projects', label: 'Projects' },
                 { value: 'rate', label: 'Rate School' },
-              ].map(t => (
+                ].map(t => (
                 <TabsTrigger key={t.value} value={t.value} className="text-xs py-1.5 px-1">{t.label}</TabsTrigger>
               ))}
             </TabsList>
@@ -1175,6 +1176,11 @@ export default function ParentPortal() {
               </Card>
             </TabsContent>
 
+            {/* PROJECTS TAB */}
+            <TabsContent value="projects" className="space-y-4 mt-4">
+              <ProjectsTab />
+            </TabsContent>
+
             {/* RATE SCHOOL TAB */}
             <TabsContent value="rate" className="space-y-4 mt-4">
               <Card className="border-0 shadow-sm">
@@ -1222,6 +1228,50 @@ export default function ParentPortal() {
         )}
       </div>
     </div>
+  );
+}
+
+function ProjectsTab() {
+  const [projects, setProjects] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    base44.entities.SchoolProject.filter({ is_parent_visible: true }).then(p => { setProjects(p); setLoading(false); });
+  }, []);
+
+  if (loading) return <LoadingSpinner />;
+
+  return (
+    <Card className="border-0 shadow-sm">
+      <CardHeader><CardTitle className="text-base flex items-center gap-2">🏗️ School Projects</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        {projects.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-6">No projects to display yet.</p>
+        ) : projects.map(p => (
+          <div key={p.id} className="border rounded-xl p-4">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <h3 className="font-bold text-gray-800">{p.project_name}</h3>
+                <p className="text-xs text-gray-500">{p.session} · {p.term}</p>
+              </div>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.status === 'Ongoing' ? 'bg-blue-100 text-blue-700' : p.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span>
+            </div>
+            {p.description && <p className="text-sm text-gray-600 mb-3">{p.description}</p>}
+            <div className="space-y-1 text-xs text-gray-600 mb-3">
+              <div className="flex justify-between"><span>Total Cost:</span><span className="font-bold">₦{(p.total_cost || 0).toLocaleString()}</span></div>
+              <div className="flex justify-between"><span>Amount Paid:</span><span className="font-bold text-green-600">₦{(p.amount_paid || 0).toLocaleString()}</span></div>
+              {p.expected_completion && <div className="flex justify-between"><span>Expected Completion:</span><span>{p.expected_completion}</span></div>}
+            </div>
+            <div className="mb-2">
+              <div className="flex justify-between text-xs mb-1"><span>Progress</span><span>{p.progress_percentage || 0}%</span></div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="h-2 rounded-full bg-blue-500" style={{ width: `${p.progress_percentage || 0}%` }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 

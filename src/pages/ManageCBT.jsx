@@ -76,6 +76,8 @@ export default function ManageCBT() {
   const [bankSubjectFilter, setBankSubjectFilter] = useState('all');
   const [selectedBankQs, setSelectedBankQs] = useState([]);
   const [gradingExam, setGradingExam] = useState(null);
+  const [malpracticeRecords, setMalpracticeRecords] = useState([]);
+  const [showMalpractice, setShowMalpractice] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => { loadData(); }, []);
@@ -257,6 +259,28 @@ export default function ManageCBT() {
     return results.some(r => r.theory_graded === false || r.theory_graded === undefined);
   });
 
+  const loadMalpractice = async () => {
+    const recs = await base44.entities.CBTMalpractice.list('-created_date', 200);
+    const myExamIds = exams.map(e => e.id);
+    setMalpracticeRecords(recs.filter(r => myExamIds.includes(r.exam_id)));
+    setShowMalpractice(true);
+  };
+
+  const handleUnblockStudent = async (rec) => {
+    const newTime = prompt('Enter new exam time/date for this student (or leave blank):');
+    const warning = `You have been unblocked from the exam "${rec.exam_title}". You must start from the beginning. Good luck!`;
+    await base44.entities.CBTMalpractice.update(rec.id, {
+      is_blocked: false,
+      unblocked_by: teacher?.email || 'Teacher',
+      unblock_date: new Date().toISOString().split('T')[0],
+      new_exam_time: newTime || '',
+      warning_message: warning,
+      retained_answers: null
+    });
+    toast({ title: `${rec.student_name} has been unblocked`, duration: 3000 });
+    loadMalpractice();
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-[#1e3a5f] border-t-transparent rounded-full" /></div>;
 
   return (
@@ -267,9 +291,14 @@ export default function ManageCBT() {
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Question Bank</h1>
             <p className="text-gray-500">Create, edit & publish CBT exams, assignments & homework questions</p>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
-            <Plus className="w-4 h-4 mr-2" />Create Questions
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={loadMalpractice} className="border-red-300 text-red-600">
+              Malpractice Records
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)} className="bg-[#1e3a5f] hover:bg-[#2c4a6e]">
+              <Plus className="w-4 h-4 mr-2" />Create Questions
+            </Button>
+          </div>
         </div>
 
         {/* Needs grading notification */}
@@ -535,9 +564,16 @@ export default function ManageCBT() {
                     <Input type="number" value={formData.pass_mark} onChange={e => setFormData({ ...formData, pass_mark: parseInt(e.target.value) })} />
                   </div>
                   <div>
+                    <Label>Exam Password (required for students)</Label>
+                    <Input value={formData.exam_password || ''} onChange={e => setFormData({ ...formData, exam_password: e.target.value })} placeholder="e.g. MATH2026A" />
+                    <p className="text-xs text-gray-400 mt-1">Students must enter this before starting</p>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-1 gap-4">
+                  <div>
                     <Label>Term</Label>
                     <Select value={formData.term} onValueChange={v => setFormData({ ...formData, term: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="First Term">First Term</SelectItem>
                         <SelectItem value="Second Term">Second Term</SelectItem>
@@ -750,6 +786,50 @@ export default function ManageCBT() {
             })()}
           </DialogContent>
         </Dialog>
+
+        {/* MALPRACTICE RECORDS DIALOG */}
+        {showMalpractice && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h3 className="font-bold text-lg text-red-700">Malpractice Records</h3>
+                <button onClick={() => setShowMalpractice(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              </div>
+              <div className="p-4 overflow-x-auto">
+                {malpracticeRecords.length === 0 ? (
+                  <p className="text-center text-gray-400 py-8">No malpractice records for your exams.</p>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b"><tr>{['Student', 'Adm No', 'Exam', 'Violations', 'Logouts', 'Status', 'Action'].map(h => <th key={h} className="text-left px-3 py-2 text-xs font-semibold">{h}</th>)}</tr></thead>
+                    <tbody>
+                      {malpracticeRecords.map(rec => (
+                        <tr key={rec.id} className="border-b hover:bg-gray-50">
+                          <td className="px-3 py-2 font-medium">{rec.student_name}</td>
+                          <td className="px-3 py-2 font-mono text-xs">{rec.admission_number}</td>
+                          <td className="px-3 py-2">{rec.exam_title}</td>
+                          <td className="px-3 py-2 text-center text-red-600 font-bold">{rec.violation_count}</td>
+                          <td className="px-3 py-2 text-center text-orange-600 font-bold">{rec.logout_count}</td>
+                          <td className="px-3 py-2">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${rec.is_blocked ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                              {rec.is_blocked ? 'BLOCKED' : 'Warning'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">
+                            {rec.is_blocked && (
+                              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs" onClick={() => handleUnblockStudent(rec)}>
+                                Unblock
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* THEORY GRADING DIALOG */}
         <TheoryGradingDialog
