@@ -11,8 +11,14 @@
 // 4. Go to "Account" → "API Keys" → copy your Public Key
 // 5. Paste all three values below (replace the YOUR_... placeholders)
 
+// export const EMAILJS_CONFIG = {
+//   serviceId: process.env.VITE_EMAILJS_SERVICE_ID,
+//   templateId: process.env.VITE_EMAILJS_TEMPLATE_ID,
+//   publicKey: process.env.VITE_EMAILJS_PUBLIC_KEY,
+// };
+
 export const EMAILJS_CONFIG = {
-  serviceId: process.env.VITE_EMAILJS_SERVICE_ID,
-  templateId: process.env.VITE_EMAILJS_TEMPLATE_ID,
-  publicKey: process.env.VITE_EMAILJS_PUBLIC_KEY,
+  serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+  templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
 };
