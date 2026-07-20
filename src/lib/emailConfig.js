@@ -12,8 +12,7 @@
 // 5. Paste all three values below (replace the YOUR_... placeholders)
 
 export const EMAILJS_CONFIG = {
-  serviceId: 'service_6sssd2s',
-  templateId: 'template_jrrxz2o',
-  publicKey: 'lIf1A2oKN5LRjDPfK',
+  serviceId: process.env.VITE_EMAILJS_SERVICE_ID,
+  templateId: process.env.VITE_EMAILJS_TEMPLATE_ID,
+  publicKey: process.env.VITE_EMAILJS_PUBLIC_KEY,
 };
-
