@@ -1,0 +1,126 @@
+{
+  "name": "SchoolProject",
+  "type": "object",
+  "properties": {
+    "project_name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Planned",
+        "Ongoing",
+        "Completed",
+        "Suspended"
+      ],
+      "default": "Planned"
+    },
+    "term": {
+      "type": "string",
+      "enum": [
+        "First Term",
+        "Second Term",
+        "Third Term"
+      ]
+    },
+    "session": {
+      "type": "string"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expected_completion": {
+      "type": "string",
+      "format": "date"
+    },
+    "actual_completion": {
+      "type": "string",
+      "format": "date"
+    },
+    "total_cost": {
+      "type": "number"
+    },
+    "amount_paid": {
+      "type": "number",
+      "default": 0
+    },
+    "balance": {
+      "type": "number",
+      "default": 0
+    },
+    "sponsor_type": {
+      "type": "string",
+      "enum": [
+        "School",
+        "External",
+        "Mixed"
+      ],
+      "default": "School"
+    },
+    "sponsors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "contractors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "progress_percentage": {
+      "type": "number",
+      "default": 0
+    },
+    "progress_notes": {
+      "type": "string"
+    },
+    "is_parent_visible": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "project_name"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

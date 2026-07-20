@@ -53,7 +53,7 @@ const SS_CLASSES = ['SS1 Arts A', 'SS1 Arts B', 'SS1 Com A', 'SS1 Com B', 'SS1 S
 const PRINCIPAL_STAMP_URL = 'https://media.base44.com/images/public/696cc2e2095499293173480a/5814af416_IMG-20260503-WA0002.jpg';
 const PROMOTED_STAMP_URL = 'https://media.base44.com/images/public/696cc2e2095499293173480a/0b5b8ac13_download31.jpg';
 
-export default function ResultSlip({ student, results, settings, term, session, classTeacher, rankings }) {
+export default function ResultSlip({ student, results, settings, term, session, classTeacher, rankings, attendance }) {
   if (!student || !results) return null;
 
   const section = student.section || 'Primary';
@@ -297,6 +297,29 @@ export default function ResultSlip({ student, results, settings, term, session, 
           ))}
         </div>
 
+        {/* ===== ATTENDANCE SUMMARY ===== */}
+        {attendance && attendance.length > 0 && (() => {
+          const present = attendance.filter(a => a.status === 'Present' || a.status === 'Late').length;
+          const absent = attendance.filter(a => a.status === 'Absent').length;
+          const total = attendance.length;
+          const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px', marginBottom: '5px', fontSize: '9px' }}>
+              {[
+                { label: 'Days Present', value: present, color: '#16a34a' },
+                { label: 'Days Absent', value: absent, color: '#dc2626' },
+                { label: 'Total School Days', value: total, color: '#1e3a5f' },
+                { label: 'Attendance Rate', value: `${rate}%`, color: '#2563eb' },
+              ].map((item, i) => (
+                <div key={i} style={{ border: `1px solid ${item.color}`, borderRadius: '3px', padding: '2px 4px', textAlign: 'center', background: `${item.color}10` }}>
+                  <div style={{ color: '#555', fontSize: '8px' }}>{item.label}</div>
+                  <div style={{ fontWeight: 'bold', color: item.color, fontSize: '12px' }}>{item.value}</div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* ===== AFFECTIVE TRAITS + PSYCHOMOTOR ===== */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px', marginBottom: '5px' }}>
           {/* Affective Traits */}
@@ -400,10 +423,11 @@ export default function ResultSlip({ student, results, settings, term, session, 
             {isPromoted && (() => {
               const parts = session?.split('/');
               const nextSession = parts?.length === 2 ? `${parts[1]}/${parseInt(parts[1]) + 1}` : 'next';
-              return `✓ This student has been PROMOTED to ${student.current_class} for the ${nextSession} academic session.`;
+              const promotedTo = results[0]?.promoted_to_class || student.current_class;
+              return `✓ This student has been PROMOTED to ${promotedTo} for the ${nextSession} academic session.`;
             })()}
             {isRepeated && `↺ This student is to REPEAT ${displayClass} in the next academic session.`}
-            {isDemoted && `↓ This student has been DEMOTED to ${student.current_class} for the next academic session.`}
+            {isDemoted && `↓ This student has been DEMOTED to ${results[0]?.promoted_to_class || student.current_class} for the next academic session.`}
           </div>
         )}
 

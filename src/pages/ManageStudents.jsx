@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { 
-  Plus, Search, Edit, Trash2, User, Upload, GraduationCap, Download
+  Plus, Search, Edit, Trash2, User, Upload, GraduationCap, Download, BookOpen, Camera
 } from 'lucide-react';
+import StudentSubjectsDialog from '@/components/StudentSubjectsDialog';
+import CameraCaptureDialog from '@/components/CameraCaptureDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SCHOOL_CLASSES, ALL_SCHOOL_CLASSES, SCHOOL_SECTIONS } from '@/components/GradingUtils';
+import { nigerianStates, getLGAsByState } from '@/components/NigerianData';
 
 const CLASSES = SCHOOL_CLASSES;
 const ALL_CLASSES = ALL_SCHOOL_CLASSES;
@@ -30,6 +33,8 @@ export default function ManageStudents() {
   const [editingStudent, setEditingStudent] = useState(null);
   const [settings, setSettings] = useState(null);
   const [isTeacherView, setIsTeacherView] = useState(false);
+  const [subjectsStudent, setSubjectsStudent] = useState(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [formData, setFormData] = useState({
     admission_number: '',
     first_name: '',
@@ -327,17 +332,28 @@ export default function ManageStudents() {
                 <div className="grid md:grid-cols-4 gap-4">
                   <div>
                     <Label>State of Origin</Label>
-                    <Input
+                    <Select
                       value={formData.state_of_origin}
-                      onChange={(e) => setFormData({ ...formData, state_of_origin: e.target.value })}
-                    />
+                      onValueChange={(v) => setFormData({ ...formData, state_of_origin: v, local_government: '' })}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+                      <SelectContent>
+                        {nigerianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Local Govt</Label>
-                    <Input
+                    <Select
                       value={formData.local_government}
-                      onChange={(e) => setFormData({ ...formData, local_government: e.target.value })}
-                    />
+                      onValueChange={(v) => setFormData({ ...formData, local_government: v })}
+                      disabled={!formData.state_of_origin}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Select LGA" /></SelectTrigger>
+                      <SelectContent>
+                        {getLGAsByState(formData.state_of_origin).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Blood Group</Label>
@@ -420,14 +436,26 @@ export default function ManageStudents() {
                         <Button type="button" variant="outline" size="sm" onClick={() => setFormData({ ...formData, passport_photo: '' })}>Remove</Button>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#1e3a5f]">
-                        <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                        <span className="text-sm text-gray-500">Upload photo</span>
-                        <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
-                      </label>
+                      <div className="space-y-2">
+                        <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#1e3a5f]">
+                          <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                          <span className="text-sm text-gray-500">Upload photo</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+                        </label>
+                        <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setCameraOpen(true)}>
+                          <Camera className="w-4 h-4 mr-2" />
+                          Use Live Camera
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
+
+                <CameraCaptureDialog
+                  open={cameraOpen}
+                  onClose={() => setCameraOpen(false)}
+                  onCapture={(url) => setFormData({ ...formData, passport_photo: url })}
+                />
 
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>Cancel</Button>
@@ -549,6 +577,9 @@ export default function ManageStudents() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => setSubjectsStudent(student)} title="Manage Subjects">
+                              <BookOpen className="w-4 h-4" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(student)}>
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -570,6 +601,7 @@ export default function ManageStudents() {
             )}
           </CardContent>
         </Card>
+        <StudentSubjectsDialog student={subjectsStudent} onClose={() => setSubjectsStudent(null)} />
       </div>
     </div>
   );

@@ -50,15 +50,24 @@ export default function ManageAssignments() {
   }, []);
 
   const loadData = async () => {
-    const userData = await base44.auth.me();
-    setUser(userData);
+    let userData = null;
+    try { userData = await base44.auth.me(); setUser(userData); } catch (e) { /* teacher via portal session */ }
 
-    const [teacherData, staffRoles] = await Promise.all([
-      base44.entities.Teacher.filter({ email: userData.email }),
-      base44.entities.StaffRole.filter({ user_email: userData.email })
-    ]);
+    // Portal session takes priority (teacher logged in via Teacher / Head Teacher portal)
+    const portalStaffId = sessionStorage.getItem('teacher_portal_staff_id') || sessionStorage.getItem('ht_portal_staff_id');
 
-    const isAdmin = userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin');
+    let teacherData = [];
+    let staffRoles = [];
+    if (portalStaffId) {
+      teacherData = await base44.entities.Teacher.filter({ staff_id: portalStaffId });
+    } else if (userData) {
+      [teacherData, staffRoles] = await Promise.all([
+        base44.entities.Teacher.filter({ email: userData.email }),
+        base44.entities.StaffRole.filter({ user_email: userData.email })
+      ]);
+    }
+
+    const isAdmin = !portalStaffId && userData && (userData.role === 'admin' || staffRoles.some(r => r.role === 'Admin'));
 
     if (isAdmin) {
       const [allSubjects, allAssignments] = await Promise.all([
@@ -68,11 +77,32 @@ export default function ManageAssignments() {
       setSubjects(allSubjects);
       setAssignments(allAssignments);
     } else if (teacherData[0]) {
-      setTeacher(teacherData[0]);
-      // Teachers only see subjects and assignments for their own classes
-      const subjectsData = await base44.entities.Subject.filter({ teacher_id: teacherData[0].id });
+      const t = teacherData[0];
+      setTeacher(t);
+      // Load subjects based on teacher type — restrict to assigned subjects/classes
+      const tt = t.teacher_type;
+      let subjectsData;
+      if (tt === 'Class Teacher' || tt === 'Head Teacher') {
+        const myClass = t.assigned_class || t.form_teacher_class;
+        const sectionSubjects = await base44.entities.Subject.filter({ section: t.section, status: 'Active' });
+        subjectsData = myClass
+          ? sectionSubjects.filter(s => !s.classes || s.classes.length === 0 || s.classes.includes(myClass))
+          : sectionSubjects;
+      } else if (tt === 'Form Teacher') {
+        const formClass = t.form_teacher_class || t.assigned_class;
+        const sectionSubjects = await base44.entities.Subject.filter({ section: t.section || 'Secondary', status: 'Active' });
+        subjectsData = formClass
+          ? sectionSubjects.filter(s => !s.classes || s.classes.length === 0 || s.classes.includes(formClass))
+          : sectionSubjects;
+      } else {
+        // Subject Teacher / Principal — only subjects assigned to them
+        const allSubjects = await base44.entities.Subject.filter({ status: 'Active' });
+        subjectsData = allSubjects.filter(s =>
+          s.teacher_id === t.id || (t.assigned_subjects || []).includes(s.id)
+        );
+      }
       setSubjects(subjectsData);
-      const assignmentsData = await base44.entities.Assignment.filter({ teacher_id: teacherData[0].id });
+      const assignmentsData = await base44.entities.Assignment.filter({ teacher_id: t.id });
       setAssignments(assignmentsData);
     }
 
@@ -165,9 +195,9 @@ export default function ManageAssignments() {
   const handleGradeSubmission = async (submission, score, feedback) => {
     await base44.entities.AssignmentSubmission.update(submission.id, {
       score: parseFloat(score),
-      feedback,
-      graded_by: user.email,
-      graded_at: new Date().toISOString(),
+      teacher_feedback: feedback,
+      graded_by: user?.email || teacher?.email || 'Teacher',
+      graded_date: new Date().toISOString().split('T')[0],
       status: 'Graded'
     });
     handleViewSubmissions(selectedAssignment);
@@ -235,10 +265,19 @@ export default function ManageAssignments() {
                       <SelectContent>
                         {(() => {
                           const selectedSubjectObj = subjects.find(s => s.id === formData.subject_id);
-                          // If teacher: restrict to subject's assigned classes; else all section classes
-                          const availClasses = teacher
-                            ? (selectedSubjectObj?.classes?.length ? selectedSubjectObj.classes : (teacher.assigned_class ? [teacher.assigned_class] : (teacher.form_teacher_class ? [teacher.form_teacher_class] : [])))
-                            : (formData.section ? CLASSES[formData.section] || [] : []);
+                          let availClasses;
+                          if (teacher) {
+                            const tt = teacher.teacher_type;
+                            if (tt === 'Class Teacher' || tt === 'Head Teacher' || tt === 'Form Teacher') {
+                              availClasses = [teacher.assigned_class, teacher.form_teacher_class].filter(Boolean);
+                            } else {
+                              availClasses = selectedSubjectObj?.classes?.length
+                                ? selectedSubjectObj.classes
+                                : [teacher.assigned_class, teacher.form_teacher_class].filter(Boolean);
+                            }
+                          } else {
+                            availClasses = formData.section ? CLASSES[formData.section] || [] : [];
+                          }
                           return availClasses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>);
                         })()}
                       </SelectContent>
@@ -401,14 +440,19 @@ export default function ManageAssignments() {
                         {submission.status}
                       </Badge>
                     </div>
-                    {submission.content && (
+                    {submission.submission_text && (
                       <div className="mb-2">
-                        <p className="text-sm text-gray-600">{submission.content}</p>
+                        <p className="text-xs text-gray-500 mb-1">Student's Answer:</p>
+                        {/<[a-z][\s\S]*>/i.test(submission.submission_text) ? (
+                          <div className="text-sm text-gray-700 prose prose-sm max-w-none p-3 bg-gray-50 rounded-lg" dangerouslySetInnerHTML={{ __html: submission.submission_text }} />
+                        ) : (
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap p-3 bg-gray-50 rounded-lg">{submission.submission_text}</p>
+                        )}
                       </div>
                     )}
-                    {submission.attachment_url && (
-                      <a href={submission.attachment_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
-                        View Attachment
+                    {submission.file_url && (
+                      <a href={submission.file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">
+                        📎 View Submitted File
                       </a>
                     )}
                     {submission.status !== 'Graded' && (
@@ -438,7 +482,7 @@ export default function ManageAssignments() {
                     {submission.status === 'Graded' && (
                       <div className="mt-3 p-3 bg-green-50 rounded">
                         <p className="text-sm"><strong>Score:</strong> {submission.score}/{submission.total_marks}</p>
-                        {submission.feedback && <p className="text-sm"><strong>Feedback:</strong> {submission.feedback}</p>}
+                        {submission.teacher_feedback && <p className="text-sm"><strong>Feedback:</strong> {submission.teacher_feedback}</p>}
                       </div>
                     )}
                   </CardContent>

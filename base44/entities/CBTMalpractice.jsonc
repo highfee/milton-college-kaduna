@@ -1,0 +1,75 @@
+{
+  "name": "CBTMalpractice",
+  "type": "object",
+  "properties": {
+    "exam_id": {
+      "type": "string"
+    },
+    "exam_title": {
+      "type": "string"
+    },
+    "student_id": {
+      "type": "string"
+    },
+    "student_name": {
+      "type": "string"
+    },
+    "admission_number": {
+      "type": "string"
+    },
+    "class": {
+      "type": "string"
+    },
+    "violation_count": {
+      "type": "number",
+      "default": 0
+    },
+    "logout_count": {
+      "type": "number",
+      "default": 0
+    },
+    "is_blocked": {
+      "type": "boolean",
+      "default": false
+    },
+    "block_reason": {
+      "type": "string"
+    },
+    "unblocked_by": {
+      "type": "string"
+    },
+    "unblock_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "new_exam_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "warning_message": {
+      "type": "string"
+    },
+    "retained_answers": {
+      "type": "string",
+      "description": "JSON string of saved answers before ban"
+    },
+    "retained_question": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "exam_id",
+    "student_id"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

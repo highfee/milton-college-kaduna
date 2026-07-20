@@ -1,0 +1,78 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "conversation_id": {
+      "type": "string",
+      "description": "Sorted participant IDs joined by _ for DMs, or BROADCAST for broadcast channel"
+    },
+    "sender_id": {
+      "type": "string"
+    },
+    "sender_name": {
+      "type": "string"
+    },
+    "sender_role": {
+      "type": "string",
+      "description": "parent, teacher, headteacher, principal, accountant, admin, nonacademic"
+    },
+    "recipient_id": {
+      "type": "string"
+    },
+    "recipient_name": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "voice",
+        "image"
+      ],
+      "default": "text"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "voice_duration": {
+      "type": "number"
+    },
+    "is_broadcast": {
+      "type": "boolean",
+      "default": false
+    },
+    "target_audience": {
+      "type": "string",
+      "enum": [
+        "All",
+        "Parents",
+        "Staff"
+      ],
+      "default": "All",
+      "description": "For broadcast messages: who should receive this"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "conversation_id",
+    "sender_id",
+    "sender_name",
+    "content"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "DirectorNotification",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "admission",
+        "withdrawal",
+        "expense",
+        "salary_due",
+        "project"
+      ],
+      "default": "admission"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false
+    },
+    "reference_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "message"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

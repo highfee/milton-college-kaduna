@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import {
   BookOpen, ClipboardList, FileText, Users, Calendar,
   CheckSquare, MessageSquare, LogOut, GraduationCap, Eye, EyeOff, Star,
-  UserCheck, Camera, Key, UserCircle, BarChart2, Layers
+  UserCheck, Camera, Key, UserCircle, BarChart2, Layers, Video, MessageCircle,
+  DollarSign, Receipt
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -117,6 +118,10 @@ export default function TeacherPortal() {
     setPhotoPreview(URL.createObjectURL(file));
   };
 
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
+
   const handleSaveProfile = async () => {
     setProfileSaving(true); setProfileMsg('');
     const updates = {};
@@ -129,11 +134,19 @@ export default function TeacherPortal() {
       const { file_url } = await base44.integrations.Core.UploadFile({ file: photoFile });
       updates.passport_photo = file_url;
     }
+    if (bankName !== '') updates.bank_name = bankName;
+    if (accountNumber !== '') updates.account_number = accountNumber;
+    if (accountName !== '') updates.account_name = accountName;
     if (Object.keys(updates).length === 0) { setProfileMsg('No changes to save'); setProfileSaving(false); return; }
-    await base44.entities.Teacher.update(teacher.id, updates);
-    setTeacher({ ...teacher, ...updates });
-    setProfileMsg('Profile updated successfully!');
-    setNewPassword(''); setConfirmPassword(''); setPhotoFile(null);
+    try {
+      await base44.entities.Teacher.update(teacher.id, updates);
+      setTeacher({ ...teacher, ...updates });
+      setProfileMsg('Profile updated successfully!');
+      setNewPassword(''); setConfirmPassword(''); setPhotoFile(null);
+      setBankName(''); setAccountNumber(''); setAccountName('');
+    } catch (err) {
+      setProfileMsg('Failed to save: ' + (err.message || 'Unknown error. Please try again.'));
+    }
     setProfileSaving(false);
   };
 
@@ -148,6 +161,18 @@ export default function TeacherPortal() {
     return 'Subject Teacher';
   };
 
+  const [salaryPayments, setSalaryPayments] = useState([]);
+  const [showSalaryView, setShowSalaryView] = useState(false);
+  const [salaryLoading, setSalaryLoading] = useState(false);
+
+  const loadSalaryHistory = async () => {
+    setSalaryLoading(true);
+    const payments = await base44.entities.SalaryPayment.filter({ staff_name: `${teacher.first_name} ${teacher.last_name}` });
+    setSalaryPayments(payments);
+    setSalaryLoading(false);
+    setShowSalaryView(true);
+  };
+
   const quickActions = [
     { icon: FileText, label: 'Enter Results', to: '/EnterResults', color: 'bg-blue-500' },
     { icon: ClipboardList, label: 'Review Class Results', to: '/ReviewClassResults', color: 'bg-green-500' },
@@ -156,7 +181,10 @@ export default function TeacherPortal() {
     { icon: Calendar, label: 'View Timetable', to: '/ManageTimetable', color: 'bg-teal-500' },
     { icon: Users, label: 'My Students', to: '/ManageStudents', color: 'bg-indigo-500' },
     { icon: Layers, label: 'CMS — Classroom Mgmt', to: '/TeacherCMS', color: 'bg-pink-500' },
-    ...(hasClass ? [{ icon: UserCheck, label: 'Mark Attendance', to: '/MarkAttendance', color: 'bg-emerald-600' }] : []),
+    { icon: FileText, label: 'Lesson Notes', to: '/ManageLessonNotes', color: 'bg-cyan-600' },
+    { icon: MessageCircle, label: 'MICAS Chat', to: '/MICASChat', color: 'bg-indigo-600' },
+    { icon: Video, label: 'PTA Meeting', to: '/OnlineMeeting', color: 'bg-red-500' },
+    ...(isClassOrFormTeacher ? [{ icon: UserCheck, label: 'Mark Attendance', to: '/MarkAttendance', color: 'bg-emerald-600' }] : []),
     ...(isClassOrFormTeacher ? [{ icon: Star, label: 'Enter Traits & Fees', to: '/ReviewClassResults', color: 'bg-amber-500' }] : []),
   ];
 
@@ -239,6 +267,14 @@ export default function TeacherPortal() {
             <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700">
               <p className="font-medium">Password Reset</p>
               <p className="text-xs mt-1">Teachers reset password using their <strong>phone number</strong> as verification.</p>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <p className="text-sm font-medium text-green-700 mb-2">Bank Account Details (for salary payment)</p>
+              <div className="space-y-2">
+                <Input placeholder={`Bank Name (current: ${teacher.bank_name || 'Not set'})`} value={bankName} onChange={e => setBankName(e.target.value)} className="text-sm" />
+                <Input placeholder={`Account Number (current: ${teacher.account_number || 'Not set'})`} value={accountNumber} onChange={e => setAccountNumber(e.target.value)} className="text-sm" />
+                <Input placeholder={`Account Name (current: ${teacher.account_name || 'Not set'})`} value={accountName} onChange={e => setAccountName(e.target.value)} className="text-sm" />
+              </div>
             </div>
             <div>
               <Label>New Password (leave blank to keep current)</Label>
@@ -340,6 +376,50 @@ export default function TeacherPortal() {
             );
           })}
         </div>
+
+        {/* Salary notification */}
+        {teacher && (
+          <Card className="border-0 shadow-sm mb-4 bg-green-50 border-l-4 border-green-500">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <DollarSign className="w-5 h-5 text-green-600" />
+                <div>
+                  <p className="font-medium text-green-800 text-sm">Salary</p>
+                  <p className="text-xs text-green-600">Monthly salary: {teacher.salary ? `₦${teacher.salary.toLocaleString()}` : 'Not set — update bank details in Profile'}</p>
+                </div>
+              </div>
+              <Button size="sm" variant="outline" className="border-green-400 text-green-700" onClick={loadSalaryHistory}>
+                <Receipt className="w-3 h-3 mr-1" />View Payment History
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Salary history dialog-like expansion */}
+        {showSalaryView && (
+          <Card className="border-0 shadow-md mb-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Salary Payment History</CardTitle>
+                <button onClick={() => setShowSalaryView(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {salaryLoading ? <div className="text-center py-4"><div className="animate-spin w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full mx-auto" /></div>
+                : salaryPayments.length === 0 ? <p className="text-gray-400 text-sm text-center py-4">No salary payments found yet.</p>
+                : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 border-b"><tr>{['Receipt', 'Month', 'Amount', 'Method', 'Date'].map(h => <th key={h} className="text-left px-3 py-2 text-xs">{h}</th>)}</tr></thead>
+                      <tbody>{salaryPayments.map(p => (
+                        <tr key={p.id} className="border-b"><td className="px-3 py-2 font-mono text-xs">{p.receipt_number}</td><td className="px-3 py-2">{p.month}</td><td className="px-3 py-2 font-bold text-green-700">₦{(p.amount || 0).toLocaleString()}</td><td className="px-3 py-2">{p.payment_method}</td><td className="px-3 py-2 text-gray-500">{p.payment_date}</td></tr>
+                      ))}</tbody>
+                    </table>
+                  </div>
+                )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-0 shadow-md">
           <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>

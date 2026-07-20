@@ -11,6 +11,7 @@ export default function ViewCBTResults() {
   const [user, setUser] = useState(null);
   const [student, setStudent] = useState(null);
   const [results, setResults] = useState([]);
+  const [exams, setExams] = useState([]);
   const [selectedResult, setSelectedResult] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -30,9 +31,19 @@ export default function ViewCBTResults() {
         student_id: studentData[0].id 
       });
       setResults(resultsData.sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at)));
+      const examsData = await base44.entities.CBTExam.list('-created_date', 200);
+      setExams(examsData);
     }
 
     setLoading(false);
+  };
+
+  const isScoreReleased = (result) => {
+    const exam = exams.find(e => e.id === result.exam_id);
+    if (!exam?.end_date) return true;
+    if (new Date(exam.end_date) > new Date()) return false;
+    if (result.theory_graded === false) return false;
+    return true;
   };
 
   const getGradeBadgeColor = (grade) => {
@@ -46,15 +57,16 @@ export default function ViewCBTResults() {
   };
 
   const calculateStats = () => {
-    if (results.length === 0) return { avgScore: 0, highestScore: 0, totalExams: 0, passRate: 0 };
+    const visibleResults = results.filter(r => isScoreReleased(r));
+    if (visibleResults.length === 0) return { avgScore: 0, highestScore: 0, totalExams: 0, passRate: 0 };
     
-    const totalScore = results.reduce((sum, r) => sum + parseFloat(r.percentage), 0);
-    const avgScore = (totalScore / results.length).toFixed(1);
-    const highestScore = Math.max(...results.map(r => parseFloat(r.percentage)));
-    const passed = results.filter(r => parseFloat(r.percentage) >= 40).length;
-    const passRate = ((passed / results.length) * 100).toFixed(1);
+    const totalScore = visibleResults.reduce((sum, r) => sum + parseFloat(r.percentage), 0);
+    const avgScore = (totalScore / visibleResults.length).toFixed(1);
+    const highestScore = Math.max(...visibleResults.map(r => parseFloat(r.percentage)));
+    const passed = visibleResults.filter(r => parseFloat(r.percentage) >= 40).length;
+    const passRate = ((passed / visibleResults.length) * 100).toFixed(1);
     
-    return { avgScore, highestScore, totalExams: results.length, passRate };
+    return { avgScore, highestScore, totalExams: visibleResults.length, passRate };
   };
 
   const stats = calculateStats();
@@ -157,16 +169,20 @@ export default function ViewCBTResults() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {results.map((result) => (
+                    {results.map((result) => {
+                      const released = isScoreReleased(result);
+                      return (
                       <TableRow key={result.id}>
                         <TableCell className="font-medium">{result.exam_title}</TableCell>
                         <TableCell>{new Date(result.submitted_at).toLocaleDateString()}</TableCell>
-                        <TableCell className="font-bold">{result.score}/{result.total_marks}</TableCell>
-                        <TableCell>{result.percentage}%</TableCell>
+                        <TableCell className="font-bold">{released ? `${result.score}/${result.total_marks}` : '—'}</TableCell>
+                        <TableCell>{released ? `${result.percentage}%` : <Badge className="bg-amber-100 text-amber-700">Pending</Badge>}</TableCell>
                         <TableCell>
-                          <Badge className={getGradeBadgeColor(result.grade)}>
-                            {result.grade}
-                          </Badge>
+                          {released ? (
+                            <Badge className={getGradeBadgeColor(result.grade)}>
+                              {result.grade}
+                            </Badge>
+                          ) : '—'}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
@@ -175,6 +191,7 @@ export default function ViewCBTResults() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
+                          {released && (
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button 
@@ -234,9 +251,11 @@ export default function ViewCBTResults() {
                               )}
                             </DialogContent>
                           </Dialog>
+                          )}
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

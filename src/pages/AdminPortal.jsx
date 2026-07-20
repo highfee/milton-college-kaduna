@@ -5,9 +5,10 @@ import { createPageUrl } from '../utils';
 import { 
   Users, GraduationCap, BookOpen, Calendar, FileText, Settings,
   TrendingUp, UserPlus, ClipboardList, Image, MessageSquare, BarChart3,
-  LogOut, Menu, X, Printer, Archive
+  LogOut, Menu, X, Printer, Archive, Video
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import PublicMessages from '@/components/PublicMessages';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -62,10 +63,13 @@ export default function AdminPortal() {
     { icon: MessageSquare, label: 'Newsletter', page: 'ManageNewsletter', color: 'bg-yellow-500' },
     { icon: Printer, label: 'Print/Send Results', page: 'PrintResult', color: 'bg-cyan-600' },
     { icon: Settings, label: 'School Settings', page: 'SchoolSettings', color: 'bg-gray-600' },
-    { icon: Users, label: 'Non-Academic Staff', page: 'ManageNonAcademicStaff', color: 'bg-slate-600' },
+    { icon: Users, label: 'Manage Parents', page: 'ManageParents', color: 'bg-pink-500' },
+  { icon: Users, label: 'Non-Academic Staff', page: 'ManageNonAcademicStaff', color: 'bg-slate-600' },
     { icon: TrendingUp, label: 'Master List', page: 'MasterList', color: 'bg-emerald-600' },
     { icon: ClipboardList, label: 'Result Tokens', page: 'ResultTokens', color: 'bg-amber-600' },
     { icon: Archive, label: 'Student Archive', page: 'StudentArchive', color: 'bg-slate-700' },
+    { icon: MessageSquare, label: 'MICAS Chat', page: 'MICASChat', color: 'bg-indigo-600' },
+    { icon: Video, label: 'PTA Meeting', page: 'OnlineMeeting', color: 'bg-red-500' },
   ];
 
   const statCards = [
@@ -156,6 +160,11 @@ export default function AdminPortal() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Public Messages */}
+        <div className="mt-8">
+          <PublicMessages />
+        </div>
       </div>
     </div>
   );

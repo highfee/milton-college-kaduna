@@ -45,6 +45,14 @@
     },
     "about": {
       "type": "string"
+    },
+    "director_email": {
+      "type": "string",
+      "description": "Registered email for director password resets"
+    },
+    "director_password": {
+      "type": "string",
+      "description": "Director portal login password (changeable via reset flow)"
     }
   },
   "required": [
@@ -57,11 +65,7 @@
       }
     },
     "read": {},
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
+    "update": true,
     "delete": {
       "user_condition": {
         "role": "admin"

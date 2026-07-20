@@ -1,0 +1,81 @@
+{
+  "name": "Meeting",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "meeting_url": {
+      "type": "string",
+      "description": "External Zoom meeting link"
+    },
+    "meeting_id": {
+      "type": "string",
+      "description": "Zoom Meeting ID"
+    },
+    "meeting_passcode": {
+      "type": "string"
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "created_name": {
+      "type": "string"
+    },
+    "start_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Scheduled",
+        "Live",
+        "Ended"
+      ],
+      "default": "Scheduled"
+    },
+    "recording_url": {
+      "type": "string",
+      "description": "Video recording URL added after meeting ends"
+    },
+    "target_audience": {
+      "type": "string",
+      "enum": [
+        "All",
+        "Parents",
+        "Staff"
+      ],
+      "default": "All"
+    }
+  },
+  "required": [
+    "title",
+    "meeting_url"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

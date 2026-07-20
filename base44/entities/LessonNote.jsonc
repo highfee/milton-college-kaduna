@@ -40,10 +40,12 @@
       "type": "string"
     },
     "content": {
-      "type": "string"
+      "type": "string",
+      "description": "Typed or pasted lesson note content"
     },
     "attachment_url": {
-      "type": "string"
+      "type": "string",
+      "description": "Uploaded lesson note file (PDF/DOC) URL"
     },
     "teacher_id": {
       "type": "string"
@@ -55,9 +57,43 @@
       "type": "string",
       "enum": [
         "Draft",
+        "Pending Approval",
+        "Approved",
+        "Rejected",
         "Published"
       ],
       "default": "Draft"
+    },
+    "reviewer_id": {
+      "type": "string",
+      "description": "Principal or Head Teacher who reviewed"
+    },
+    "reviewer_name": {
+      "type": "string"
+    },
+    "reviewer_role": {
+      "type": "string"
+    },
+    "review_comment": {
+      "type": "string",
+      "description": "Comment from reviewer"
+    },
+    "rejection_reasons": {
+      "type": "string",
+      "description": "Topics/content highlighted for the teacher to change/edit on rejection"
+    },
+    "reviewed_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "published_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "revision_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of times rejected and resubmitted"
     }
   },
   "required": [
@@ -69,21 +105,7 @@
     "create": {
       "created_by": "{{user.email}}"
     },
-    "read": {
-      "$or": [
-        {
-          "data.class": "{{user.data.current_class}}"
-        },
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "read": true,
     "update": {
       "$or": [
         {

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import {
   Eye, EyeOff, LogOut, Users, GraduationCap, BookOpen, FileText,
   CheckCircle, MessageSquare, BarChart2, Settings, ClipboardList,
-  Save, Search, ArrowUp, ArrowDown, Star, Shield, Printer, Trash2, Edit, List
+  Save, Search, ArrowUp, ArrowDown, Star, Shield, Printer, Trash2, Edit, List, Video
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SCHOOL_CLASSES } from '@/components/GradingUtils';
 import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
+import LessonNoteReview from '@/components/LessonNoteReview';
 
 const DEFAULT_PASSWORD = 'User123';
 // Principal approves Secondary classes only
@@ -172,6 +173,16 @@ function OverviewTab({ principal, stats, setActiveTab }) {
               <p className="font-semibold text-sm">Print Newsletter</p>
               <p className="text-xs text-white/70 mt-1">Create and print term newsletters</p>
             </Link>
+            <Link to="/MICASChat" className="bg-white/10 hover:bg-white/20 rounded-lg p-4 text-left transition-colors block">
+              <MessageSquare className="w-5 h-5 mb-2" />
+              <p className="font-semibold text-sm">MICAS Chat</p>
+              <p className="text-xs text-white/70 mt-1">Chat with staff members</p>
+            </Link>
+            <Link to="/OnlineMeeting" className="bg-white/10 hover:bg-white/20 rounded-lg p-4 text-left transition-colors block">
+              <Video className="w-5 h-5 mb-2" />
+              <p className="font-semibold text-sm">PTA Meeting</p>
+              <p className="text-xs text-white/70 mt-1">Join or initiate online meetings</p>
+            </Link>
           </div>
         </CardContent>
       </Card>
@@ -244,13 +255,22 @@ function ReviewResultsTab({ principal, settings }) {
         status: 'Approved',
         approved_by: principal?.email || principal?.staff_id,
         approved_date: new Date().toISOString().split('T')[0],
-        ...(selectedTerm === 'Third Term' ? { promotion_status: promotionStatus } : {})
+        ...(selectedTerm === 'Third Term' ? { promotion_status: promotionStatus, promoted_to_class: nextClass } : {})
       });
     }
     if (selectedTerm === 'Third Term' && promotion) {
       const newSection = ['Reception Class','Nursery 1','Nursery 2'].includes(nextClass) ? 'Nursery'
         : nextClass.startsWith('Primary') ? 'Primary' : 'Secondary';
-      await base44.entities.Student.update(selectedStudent.id, { current_class: nextClass, section: newSection });
+      // Update student's class, section, and subjects for the new class
+      const allSubjects = await base44.entities.Subject.filter({ status: 'Active' });
+      const classSubjectIds = allSubjects
+        .filter(s => s.classes && s.classes.includes(nextClass))
+        .map(s => s.id);
+      await base44.entities.Student.update(selectedStudent.id, {
+        current_class: nextClass,
+        section: newSection,
+        ...(classSubjectIds.length > 0 ? { subjects: classSubjectIds } : {})
+      });
     }
     setSaving(false);
     alert(`Results approved! Student ${promotionStatus === 'Promoted' ? `promoted to ${nextClass}` : promotionStatus === 'Demoted' ? `demoted to ${nextClass}` : 'set to repeat class'}.`);
@@ -750,6 +770,9 @@ export default function PrincipalPortal() {
             <TabsTrigger value="students" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">
               <GraduationCap className="w-4 h-4 mr-2" /> Students
             </TabsTrigger>
+            <TabsTrigger value="lesson_notes" className="data-[state=active]:bg-[#1e3a5f] data-[state=active]:text-white">
+              <FileText className="w-4 h-4 mr-2" /> Lesson Notes
+            </TabsTrigger>
             <Link to="/EnterResults">
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                 <Edit className="w-4 h-4 mr-2" /> Enter Results
@@ -778,6 +801,9 @@ export default function PrincipalPortal() {
           </TabsContent>
           <TabsContent value="students">
             <StudentsTab />
+          </TabsContent>
+          <TabsContent value="lesson_notes">
+            <LessonNoteReview reviewer={principal} sections={['Secondary']} />
           </TabsContent>
         </Tabs>
       </div>

@@ -17,6 +17,14 @@ import AdmissionRequirements from './pages/AdmissionRequirements';
 import CheckAdmissionStatus from './pages/CheckAdmissionStatus';
 import ReceiptManagement from './pages/ReceiptManagement';
 import CalendarSync from './pages/CalendarSync';
+import GradingDashboard from './pages/GradingDashboard';
+import ManageLessonNotes from './pages/ManageLessonNotes';
+import ViewLessonNotes from './pages/ViewLessonNotes';
+import MICASChat from './pages/MICASChat';
+import ParentAcademicProgress from './pages/ParentAcademicProgress';
+import OnlineMeeting from './pages/OnlineMeeting';
+import DirectorPortal from './pages/DirectorPortal';
+import ExpenseManagement from './pages/ExpenseManagement';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -78,6 +86,14 @@ const AuthenticatedApp = () => {
       <Route path="/CheckAdmissionStatus" element={<LayoutWrapper currentPageName="CheckAdmissionStatus"><CheckAdmissionStatus /></LayoutWrapper>} />
       <Route path="/ReceiptManagement" element={<LayoutWrapper currentPageName="ReceiptManagement"><ReceiptManagement /></LayoutWrapper>} />
       <Route path="/CalendarSync" element={<LayoutWrapper currentPageName="CalendarSync"><CalendarSync /></LayoutWrapper>} />
+      <Route path="/GradingDashboard" element={<LayoutWrapper currentPageName="GradingDashboard"><GradingDashboard /></LayoutWrapper>} />
+      <Route path="/ManageLessonNotes" element={<LayoutWrapper currentPageName="ManageLessonNotes"><ManageLessonNotes /></LayoutWrapper>} />
+      <Route path="/ViewLessonNotes" element={<LayoutWrapper currentPageName="ViewLessonNotes"><ViewLessonNotes /></LayoutWrapper>} />
+      <Route path="/MICASChat" element={<LayoutWrapper currentPageName="MICASChat"><MICASChat /></LayoutWrapper>} />
+      <Route path="/ParentAcademicProgress" element={<LayoutWrapper currentPageName="ParentAcademicProgress"><ParentAcademicProgress /></LayoutWrapper>} />
+      <Route path="/OnlineMeeting" element={<LayoutWrapper currentPageName="OnlineMeeting"><OnlineMeeting /></LayoutWrapper>} />
+      <Route path="/DirectorPortal" element={<LayoutWrapper currentPageName="DirectorPortal"><DirectorPortal /></LayoutWrapper>} />
+      <Route path="/ExpenseManagement" element={<LayoutWrapper currentPageName="ExpenseManagement"><ExpenseManagement /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

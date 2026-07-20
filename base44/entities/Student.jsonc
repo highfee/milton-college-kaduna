@@ -41,6 +41,13 @@
     "current_class": {
       "type": "string"
     },
+    "subjects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Subject IDs the student is offering/taking"
+    },
     "state_of_origin": {
       "type": "string"
     },

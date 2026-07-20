@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Edit, Trash2, Calendar as CalendarIcon, Upload, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar as CalendarIcon, Upload, Download, Smartphone } from 'lucide-react';
+import { downloadCalendarICS } from '@/lib/icsGenerator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -276,6 +277,16 @@ export default function ManageCalendar() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            {calendar.activities?.length > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Sync to your device calendar"
+                                onClick={() => downloadCalendarICS(calendar)}
+                              >
+                                <Smartphone className="w-4 h-4 text-teal-600" />
+                              </Button>
+                            )}
                             {calendar.attachment_url && (
                               <a href={calendar.attachment_url} target="_blank" rel="noopener noreferrer">
                                 <Button variant="ghost" size="icon">

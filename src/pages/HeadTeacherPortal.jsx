@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   BookOpen, ClipboardList, FileText, Users, LogOut, Eye, EyeOff,
   GraduationCap, CheckCircle, MessageSquare, Star, Save, Search,
-  ChevronLeft, TrendingUp, ArrowUp, ArrowDown, UserCheck
+  ChevronLeft, TrendingUp, ArrowUp, ArrowDown, UserCheck, Video
 } from 'lucide-react';
 
 // Full ordered class progression map for Nursery + Primary (HT scope)
@@ -32,6 +32,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { getGrade, getRemark, SCHOOL_CLASSES } from '@/components/GradingUtils';
 import EnterTraitsDialog from '@/components/EnterTraitsDialog';
 import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
+import LessonNoteReview from '@/components/LessonNoteReview';
 
 const DEFAULT_PASSWORD = 'User123';
 
@@ -855,6 +856,9 @@ export default function HeadTeacherPortal() {
             <TabsTrigger value="head_teacher" className="data-[state=active]:bg-amber-700 data-[state=active]:text-white">
               <CheckCircle className="w-4 h-4 mr-2" /> HT Approval
             </TabsTrigger>
+            <TabsTrigger value="lesson_notes" className="data-[state=active]:bg-amber-700 data-[state=active]:text-white">
+              <FileText className="w-4 h-4 mr-2" /> Lesson Notes
+            </TabsTrigger>
             <Link to="/MarkAttendance">
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                 <UserCheck className="w-4 h-4 mr-2" /> Mark Attendance
@@ -863,6 +867,16 @@ export default function HeadTeacherPortal() {
             <Link to="/MasterList">
               <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                 <ClipboardList className="w-4 h-4 mr-2" /> Master List
+              </button>
+            </Link>
+            <Link to="/MICASChat">
+              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                <MessageSquare className="w-4 h-4 mr-2" /> MICAS Chat
+              </button>
+            </Link>
+            <Link to="/OnlineMeeting">
+              <button className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                <Video className="w-4 h-4 mr-2" /> PTA Meeting
               </button>
             </Link>
 
@@ -935,6 +949,9 @@ export default function HeadTeacherPortal() {
 
           <TabsContent value="head_teacher">
             <HeadTeacherReviewTab teacher={teacher} settings={settings} />
+          </TabsContent>
+          <TabsContent value="lesson_notes">
+            <LessonNoteReview reviewer={teacher} sections={['Nursery', 'Primary']} />
           </TabsContent>
         </Tabs>
       </div>

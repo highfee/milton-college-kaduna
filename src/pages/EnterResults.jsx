@@ -255,7 +255,16 @@ export default function EnterResults() {
     setSaving(false);
   };
 
-  const filteredStudents = students.filter(s =>
+  // If any student in the class has per-student subjects assigned, filter strictly.
+  // Otherwise, show all students in the class (backward compatibility).
+  const hasSubjectAssignments = students.some(s => s.subjects && s.subjects.length > 0);
+
+  const filteredStudents = students.filter(s => {
+    if (hasSubjectAssignments) {
+      return s.subjects && s.subjects.includes(selectedSubject);
+    }
+    return true;
+  }).filter(s =>
     `${s.first_name} ${s.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
     s.admission_number?.toLowerCase().includes(search.toLowerCase())
   );

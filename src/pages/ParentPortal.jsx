@@ -5,8 +5,10 @@ import {
   FileText, GraduationCap, LogOut, UserCircle, TrendingUp, BookOpen, 
   Eye, Bell, CreditCard, ClipboardCheck, CheckCircle2, XCircle, Clock, 
   AlertCircle, BarChart2, Award, Phone, Star, MessageCircle, Download,
-  Calendar, Newspaper, Layout, Lock, Key, Send, ShieldCheck
+  Calendar, Newspaper, Layout, Lock, Key, Send, ShieldCheck, Video, Calculator,
+  Smartphone
 } from 'lucide-react';
+import { downloadCalendarICS } from '@/lib/icsGenerator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -455,6 +457,7 @@ export default function ParentPortal() {
               session={showResultSlip.session}
               classTeacher={slipClassTeacher}
               rankings={slipRankings}
+              attendance={attendance.filter(a => a.term === showResultSlip.term && a.session === showResultSlip.session)}
             />
           </div>
         )}
@@ -593,6 +596,51 @@ export default function ParentPortal() {
           </div>
         )}
 
+        {/* Quick Links: Academic Progress, MICAS Chat, PTA Meeting */}
+        {selectedChild && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Link to="/ParentAcademicProgress">
+              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Calculator className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800">Academic Progress</p>
+                    <p className="text-xs text-gray-500">View C.A. scores & predict performance</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link to="/MICASChat">
+              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-teal-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800">MICAS Chat</p>
+                    <p className="text-xs text-gray-500">Message class/form teacher</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link to="/OnlineMeeting">
+              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <Video className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-gray-800">PTA Meeting</p>
+                    <p className="text-xs text-gray-500">Join online meeting</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        )}
+
         {/* Main Tabs */}
         {selectedChild && (
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -605,8 +653,9 @@ export default function ParentPortal() {
                 { value: 'timetable', label: 'Timetable' },
                 { value: 'newsletter', label: 'Newsletter' },
                 { value: 'messages', label: 'Messages' },
+                { value: 'projects', label: 'Projects' },
                 { value: 'rate', label: 'Rate School' },
-              ].map(t => (
+                ].map(t => (
                 <TabsTrigger key={t.value} value={t.value} className="text-xs py-1.5 px-1">{t.label}</TabsTrigger>
               ))}
             </TabsList>
@@ -1054,13 +1103,25 @@ export default function ParentPortal() {
                                   <p className="font-medium text-sm">{cal.title}</p>
                                   <p className="text-xs text-gray-500">{cal.term} · {cal.session} · {cal.section}</p>
                                 </div>
-                                {cal.attachment_url && (
-                                  <a href={cal.attachment_url} download target="_blank" rel="noopener noreferrer">
-                                    <Button size="sm" variant="outline" className="text-xs h-7">
-                                      <Download className="w-3 h-3 mr-1" /> Download
+                                <div className="flex items-center gap-2">
+                                  {cal.activities?.length > 0 && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs h-7"
+                                      onClick={() => downloadCalendarICS(cal)}
+                                    >
+                                      <Smartphone className="w-3 h-3 mr-1" /> Sync to Device
                                     </Button>
-                                  </a>
-                                )}
+                                  )}
+                                  {cal.attachment_url && (
+                                    <a href={cal.attachment_url} download target="_blank" rel="noopener noreferrer">
+                                      <Button size="sm" variant="outline" className="text-xs h-7">
+                                        <Download className="w-3 h-3 mr-1" /> Download
+                                      </Button>
+                                    </a>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1115,6 +1176,11 @@ export default function ParentPortal() {
               </Card>
             </TabsContent>
 
+            {/* PROJECTS TAB */}
+            <TabsContent value="projects" className="space-y-4 mt-4">
+              <ProjectsTab />
+            </TabsContent>
+
             {/* RATE SCHOOL TAB */}
             <TabsContent value="rate" className="space-y-4 mt-4">
               <Card className="border-0 shadow-sm">
@@ -1162,6 +1228,50 @@ export default function ParentPortal() {
         )}
       </div>
     </div>
+  );
+}
+
+function ProjectsTab() {
+  const [projects, setProjects] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    base44.entities.SchoolProject.filter({ is_parent_visible: true }).then(p => { setProjects(p); setLoading(false); });
+  }, []);
+
+  if (loading) return <LoadingSpinner />;
+
+  return (
+    <Card className="border-0 shadow-sm">
+      <CardHeader><CardTitle className="text-base flex items-center gap-2">🏗️ School Projects</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        {projects.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-6">No projects to display yet.</p>
+        ) : projects.map(p => (
+          <div key={p.id} className="border rounded-xl p-4">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <h3 className="font-bold text-gray-800">{p.project_name}</h3>
+                <p className="text-xs text-gray-500">{p.session} · {p.term}</p>
+              </div>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.status === 'Ongoing' ? 'bg-blue-100 text-blue-700' : p.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span>
+            </div>
+            {p.description && <p className="text-sm text-gray-600 mb-3">{p.description}</p>}
+            <div className="space-y-1 text-xs text-gray-600 mb-3">
+              <div className="flex justify-between"><span>Total Cost:</span><span className="font-bold">₦{(p.total_cost || 0).toLocaleString()}</span></div>
+              <div className="flex justify-between"><span>Amount Paid:</span><span className="font-bold text-green-600">₦{(p.amount_paid || 0).toLocaleString()}</span></div>
+              {p.expected_completion && <div className="flex justify-between"><span>Expected Completion:</span><span>{p.expected_completion}</span></div>}
+            </div>
+            <div className="mb-2">
+              <div className="flex justify-between text-xs mb-1"><span>Progress</span><span>{p.progress_percentage || 0}%</span></div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="h-2 rounded-full bg-blue-500" style={{ width: `${p.progress_percentage || 0}%` }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 

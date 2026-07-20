@@ -46,13 +46,19 @@ export default function Home() {
   const handleContactSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    await base44.entities.Message.create({
-      ...contactForm,
-      message_type: 'Public-Admin'
-    });
-    setContactForm({ from_name: '', from_email: '', from_phone: '', subject: '', content: '' });
-    setSubmitting(false);
-    alert('Message sent successfully!');
+    try {
+      await base44.entities.Message.create({
+        ...contactForm,
+        message_type: 'Public-Admin'
+      });
+      setContactForm({ from_name: '', from_email: '', from_phone: '', subject: '', content: '' });
+      alert('Message sent successfully! The school administration will receive your message.');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again or contact the school directly.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleRatingSubmit = async (e) => {
@@ -93,7 +99,7 @@ export default function Home() {
             >
               <div className="flex items-center justify-center lg:justify-start gap-4 mb-6">
                 {settings?.school_logo ? (
-                  <img src={settings.school_logo} alt="School Logo" className="w-20 h-20 object-contain bg-white rounded-full p-2 shadow-lg" />
+                  <img src={settings.school_logo} alt="School Logo" className="w-20 h-20 object-cover bg-white rounded-full shadow-lg" />
                 ) : (
                   <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30">
                     <GraduationCap className="w-10 h-10" />
