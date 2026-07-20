@@ -16,6 +16,8 @@ import { useToast } from '@/components/ui/use-toast';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import TheoryGradingDialog from '@/components/TheoryGradingDialog';
+import { generateUniquePasswords } from '@/lib/cbtPasswordGenerator';
+import { KeyRound, Printer } from 'lucide-react';
 
 const QUILL_MODULES = {
   toolbar: [
@@ -78,6 +80,9 @@ export default function ManageCBT() {
   const [gradingExam, setGradingExam] = useState(null);
   const [malpracticeRecords, setMalpracticeRecords] = useState([]);
   const [showMalpractice, setShowMalpractice] = useState(false);
+  const [passwordExam, setPasswordExam] = useState(null);
+  const [examPasswords, setExamPasswords] = useState([]);
+  const [generatingPasswords, setGeneratingPasswords] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => { loadData(); }, []);
@@ -281,6 +286,112 @@ export default function ManageCBT() {
     loadMalpractice();
   };
 
+  // ===== CBT PASSWORD GENERATION =====
+  const handleViewPasswords = async (exam) => {
+    const recs = await base44.entities.CBTExamPassword.filter({ exam_id: exam.id });
+    setExamPasswords(recs);
+    setPasswordExam(exam);
+  };
+
+  const handleGeneratePasswords = async (exam) => {
+    if (!exam.classes || exam.classes.length === 0) {
+      toast({ title: 'This exam has no classes assigned.', variant: 'destructive', duration: 5000 });
+      return;
+    }
+    setGeneratingPasswords(true);
+    try {
+      // Fetch all students in the exam's classes
+      const allStudents = await base44.entities.Student.filter({ status: 'Active' });
+      const eligible = allStudents.filter(s => exam.classes.includes(s.current_class));
+      if (eligible.length === 0) {
+        toast({ title: 'No active students found in the assigned classes.', variant: 'destructive', duration: 5000 });
+        setGeneratingPasswords(false);
+        return;
+      }
+      // Fetch existing passwords for this exam (to skip students who already have one)
+      const existing = await base44.entities.CBTExamPassword.filter({ exam_id: exam.id });
+      const existingMap = new Map(existing.map(p => [p.student_id, p]));
+      // Fetch ALL existing passwords globally to ensure uniqueness
+      const allPwdRecords = await base44.entities.CBTExamPassword.list('-created_date', 500);
+      const globalUsed = new Set(allPwdRecords.map(p => p.password.toUpperCase()));
+      // Students who need a password
+      const needPassword = eligible.filter(s => !existingMap.has(s.id));
+      if (needPassword.length === 0) {
+        toast({ title: 'All students already have passwords for this exam.', duration: 5000 });
+        setGeneratingPasswords(false);
+        handleViewPasswords(exam);
+        return;
+      }
+      const generated = generateUniquePasswords(needPassword, globalUsed);
+      await base44.entities.CBTExamPassword.bulkCreate(
+        generated.map(({ student, password }) => ({
+          exam_id: exam.id,
+          exam_title: exam.title,
+          subject_name: exam.subject_name,
+          student_id: student.id,
+          student_name: `${student.first_name} ${student.last_name}`,
+          admission_number: student.admission_number || '',
+          class: student.current_class,
+          password,
+          used: false,
+          generated_by: teacher?.email || user?.email || 'Teacher',
+          generated_date: new Date().toISOString()
+        }))
+      );
+      toast({ title: `${generated.length} unique password(s) generated!`, duration: 5000 });
+      handleViewPasswords(exam);
+    } catch (err) {
+      toast({ title: 'Failed to generate passwords: ' + (err.message || 'Unknown error'), variant: 'destructive', duration: 5000 });
+    }
+    setGeneratingPasswords(false);
+  };
+
+  const handleRegenerateSingle = async (exam, pwdRecord) => {
+    if (!confirm(`Regenerate a new password for ${pwdRecord.student_name}? The old one will be deleted.`)) return;
+    const allPwdRecords = await base44.entities.CBTExamPassword.list('-created_date', 500);
+    const globalUsed = new Set(allPwdRecords.filter(p => p.id !== pwdRecord.id).map(p => p.password.toUpperCase()));
+    const [{ password: newPwd }] = generateUniquePasswords([{}], globalUsed);
+    await base44.entities.CBTExamPassword.update(pwdRecord.id, { password: newPwd, used: false });
+    toast({ title: 'Password regenerated', duration: 3000 });
+    handleViewPasswords(exam);
+  };
+
+  const handleDeleteAllPasswords = async (exam) => {
+    if (!confirm('Delete ALL passwords for this exam? Students will not be able to start until new ones are generated.')) return;
+    await base44.entities.CBTExamPassword.deleteMany({ exam_id: exam.id });
+    toast({ title: 'All passwords deleted.', duration: 3000 });
+    setExamPasswords([]);
+    setPasswordExam(null);
+  };
+
+  const handlePrintPasswords = () => {
+    if (!passwordExam) return;
+    const win = window.open('', '_blank');
+    const rows = examPasswords.map((p, i) => `
+      <tr>
+        <td style="border:1px solid #ccc;padding:6px;">${i + 1}</td>
+        <td style="border:1px solid #ccc;padding:6px;">${p.student_name}</td>
+        <td style="border:1px solid #ccc;padding:6px;">${p.admission_number || '-'}</td>
+        <td style="border:1px solid #ccc;padding:6px;">${p.class}</td>
+        <td style="border:1px solid #ccc;padding:6px;font-family:monospace;font-weight:bold;font-size:16px;letter-spacing:2px;">${p.password}</td>
+      </tr>`).join('');
+    win.document.write(`
+      <html><head><title>${passwordExam.title} — Passwords</title>
+      <style>body{font-family:Arial,sans-serif;padding:20px;}h1{font-size:20px;}table{border-collapse:collapse;width:100%;}th{background:#1e3a5f;color:white;}</style>
+      </head><body>
+      <h1>Milton College — CBT Exam Passwords</h1>
+      <p><strong>Exam:</strong> ${passwordExam.title} | <strong>Subject:</strong> ${passwordExam.subject_name || '-'}</p>
+      <p><strong>Total Students:</strong> ${examPasswords.length}</p>
+      <table>
+        <thead><tr><th style="border:1px solid #ccc;padding:6px;">#</th><th style="border:1px solid #ccc;padding:6px;">Student</th><th style="border:1px solid #ccc;padding:6px;">Adm No</th><th style="border:1px solid #ccc;padding:6px;">Class</th><th style="border:1px solid #ccc;padding:6px;">Password</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="margin-top:20px;font-size:12px;color:#666;">Each password is unique to the student and the exam. Students cannot share passwords or reuse them for other subjects.</p>
+      </body></html>`);
+    win.document.close();
+    win.print();
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-[#1e3a5f] border-t-transparent rounded-full" /></div>;
 
   return (
@@ -368,6 +479,7 @@ export default function ManageCBT() {
                               {exam.status === 'Draft' && <Button size="sm" variant="outline" onClick={() => handlePublish(exam)}>Publish</Button>}
                               {exam.status === 'Published' && <Button size="sm" variant="outline" className="text-blue-600" onClick={() => handleUnpublish(exam)}>Unpublish</Button>}
                               {exam.status === 'Published' && <Button size="sm" variant="outline" className="text-orange-600" onClick={() => handleClose(exam)}>Close</Button>}
+                              {exam.status === 'Published' && <Button size="sm" variant="outline" className="text-indigo-600 border-indigo-300" onClick={() => handleViewPasswords(exam)}><KeyRound className="w-3 h-3 mr-1" />Passwords</Button>}
                               {needsMark && <Button size="sm" variant="outline" className="text-amber-600 border-amber-300" onClick={() => setGradingExam(exam)}>Grade Theory</Button>}
                               <Button variant="ghost" size="icon" onClick={() => handleDuplicate(exam)}><Copy className="w-4 h-4" /></Button>
                               <Button variant="ghost" size="icon" onClick={() => handleEdit(exam)}><Edit className="w-4 h-4" /></Button>
@@ -564,9 +676,11 @@ export default function ManageCBT() {
                     <Input type="number" value={formData.pass_mark} onChange={e => setFormData({ ...formData, pass_mark: parseInt(e.target.value) })} />
                   </div>
                   <div>
-                    <Label>Exam Password (required for students)</Label>
-                    <Input value={formData.exam_password || ''} onChange={e => setFormData({ ...formData, exam_password: e.target.value })} placeholder="e.g. MATH2026A" />
-                    <p className="text-xs text-gray-400 mt-1">Students must enter this before starting</p>
+                    <Label>Exam Password</Label>
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
+                      <KeyRound className="w-3 h-3 inline mr-1" />
+                      Unique passwords are generated per student after publishing. Use the "Passwords" button on the exam row.
+                    </div>
                   </div>
                 </div>
                 <div className="grid md:grid-cols-1 gap-4">
@@ -838,6 +952,79 @@ export default function ManageCBT() {
           onClose={() => setGradingExam(null)}
           onGraded={() => { setGradingExam(null); loadData(); }}
         />
+
+        {/* PASSWORDS DIALOG */}
+        <Dialog open={!!passwordExam} onOpenChange={() => setPasswordExam(null)}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><KeyRound className="w-5 h-5 text-indigo-600" />Passwords — {passwordExam?.title}</DialogTitle>
+            </DialogHeader>
+            {passwordExam && (
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                  <p className="font-semibold mb-1">How it works:</p>
+                  <ul className="list-disc list-inside text-xs space-y-0.5">
+                    <li>Each student gets a <strong>unique password</strong> for this exam only.</li>
+                    <li>No two students share the same password.</li>
+                    <li>A student cannot use the same password for a different subject.</li>
+                    <li>Print and hand each student their password before the exam starts.</li>
+                  </ul>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={() => handleGeneratePasswords(passwordExam)} disabled={generatingPasswords} className="bg-indigo-600 hover:bg-indigo-700">
+                    <KeyRound className="w-4 h-4 mr-1" />{generatingPasswords ? 'Generating...' : examPasswords.length > 0 ? 'Generate for New Students' : 'Generate Passwords'}
+                  </Button>
+                  {examPasswords.length > 0 && (
+                    <>
+                      <Button variant="outline" onClick={handlePrintPasswords}><Printer className="w-4 h-4 mr-1" />Print / Export</Button>
+                      <Button variant="outline" className="text-red-600 border-red-300" onClick={() => handleDeleteAllPasswords(passwordExam)}>Delete All</Button>
+                    </>
+                  )}
+                </div>
+                {examPasswords.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-[#1e3a5f] text-white">
+                          <th className="px-3 py-2 text-left">#</th>
+                          <th className="px-3 py-2 text-left">Student</th>
+                          <th className="px-3 py-2 text-left">Adm No</th>
+                          <th className="px-3 py-2 text-left">Class</th>
+                          <th className="px-3 py-2 text-left">Password</th>
+                          <th className="px-3 py-2 text-center">Used</th>
+                          <th className="px-3 py-2 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {examPasswords.map((p, i) => (
+                          <tr key={p.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                            <td className="px-3 py-2">{i + 1}</td>
+                            <td className="px-3 py-2 font-medium">{p.student_name}</td>
+                            <td className="px-3 py-2 font-mono text-xs">{p.admission_number || '-'}</td>
+                            <td className="px-3 py-2">{p.class}</td>
+                            <td className="px-3 py-2 font-mono font-bold tracking-wider text-indigo-700">{p.password}</td>
+                            <td className="px-3 py-2 text-center">
+                              {p.used ? <Badge className="bg-green-100 text-green-800">Yes</Badge> : <Badge className="bg-gray-100 text-gray-600">No</Badge>}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <Button size="sm" variant="ghost" className="text-xs" onClick={() => handleRegenerateSingle(passwordExam, p)}>Regenerate</Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <KeyRound className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p>No passwords generated yet for this exam.</p>
+                    <p className="text-xs mt-1">Click "Generate Passwords" to create unique passwords for all students in the assigned classes.</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

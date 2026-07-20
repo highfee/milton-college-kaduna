@@ -79,7 +79,7 @@ const RULES = [
   "After 2 violations you will be logged out. Your progress is saved.",
   "After 3 logouts, you will be permanently blocked from this exam.",
   "If blocked, contact your subject teacher or principal.",
-  "All exams require a password provided by your teacher before starting.",
+  "All exams require a unique password provided by your teacher before starting. Each student has a different password.",
 ];
 
 export default function TakeCBT() {
@@ -290,8 +290,15 @@ export default function TakeCBT() {
       setPasswordError('You are blocked from this exam due to malpractice. Contact your teacher or principal.');
       return;
     }
-    if (examToStart.exam_password && examPassword !== examToStart.exam_password) {
-      setPasswordError('Incorrect exam password. Please ask your teacher for the correct password.');
+    // Verify per-student unique password
+    const pwdRecords = await base44.entities.CBTExamPassword.filter({ exam_id: examToStart.id, student_id: student.id });
+    const pwdRecord = pwdRecords[0];
+    if (!pwdRecord) {
+      setPasswordError('No exam password has been assigned to you for this exam. Please contact your subject teacher.');
+      return;
+    }
+    if (examPassword.trim().toUpperCase() !== pwdRecord.password.toUpperCase()) {
+      setPasswordError('Incorrect exam password. Please ask your teacher for your unique password.');
       return;
     }
     // Check retained answers for re-login scenario
@@ -323,6 +330,10 @@ export default function TakeCBT() {
     setViolationCount(0);
     setPhase('exam');
     startMicMonitoring();
+    // Mark this student's password as used
+    if (pwdRecord) {
+      base44.entities.CBTExamPassword.update(pwdRecord.id, { used: true }).catch(() => {});
+    }
     setExamPassword('');
     setPasswordError('');
   };
@@ -553,7 +564,7 @@ export default function TakeCBT() {
                       </div>
                       {exam.instructions && <div className="p-3 bg-blue-50 rounded-lg text-xs text-blue-800" dangerouslySetInnerHTML={{ __html: exam.instructions }} />}
                       {hasTheory && <div className="flex items-center gap-1.5 p-2 bg-purple-50 rounded text-xs text-purple-700"><AlertCircle className="w-3 h-3" />Includes theory questions (manual grading)</div>}
-                      {exam.exam_password && <div className="flex items-center gap-1.5 p-2 bg-yellow-50 rounded text-xs text-yellow-700"><Lock className="w-3 h-3" />Password required — ask your teacher</div>}
+                      <div className="flex items-center gap-1.5 p-2 bg-yellow-50 rounded text-xs text-yellow-700"><Lock className="w-3 h-3" />Unique password required — ask your teacher</div>
                       <Button onClick={() => { setExamToStart(exam); setPhase('password'); }} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
                         <Zap className="w-4 h-4 mr-2" />Start Exam
                       </Button>
@@ -578,7 +589,7 @@ export default function TakeCBT() {
           <p className="text-white/80 text-sm mt-1">{examToStart.title}</p>
         </div>
         <CardContent className="p-6 space-y-4">
-          <p className="text-sm text-gray-600">Your teacher will provide the exam password after you are seated and ready.</p>
+          <p className="text-sm text-gray-600">Your teacher will provide your <strong>unique exam password</strong> after you are seated and ready. Each student has a different password — do not share yours.</p>
           <div>
             <Label>Exam Password *</Label>
             <Input type="password" value={examPassword} onChange={e => setExamPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleVerifyPassword()} placeholder="Enter password" className="mt-1" />
